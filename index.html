@@ -3,1148 +3,236 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Parks &amp; Preserves Within ~90 Minutes of Audubon, PA</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <title>Razor's Edge</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg: #0d0d0d;
+      --surface: #161616;
+      --surface2: #1e1e1e;
+      --border: #2a2a2a;
+      --accent: #c8a96e;
+      --accent2: #8fbf6a;
+      --text: #e8e4dc;
+      --muted: #888;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f4f6f0;
-      color: #2c3a22;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 5rem 2rem 4rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(200,169,110,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.25rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.5rem, 10vw, 7rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      background: linear-gradient(135deg, #e8e4dc 0%, var(--accent) 50%, #e8e4dc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-rule {
+      width: 60px;
+      height: 2px;
+      background: var(--accent);
+      margin: 0 auto 1.5rem;
+      opacity: 0.6;
+    }
+
+    .hero-sub {
+      font-size: 1rem;
+      color: var(--muted);
+      max-width: 420px;
+      margin: 0 auto;
       line-height: 1.6;
     }
 
-    /* ── Layout ── */
-    .page-header {
-      padding: 1.5rem 1.5rem 1rem;
-      background: #fff;
-      border-bottom: 1px solid #d4e8c2;
-    }
-
-    .page-header h1 {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: #2c3a22;
-      margin-bottom: 0.25rem;
-    }
-
-    .subtitle {
-      color: #5a6e47;
-      font-size: 0.9rem;
-      font-style: italic;
-    }
-
-    .stats-bar {
-      display: flex;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-      margin: 0.75rem 0 0;
-      font-size: 0.9rem;
-      color: #5a6e47;
-    }
-
-    .stats-bar span strong {
-      color: #3a6b2a;
-      font-size: 1.05rem;
-    }
-
-    /* ── Map ── */
-    #map {
+    /* ── Grid ── */
+    .grid-section {
+      flex: 1;
+      max-width: 1000px;
       width: 100%;
-      height: 420px;
-      border-bottom: 3px solid #d4e8c2;
-    }
-
-    /* ── Legend ── */
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.6rem 1.2rem;
-      padding: 0.6rem 1.5rem;
-      background: #fff;
-      border-bottom: 1px solid #d4e8c2;
-      font-size: 0.8rem;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      color: #3a4a2a;
-    }
-
-    .legend-dot {
-      width: 13px;
-      height: 13px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      border: 2px solid rgba(0,0,0,0.25);
-    }
-
-    /* ── Controls ── */
-    .controls {
-      display: flex;
-      gap: 0.6rem;
-      flex-wrap: wrap;
-      padding: 0.75rem 1.5rem;
-      background: #f4f6f0;
-      border-bottom: 1px solid #d4e8c2;
-    }
-
-    .controls button {
-      padding: 0.35rem 0.9rem;
-      border: 1.5px solid #7aab5a;
-      border-radius: 20px;
-      background: white;
-      color: #3a6b2a;
-      font-size: 0.82rem;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s;
-    }
-
-    .controls button:hover {
-      background: #3a6b2a;
-      color: white;
-    }
-
-    /* ── List ── */
-    .list-area {
-      max-width: 860px;
       margin: 0 auto;
-      padding: 1.5rem 1rem 4rem;
+      padding: 1rem 2rem 5rem;
     }
 
-    section { margin-bottom: 2.25rem; }
-
-    h2 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #2c3a22;
-      background: #d4e8c2;
-      padding: 0.45rem 1rem;
-      border-radius: 6px;
-      margin-bottom: 0.6rem;
-    }
-
-    h3 {
-      font-size: 0.82rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #5a6e47;
-      margin: 1rem 0 0.4rem 0.25rem;
-    }
-
-    .item {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.65rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.12s;
-      user-select: none;
-    }
-
-    .item:hover { background: #eaf3e0; }
-
-    .item.checked {
-      opacity: 0.5;
-    }
-
-    .item.checked .item-name {
-      text-decoration: line-through;
-      color: #7a8f6a;
-    }
-
-    .item.highlight {
-      background: #fff9c4;
-      outline: 2px solid #e6c84a;
-    }
-
-    .item input[type="checkbox"] {
-      width: 17px;
-      height: 17px;
-      flex-shrink: 0;
-      margin-top: 3px;
-      accent-color: #3a6b2a;
-      cursor: pointer;
-    }
-
-    .cat-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      margin-top: 6px;
-      border: 1.5px solid rgba(0,0,0,0.2);
-    }
-
-    .item-body { flex: 1; }
-
-    .item-name {
-      font-weight: 600;
-      font-size: 0.93rem;
-      color: #2c3a22;
-    }
-
-    .item-meta {
-      font-size: 0.8rem;
-      color: #6a7f5a;
-      margin-top: 0.05rem;
-    }
-
-    .paw {
-      display: inline-block;
-      font-size: 0.85em;
-      margin-left: 0.35rem;
-      vertical-align: middle;
-    }
-
-    .no-dogs .paw { display: none; }
-
-    .dog-hidden { display: none !important; }
-
-    .btn-active {
-      background: #3a6b2a !important;
-      color: white !important;
-    }
-
-    .badge-boundary {
-      display: inline-block;
-      background: #fff3cd;
-      border: 1px solid #e6c84a;
-      color: #7a6010;
+    .section-label {
       font-size: 0.7rem;
       font-weight: 600;
-      padding: 0.05rem 0.4rem;
-      border-radius: 10px;
-      margin-left: 0.35rem;
-      vertical-align: middle;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid var(--border);
     }
 
-    .notes {
-      margin-top: 2rem;
-      background: #fff;
-      border: 1px solid #cdd9bb;
-      border-radius: 8px;
-      padding: 1rem 1.25rem;
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    /* ── Cards ── */
+    .card {
+      display: block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--card-accent, var(--accent));
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .card:hover {
+      border-color: var(--card-accent, var(--accent));
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+
+    .card:hover::before { opacity: 1; }
+
+    .card-icon {
+      font-size: 1.8rem;
+      margin-bottom: 0.9rem;
+      display: block;
+      line-height: 1;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+
+    .card-desc {
       font-size: 0.82rem;
-      color: #5a6e47;
+      color: var(--muted);
+      line-height: 1.5;
     }
 
-    .notes p { margin-bottom: 0.35rem; }
-    .notes p:last-child { margin-bottom: 0; }
+    .card-arrow {
+      position: absolute;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      font-size: 0.9rem;
+      color: var(--border);
+      transition: color 0.2s, transform 0.2s;
+    }
 
-    @media (max-width: 600px) {
-      .page-header h1 { font-size: 1.25rem; }
-      #map { height: 280px; }
+    .card:hover .card-arrow {
+      color: var(--card-accent, var(--accent));
+      transform: translate(2px, -2px);
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.75rem;
+      color: var(--border);
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 480px) {
+      .hero { padding: 3.5rem 1.25rem 3rem; }
+      .grid-section { padding: 1rem 1.25rem 3rem; }
+      .grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-<div class="page-header">
-  <h1>Parks &amp; Preserves Within ~90 Min of Audubon, PA</h1>
-  <p class="subtitle">Drive times estimated from Audubon, PA 19403 without traffic. Click a map marker to jump to that entry.</p>
-  <div class="stats-bar">
-    <span>Visited: <strong id="count-visited">0</strong></span>
-    <span>Remaining: <strong id="count-remaining">0</strong></span>
-    <span>Total: <strong id="count-total">0</strong></span>
-  </div>
-</div>
-
-<div id="map"></div>
-
-<div class="legend">
-  <div class="legend-item"><div class="legend-dot" style="background:#2e7d32"></div> NPS Unit</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div> PA State Park</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#e65100"></div> NJ State Park</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#00838f"></div> DE State Park</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#6a1b9a"></div> MD State Park</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#c62828"></div> Nature Preserve</div>
-</div>
-
-<div class="controls">
-  <button onclick="checkAll()">Check All</button>
-  <button onclick="uncheckAll()">Uncheck All</button>
-  <button onclick="clearStorage()">Reset</button>
-  <button id="btn-dogs" onclick="toggleDogFilter(this)">🐾 Dogs Only</button>
-</div>
-
-<div class="list-area">
-
-  <!-- ===================== NATIONAL PARK SERVICE ===================== -->
-  <section>
-    <h2>National Park Service Units</h2>
-
-    <h3>Pennsylvania</h3>
-    <div class="item" id="item-0" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#2e7d32"></div>
-      <div class="item-body">
-        <div class="item-name">Valley Forge National Historical Park</div>
-        <div class="item-meta">~10 min &mdash; King of Prussia, PA &mdash; 3,500 acres of Revolutionary War landscape, trails, monuments</div>
-      </div>
-    </div>
-    <div class="item" id="item-1" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#2e7d32"></div>
-      <div class="item-body">
-        <div class="item-name">Washington Crossing Historic Park (NPS)</div>
-        <div class="item-meta">~30 min &mdash; Washington Crossing, PA &mdash; Site of Washington's 1776 Delaware crossing</div>
-      </div>
-    </div>
-    <div class="item" id="item-2" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#2e7d32"></div>
-      <div class="item-body">
-        <div class="item-name">Hopewell Furnace National Historic Site</div>
-        <div class="item-meta">~35 min &mdash; Elverson, PA &mdash; Iron plantation history within French Creek forests</div>
-      </div>
-    </div>
-    <div class="item" id="item-3" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#2e7d32"></div>
-      <div class="item-body">
-        <div class="item-name">Independence National Historical Park</div>
-        <div class="item-meta">~35 min &mdash; Philadelphia, PA &mdash; Liberty Bell, Independence Hall, historic district</div>
-      </div>
-    </div>
-    <div class="item" id="item-4" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#2e7d32"></div>
-      <div class="item-body">
-        <div class="item-name">Edgar Allan Poe National Historic Site</div>
-        <div class="item-meta">~35 min &mdash; Philadelphia, PA &mdash; Poe's only surviving Philadelphia home</div>
-      </div>
-    </div>
-    <div class="item" id="item-5" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#2e7d32"></div>
-      <div class="item-body">
-        <div class="item-name">Gloria Dei (Old Swedes) Church National Historic Site</div>
-        <div class="item-meta">~35 min &mdash; Philadelphia, PA &mdash; Oldest church in Pennsylvania (c. 1700)</div>
-      </div>
-    </div>
-    <div class="item" id="item-6" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#2e7d32"></div>
-      <div class="item-body">
-        <div class="item-name">Thaddeus Kosciuszko National Memorial</div>
-        <div class="item-meta">~35 min &mdash; Philadelphia, PA &mdash; Home of the Polish-American Revolutionary War hero</div>
-      </div>
-    </div>
-    <div class="item no-dogs" id="item-7" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#2e7d32"></div>
-      <div class="item-body">
-        <div class="item-name">Benjamin Franklin National Memorial</div>
-        <div class="item-meta">~35 min &mdash; Philadelphia, PA &mdash; Franklin Institute</div>
-      </div>
-    </div>
-    <div class="item" id="item-8" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#2e7d32"></div>
-      <div class="item-body">
-        <div class="item-name">Lower Delaware National Wild &amp; Scenic River</div>
-        <div class="item-meta">~35&ndash;60 min &mdash; Bucks/Hunterdon counties &mdash; Scenic river corridor designation</div>
-      </div>
-    </div>
-    <div class="item" id="item-9" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#2e7d32"></div>
-      <div class="item-body">
-        <div class="item-name">Delaware Water Gap National Recreation Area <span class="badge-boundary">~90 min</span></div>
-        <div class="item-meta">~75&ndash;90 min &mdash; East Stroudsburg, PA/NJ &mdash; 70,000 acres, 40 miles of Delaware River corridor</div>
-      </div>
-    </div>
-
-    <h3>New Jersey</h3>
-    <div class="item" id="item-10" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#2e7d32"></div>
-      <div class="item-body">
-        <div class="item-name">Morristown National Historical Park <span class="badge-boundary">~90 min</span></div>
-        <div class="item-meta">~85&ndash;90 min &mdash; Morristown, NJ &mdash; Washington's winter encampment</div>
-      </div>
-    </div>
-
-    <h3>Delaware</h3>
-    <div class="item" id="item-11" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#2e7d32"></div>
-      <div class="item-body">
-        <div class="item-name">First State National Historical Park</div>
-        <div class="item-meta">~55&ndash;65 min &mdash; Various sites, DE &mdash; First European settlement landscape; includes Woodlawn Tract</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== PA STATE PARKS ===================== -->
-  <section>
-    <h2>Pennsylvania State Parks</h2>
-
-    <h3>Montgomery County (~10&ndash;25 min)</h3>
-    <div class="item" id="item-12" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Evansburg State Park</div>
-        <div class="item-meta">~15 min &mdash; Collegeville, PA &mdash; 3,349 acres; trails, fishing, equestrian</div>
-      </div>
-    </div>
-    <div class="item" id="item-13" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Fort Washington State Park</div>
-        <div class="item-meta">~20 min &mdash; Fort Washington, PA &mdash; Historic Civil War fortifications; trails along Wissahickon Creek</div>
-      </div>
-    </div>
-
-    <h3>Bucks County (~25&ndash;55 min)</h3>
-    <div class="item" id="item-14" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Tyler State Park</div>
-        <div class="item-meta">~30 min &mdash; Newtown, PA &mdash; 1,711 acres; hiking, biking, canoeing on Neshaminy Creek</div>
-      </div>
-    </div>
-    <div class="item" id="item-15" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Neshaminy State Park</div>
-        <div class="item-meta">~35 min &mdash; Bensalem, PA &mdash; Along the Delaware River; swimming, boating</div>
-      </div>
-    </div>
-    <div class="item" id="item-16" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Delaware Canal State Park</div>
-        <div class="item-meta">~35 min &mdash; New Hope to Easton, PA &mdash; 60-mile linear park along the historic Delaware Canal towpath</div>
-      </div>
-    </div>
-    <div class="item" id="item-17" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Washington Crossing State Park (PA)</div>
-        <div class="item-meta">~35 min &mdash; Washington Crossing, PA &mdash; Historic site; wildflower preserve (Bowman's Hill)</div>
-      </div>
-    </div>
-    <div class="item" id="item-18" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Nockamixon State Park</div>
-        <div class="item-meta">~40 min &mdash; Quakertown, PA &mdash; 5,286 acres; 1,450-acre lake; boating, fishing, biking</div>
-      </div>
-    </div>
-    <div class="item" id="item-19" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Ralph Stover State Park</div>
-        <div class="item-meta">~45 min &mdash; Pipersville, PA &mdash; Scenic Tohickon Creek gorge; rock climbing</div>
-      </div>
-    </div>
-
-    <h3>Chester County (~25&ndash;55 min)</h3>
-    <div class="item" id="item-20" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Marsh Creek State Park</div>
-        <div class="item-meta">~30 min &mdash; Downingtown, PA &mdash; 1,705-acre park with 535-acre lake; sailing, hiking</div>
-      </div>
-    </div>
-    <div class="item" id="item-21" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">French Creek State Park</div>
-        <div class="item-meta">~40 min &mdash; Elverson, PA &mdash; 7,730 acres in Berks/Chester counties; camping, hiking, two lakes (adjacent to Hopewell Furnace NHS)</div>
-      </div>
-    </div>
-    <div class="item" id="item-22" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Big Elk Creek State Park</div>
-        <div class="item-meta">~55 min &mdash; New London, PA &mdash; 195 acres; fishing, hiking along Big Elk Creek</div>
-      </div>
-    </div>
-
-    <h3>Delaware County (~25 min)</h3>
-    <div class="item" id="item-23" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Ridley Creek State Park</div>
-        <div class="item-meta">~25 min &mdash; Media, PA &mdash; 2,606 acres; Colonial-era plantation, trails, wildlife</div>
-      </div>
-    </div>
-
-    <h3>Berks County (~45&ndash;75 min)</h3>
-    <div class="item" id="item-24" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Nolde Forest Environmental Education Center</div>
-        <div class="item-meta">~55 min &mdash; Reading, PA &mdash; 665-acre state forest; interpretive nature trails</div>
-      </div>
-    </div>
-    <div class="item" id="item-25" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Tuscarora State Park</div>
-        <div class="item-meta">~70 min &mdash; Barnesville, PA &mdash; 1,618 acres; 96-acre lake; swimming, hiking</div>
-      </div>
-    </div>
-
-    <h3>Lehigh/Northampton Counties (~55&ndash;90 min)</h3>
-    <div class="item" id="item-26" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Jacobsburg Environmental Education Center</div>
-        <div class="item-meta">~55 min &mdash; Nazareth, PA &mdash; 1,722 acres; trails along Bushkill Creek; historic Henry gun factory</div>
-      </div>
-    </div>
-    <div class="item" id="item-27" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Beltzville State Park <span class="badge-boundary">~90 min</span></div>
-        <div class="item-meta">~75 min &mdash; Lehighton, PA &mdash; 2,972-acre park; 949-acre lake; swimming, boating</div>
-      </div>
-    </div>
-    <div class="item" id="item-28" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#1565c0"></div>
-      <div class="item-body">
-        <div class="item-name">Lehigh Gorge State Park <span class="badge-boundary">~90 min</span></div>
-        <div class="item-meta">~85&ndash;90 min &mdash; White Haven, PA &mdash; 4,548 acres; dramatic gorge; whitewater rafting</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== NJ STATE PARKS ===================== -->
-  <section>
-    <h2>New Jersey State Parks &amp; Forests</h2>
-
-    <h3>Burlington/Hunterdon/Mercer Counties (~30&ndash;50 min)</h3>
-    <div class="item" id="item-29" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#e65100"></div>
-      <div class="item-body">
-        <div class="item-name">Washington Crossing State Park (NJ)</div>
-        <div class="item-meta">~35 min &mdash; Titusville, NJ &mdash; Historic crossing site; wildflower preserve; trails</div>
-      </div>
-    </div>
-    <div class="item" id="item-30" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#e65100"></div>
-      <div class="item-body">
-        <div class="item-name">Bull's Island Recreation Area</div>
-        <div class="item-meta">~45 min &mdash; Stockton, NJ &mdash; D&amp;R Canal State Park unit; Delaware River island; hiking, camping</div>
-      </div>
-    </div>
-
-    <h3>Burlington/Camden/Gloucester Counties (~40&ndash;75 min)</h3>
-    <div class="item" id="item-31" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#e65100"></div>
-      <div class="item-body">
-        <div class="item-name">Brendan T. Byrne State Forest</div>
-        <div class="item-meta">~60 min &mdash; New Lisbon, NJ &mdash; Pine Barrens; Whitesbog Village; sandy trails, bogs</div>
-      </div>
-    </div>
-    <div class="item" id="item-32" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#e65100"></div>
-      <div class="item-body">
-        <div class="item-name">Wharton State Forest</div>
-        <div class="item-meta">~60 min &mdash; Hammonton, NJ &mdash; 125,000+ acres of Pine Barrens; Batsto Village; paddling, hiking, camping</div>
-      </div>
-    </div>
-    <div class="item" id="item-33" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#e65100"></div>
-      <div class="item-body">
-        <div class="item-name">Penn State Forest</div>
-        <div class="item-meta">~65 min &mdash; Chatsworth, NJ &mdash; Pine Barrens; Lake Oswego; remote and quiet</div>
-      </div>
-    </div>
-    <div class="item" id="item-34" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#e65100"></div>
-      <div class="item-body">
-        <div class="item-name">Bass River State Forest</div>
-        <div class="item-meta">~75 min &mdash; Tuckerton, NJ &mdash; Oldest state forest in NJ; Lake Absegami; Pine Barrens</div>
-      </div>
-    </div>
-
-    <h3>Salem/Cumberland Counties (~45&ndash;70 min)</h3>
-    <div class="item" id="item-35" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#e65100"></div>
-      <div class="item-body">
-        <div class="item-name">Parvin State Park</div>
-        <div class="item-meta">~50 min &mdash; Elmer, NJ &mdash; Lush forests; Parvin Lake swimming; camping</div>
-      </div>
-    </div>
-    <div class="item" id="item-36" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#e65100"></div>
-      <div class="item-body">
-        <div class="item-name">Belleplain State Forest</div>
-        <div class="item-meta">~70 min &mdash; Woodbine, NJ &mdash; 21,000 acres; Lake Nummy; hiking, birding</div>
-      </div>
-    </div>
-
-    <h3>Ocean/Monmouth Counties (~80&ndash;90 min)</h3>
-    <div class="item" id="item-37" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#e65100"></div>
-      <div class="item-body">
-        <div class="item-name">Allaire State Park <span class="badge-boundary">~90 min</span></div>
-        <div class="item-meta">~80 min &mdash; Wall Township, NJ &mdash; 3,000+ acres; Historic Allaire Village; trails</div>
-      </div>
-    </div>
-    <div class="item" id="item-38" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#e65100"></div>
-      <div class="item-body">
-        <div class="item-name">Island Beach State Park <span class="badge-boundary">~90 min</span></div>
-        <div class="item-meta">~90 min &mdash; Seaside Park, NJ &mdash; 10 miles of barrier island; swimming, birding</div>
-      </div>
-    </div>
-    <div class="item" id="item-39" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#e65100"></div>
-      <div class="item-body">
-        <div class="item-name">Cheesequake State Park <span class="badge-boundary">~90 min</span></div>
-        <div class="item-meta">~85 min &mdash; Matawan, NJ &mdash; 1,600+ acres; rare habitat transition zone (Pine Barrens meets mid-Atlantic)</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== DELAWARE STATE PARKS ===================== -->
-  <section>
-    <h2>Delaware State Parks</h2>
-
-    <div class="item" id="item-40" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#00838f"></div>
-      <div class="item-body">
-        <div class="item-name">Brandywine Creek State Park</div>
-        <div class="item-meta">~45 min &mdash; Wilmington, DE &mdash; 933 acres; old-growth tulip tree forest; hawk watch; first DE nature preserves</div>
-      </div>
-    </div>
-    <div class="item" id="item-41" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#00838f"></div>
-      <div class="item-body">
-        <div class="item-name">Alapocas Run State Park</div>
-        <div class="item-meta">~50 min &mdash; Wilmington, DE &mdash; Blue Rocks granite outcropping; trails along Brandywine</div>
-      </div>
-    </div>
-    <div class="item" id="item-42" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#00838f"></div>
-      <div class="item-body">
-        <div class="item-name">Bellevue State Park</div>
-        <div class="item-meta">~50 min &mdash; Wilmington, DE &mdash; Formal gardens; trails; historic du Pont estate</div>
-      </div>
-    </div>
-    <div class="item" id="item-43" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#00838f"></div>
-      <div class="item-body">
-        <div class="item-name">White Clay Creek State Park</div>
-        <div class="item-meta">~55 min &mdash; Newark, DE &mdash; 3,708 acres; multi-state preserve; excellent trails</div>
-      </div>
-    </div>
-    <div class="item" id="item-44" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#00838f"></div>
-      <div class="item-body">
-        <div class="item-name">Lums Pond State Park</div>
-        <div class="item-meta">~60 min &mdash; Bear, DE &mdash; Largest freshwater pond in DE; 1,790 acres; hiking, paddling</div>
-      </div>
-    </div>
-    <div class="item" id="item-45" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#00838f"></div>
-      <div class="item-body">
-        <div class="item-name">Fair Hill Natural Resource Management Area (MD/DE)</div>
-        <div class="item-meta">~55 min &mdash; Fair Hill, MD &mdash; 5,600 acres; equestrian trails; Iron Hill area; excellent birding</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== MARYLAND STATE PARKS ===================== -->
-  <section>
-    <h2>Maryland State Parks</h2>
-
-    <div class="item" id="item-46" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#6a1b9a"></div>
-      <div class="item-body">
-        <div class="item-name">Susquehanna State Park</div>
-        <div class="item-meta">~65 min &mdash; Havre de Grace, MD &mdash; 2,753 acres; Susquehanna River; historic Rock Run Mill; hiking</div>
-      </div>
-    </div>
-    <div class="item" id="item-47" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#6a1b9a"></div>
-      <div class="item-body">
-        <div class="item-name">Elk Neck State Park</div>
-        <div class="item-meta">~75 min &mdash; North East, MD &mdash; 2,188 acres; Turkey Point Lighthouse; Chesapeake Bay access; hiking, camping</div>
-      </div>
-    </div>
-    <div class="item" id="item-48" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#6a1b9a"></div>
-      <div class="item-body">
-        <div class="item-name">Gunpowder Falls State Park <span class="badge-boundary">~90 min</span></div>
-        <div class="item-meta">~80 min &mdash; Various, MD &mdash; 18,000+ acres; Big and Little Gunpowder Falls; trails</div>
-      </div>
-    </div>
-    <div class="item" id="item-49" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#6a1b9a"></div>
-      <div class="item-body">
-        <div class="item-name">Patapsco Valley State Park <span class="badge-boundary">~90 min</span></div>
-        <div class="item-meta">~85&ndash;90 min &mdash; Ellicott City, MD &mdash; 16,000 acres along Patapsco River valley; extensive trail network</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== NATURE PRESERVES ===================== -->
-  <section>
-    <h2>Nature Preserves (Publicly Accessible)</h2>
-
-    <h3>Natural Lands Preserves (free, year-round)</h3>
-    <div class="item" id="item-50" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">John James Audubon Center at Mill Grove</div>
-        <div class="item-meta">~5 min &mdash; Audubon, PA &mdash; 175-acre preserve; Perkiomen Creek; historic home of John James Audubon</div>
-      </div>
-    </div>
-    <div class="item" id="item-51" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">Gwynedd Wildlife Preserve</div>
-        <div class="item-meta">~20 min &mdash; Gwynedd, PA &mdash; 1,000+ acres; excellent birding</div>
-      </div>
-    </div>
-    <div class="item" id="item-52" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">Bryn Coed Preserve</div>
-        <div class="item-meta">~25 min &mdash; Pottstown, PA &mdash; 1,505 acres; forest and farmland; one of the largest preserved parcels in greater Philadelphia</div>
-      </div>
-    </div>
-    <div class="item" id="item-53" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">Binky Lee Preserve</div>
-        <div class="item-meta">~30 min &mdash; Chester Springs, PA &mdash; Meadows, woodlands, and wetlands along Valley Creek</div>
-      </div>
-    </div>
-    <div class="item" id="item-54" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">Hildacy Preserve</div>
-        <div class="item-meta">~30 min &mdash; Media, PA &mdash; 55 acres; diverse woodland and meadow habitats</div>
-      </div>
-    </div>
-    <div class="item" id="item-55" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">Glades Wildlife Refuge</div>
-        <div class="item-meta">~35 min &mdash; Southern Chester County, PA &mdash; Diverse wetland habitats</div>
-      </div>
-    </div>
-    <div class="item" id="item-56" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">Green Hills Preserve</div>
-        <div class="item-meta">~35 min &mdash; Reading, PA &mdash; Rolling grasslands, woodlands, and wetlands</div>
-      </div>
-    </div>
-    <div class="item" id="item-57" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">Meng Preserve</div>
-        <div class="item-meta">~35 min &mdash; Chester County, PA &mdash; Agricultural and natural landscape</div>
-      </div>
-    </div>
-    <div class="item" id="item-58" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">Crow's Nest Preserve</div>
-        <div class="item-meta">~40 min &mdash; Elverson, PA &mdash; 621 acres along French Creek; gateway to Hopewell Big Woods</div>
-      </div>
-    </div>
-    <div class="item" id="item-59" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">Stroud Preserve</div>
-        <div class="item-meta">~45 min &mdash; West Chester, PA &mdash; 542 acres; Brandywine Creek floodplain; birding</div>
-      </div>
-    </div>
-    <div class="item" id="item-60" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">ChesLen Preserve</div>
-        <div class="item-meta">~45 min &mdash; Coatesville, PA &mdash; 1,263 acres; largest private preserve open to public in Chester County; serpentine barrens</div>
-      </div>
-    </div>
-    <div class="item" id="item-61" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">Mariton Wildlife Sanctuary</div>
-        <div class="item-meta">~50 min &mdash; Easton, PA &mdash; 522 acres; mature forest; nature center</div>
-      </div>
-    </div>
-
-    <h3>Other Notable Preserves</h3>
-    <div class="item" id="item-62" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">Peace Valley Nature Center</div>
-        <div class="item-meta">~30 min &mdash; Doylestown, PA &mdash; 14-mile Lake Galena shoreline trail; birding; Bucks County park</div>
-      </div>
-    </div>
-    <div class="item" id="item-63" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">Bowman's Hill Wildflower Preserve</div>
-        <div class="item-meta">~35 min &mdash; New Hope, PA &mdash; 134 acres; native PA plants; exceptional spring wildflowers; part of Washington Crossing SP</div>
-      </div>
-    </div>
-    <div class="item" id="item-64" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">Honey Hollow / Bucks County Audubon Society</div>
-        <div class="item-meta">~35 min &mdash; New Hope, PA &mdash; Nature center and trails along Pidcock Creek</div>
-      </div>
-    </div>
-    <div class="item" id="item-65" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">The Laurels Preserve (Brandywine Conservancy)</div>
-        <div class="item-meta">~40 min &mdash; Unionville, PA &mdash; Open dawn to dusk; member access</div>
-      </div>
-    </div>
-    <div class="item" id="item-66" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">Waterloo Mills Preserve (Brandywine Conservancy)</div>
-        <div class="item-meta">~30 min &mdash; Devon, PA &mdash; Open Wed&ndash;Sun dawn to dusk; streamside habitat</div>
-      </div>
-    </div>
-    <div class="item" id="item-67" onclick="toggle(this)">
-      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
-      <div class="cat-dot" style="background:#c62828"></div>
-      <div class="item-body">
-        <div class="item-name">White Clay Creek Preserve (PA)</div>
-        <div class="item-meta">~55 min &mdash; London Grove, PA &mdash; PA State Forest Natural Area; connects to DE White Clay Creek SP</div>
-      </div>
-    </div>
-  </section>
-
-  <div class="notes">
-    <p><strong>Notes:</strong></p>
-    <p>Drive times are estimates from Audubon, PA 19403 without heavy traffic. Entries marked <span class="badge-boundary">~90 min</span> may exceed 90 minutes in traffic &mdash; verify before going.</p>
-    <p>Some Natural Lands preserves require free registration; check natlands.org before visiting.</p>
-    <p>Brandywine Conservancy preserves may require membership for some sites.</p>
-    <p>🐾 = dogs allowed on leash. The only entry without this icon is Benjamin Franklin National Memorial (indoor museum). Coastal NJ and DE parks restrict dogs on swimming beaches May&ndash;Sept.</p>
-    <p>Your progress is saved automatically in your browser.</p>
+  <div class="hero">
+    <p class="hero-eyebrow">Personal Tools &amp; Projects</p>
+    <h1>Razor's Edge</h1>
+    <div class="hero-rule"></div>
+    <p class="hero-sub">A collection of tools, games, and trackers built for everyday use.</p>
   </div>
 
-</div><!-- end list-area -->
+  <div class="grid-section">
+    <p class="section-label">All Projects</p>
+    <div class="grid">
 
-<script>
-  const STORAGE_KEY = 'parks-checklist-audubon';
+      <a class="card" href="parks-checklist-audubon-pa.html" style="--card-accent: #8fbf6a;">
+        <span class="card-icon">🗺️</span>
+        <div class="card-title">Parks Near Audubon, PA</div>
+        <div class="card-desc">Interactive checklist of state parks, national park units, and nature preserves within 90 minutes. Includes a live map and dog-friendly filters.</div>
+        <span class="card-arrow">↗</span>
+      </a>
 
-  // ── Map data: [id, name, lat, lng, color] ──
-  const PARKS = [
-    // NPS PA
-    [0,  'Valley Forge NHP',                    40.0956, -75.4138, '#2e7d32'],
-    [1,  'Washington Crossing Historic Park',   40.2898, -74.8663, '#2e7d32'],
-    [2,  'Hopewell Furnace NHS',                40.1454, -75.7706, '#2e7d32'],
-    [3,  'Independence NHP',                    39.9496, -75.1503, '#2e7d32'],
-    [4,  'Edgar Allan Poe NHS',                 39.9578, -75.1581, '#2e7d32'],
-    [5,  'Gloria Dei Church NHS',               39.9313, -75.1437, '#2e7d32'],
-    [6,  'Thaddeus Kosciuszko NMem',            39.9478, -75.1478, '#2e7d32'],
-    [7,  'Benjamin Franklin NMem',              39.9584, -75.1727, '#2e7d32'],
-    [8,  'Lower Delaware Wild & Scenic River',  40.3500, -74.9500, '#2e7d32'],
-    [9,  'Delaware Water Gap NRA',              41.0534, -74.9240, '#2e7d32'],
-    // NPS NJ
-    [10, 'Morristown NHP',                      40.7968, -74.4773, '#2e7d32'],
-    // NPS DE
-    [11, 'First State NHP',                     39.7915, -75.5610, '#2e7d32'],
-    // PA State Parks
-    [12, 'Evansburg SP',                        40.1901, -75.3760, '#1565c0'],
-    [13, 'Fort Washington SP',                  40.1434, -75.2127, '#1565c0'],
-    [14, 'Tyler SP',                            40.2334, -74.9846, '#1565c0'],
-    [15, 'Neshaminy SP',                        40.0834, -74.8676, '#1565c0'],
-    [16, 'Delaware Canal SP',                   40.3668, -74.9579, '#1565c0'],
-    [17, 'Washington Crossing SP (PA)',         40.2937, -74.8700, '#1565c0'],
-    [18, 'Nockamixon SP',                       40.4670, -75.2354, '#1565c0'],
-    [19, 'Ralph Stover SP',                     40.4209, -75.0676, '#1565c0'],
-    [20, 'Marsh Creek SP',                      40.0540, -75.7318, '#1565c0'],
-    [21, 'French Creek SP',                     40.2165, -75.7754, '#1565c0'],
-    [22, 'Big Elk Creek SP',                    39.7390, -75.9376, '#1565c0'],
-    [23, 'Ridley Creek SP',                     39.9476, -75.4131, '#1565c0'],
-    [24, 'Nolde Forest EEC',                    40.2854, -75.9437, '#1565c0'],
-    [25, 'Tuscarora SP',                        40.7176, -75.9337, '#1565c0'],
-    [26, 'Jacobsburg EEC',                      40.7176, -75.3026, '#1565c0'],
-    [27, 'Beltzville SP',                       40.8623, -75.6373, '#1565c0'],
-    [28, 'Lehigh Gorge SP',                     41.0668, -75.7176, '#1565c0'],
-    // NJ State Parks
-    [29, 'Washington Crossing SP (NJ)',         40.2973, -74.8681, '#e65100'],
-    [30, "Bull's Island Recreation Area",       40.4087, -74.9965, '#e65100'],
-    [31, 'Brendan T. Byrne SF',                 39.9040, -74.5448, '#e65100'],
-    [32, 'Wharton SF',                          39.6590, -74.6568, '#e65100'],
-    [33, 'Penn SF',                             39.7790, -74.5426, '#e65100'],
-    [34, 'Bass River SF',                       39.6268, -74.4376, '#e65100'],
-    [35, 'Parvin SP',                           39.5068, -75.1254, '#e65100'],
-    [36, 'Belleplain SF',                       39.2543, -74.8637, '#e65100'],
-    [37, 'Allaire SP',                          40.1629, -74.1318, '#e65100'],
-    [38, 'Island Beach SP',                     39.9265, -74.0943, '#e65100'],
-    [39, 'Cheesequake SP',                      40.4437, -74.2651, '#e65100'],
-    // DE State Parks
-    [40, 'Brandywine Creek SP',                 39.8076, -75.5840, '#00838f'],
-    [41, 'Alapocas Run SP',                     39.7698, -75.5668, '#00838f'],
-    [42, 'Bellevue SP',                         39.7954, -75.5027, '#00838f'],
-    [43, 'White Clay Creek SP',                 39.6854, -75.7526, '#00838f'],
-    [44, 'Lums Pond SP',                        39.5704, -75.7026, '#00838f'],
-    [45, 'Fair Hill NRMA',                      39.7026, -75.8637, '#00838f'],
-    // MD State Parks
-    [46, 'Susquehanna SP',                      39.5665, -76.0993, '#6a1b9a'],
-    [47, 'Elk Neck SP',                         39.4665, -75.9737, '#6a1b9a'],
-    [48, 'Gunpowder Falls SP',                  39.4826, -76.4293, '#6a1b9a'],
-    [49, 'Patapsco Valley SP',                  39.2665, -76.7526, '#6a1b9a'],
-    // Nature Preserves
-    [50, 'Audubon Center at Mill Grove',        40.1276, -75.4368, '#c62828'],
-    [51, 'Gwynedd Wildlife Preserve',           40.2026, -75.3068, '#c62828'],
-    [52, 'Bryn Coed Preserve',                  40.2368, -75.5793, '#c62828'],
-    [53, 'Binky Lee Preserve',                  40.0793, -75.6068, '#c62828'],
-    [54, 'Hildacy Preserve',                    39.9293, -75.3876, '#c62828'],
-    [55, 'Glades Wildlife Refuge',              39.8793, -75.8068, '#c62828'],
-    [56, 'Green Hills Preserve',                40.3293, -75.8568, '#c62828'],
-    [57, 'Meng Preserve',                       40.0293, -75.7568, '#c62828'],
-    [58, "Crow's Nest Preserve",                40.2293, -75.7368, '#c62828'],
-    [59, 'Stroud Preserve',                     39.9493, -75.6268, '#c62828'],
-    [60, 'ChesLen Preserve',                    39.9793, -75.7568, '#c62828'],
-    [61, 'Mariton Wildlife Sanctuary',          40.6793, -75.2268, '#c62828'],
-    [62, 'Peace Valley Nature Center',          40.3293, -75.1568, '#c62828'],
-    [63, "Bowman's Hill Wildflower Preserve",   40.3093, -74.8768, '#c62828'],
-    [64, 'Honey Hollow / BCAS',                 40.3293, -74.9068, '#c62828'],
-    [65, 'The Laurels Preserve',                39.9568, -75.7793, '#c62828'],
-    [66, 'Waterloo Mills Preserve',             40.0368, -75.5468, '#c62828'],
-    [67, 'White Clay Creek Preserve (PA)',      39.8568, -75.7793, '#c62828'],
-  ];
+      <a class="card" href="national-parks-checklist.html" style="--card-accent: #6aab8f;">
+        <span class="card-icon">🏕️</span>
+        <div class="card-title">National Park Sites Checklist</div>
+        <div class="card-desc">Track every National Park Service unit across the country. Check them off as you go.</div>
+        <span class="card-arrow">↗</span>
+      </a>
 
-  // ── Init map ──
-  const map = L.map('map').setView([40.12, -75.28], 8);
+      <a class="card" href="geography-game.html" style="--card-accent: #c8a96e;">
+        <span class="card-icon">🌍</span>
+        <div class="card-title">Guess the Country</div>
+        <div class="card-desc">A geography quiz game. Test how well you know the countries of the world.</div>
+        <span class="card-arrow">↗</span>
+      </a>
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 18
-  }).addTo(map);
+      <a class="card" href="lunch-picker.html" style="--card-accent: #c87a6e;">
+        <span class="card-icon">🍜</span>
+        <div class="card-title">Friday Lunch Picker</div>
+        <div class="card-desc">Can't decide where to eat? Let the wheel decide. Spin for a random lunch spot.</div>
+        <span class="card-arrow">↗</span>
+      </a>
 
-  // Audubon home star marker
-  const homeIcon = L.divIcon({
-    html: '<div style="font-size:20px;line-height:1;filter:drop-shadow(0 1px 2px #000)">&#9733;</div>',
-    className: '',
-    iconAnchor: [10, 10]
-  });
-  L.marker([40.1218, -75.4368], { icon: homeIcon })
-    .addTo(map)
-    .bindTooltip('Audubon, PA (home base)', { permanent: false });
+    </div>
+  </div>
 
-  // Build markers
-  const markers = {};
+  <footer>Razor's Edge</footer>
 
-  function makeCircleIcon(color, checked) {
-    const opacity = checked ? 0.35 : 1;
-    return L.circleMarker([0, 0], {
-      radius: 7,
-      fillColor: color,
-      color: 'rgba(0,0,0,0.4)',
-      weight: 1.5,
-      fillOpacity: opacity,
-      opacity: opacity
-    });
-  }
-
-  PARKS.forEach(([id, name, lat, lng, color]) => {
-    const marker = L.circleMarker([lat, lng], {
-      radius: 7,
-      fillColor: color,
-      color: 'rgba(0,0,0,0.4)',
-      weight: 1.5,
-      fillOpacity: 0.85,
-      opacity: 1
-    }).addTo(map);
-
-    marker.bindTooltip(name, { sticky: true });
-
-    marker.on('click', () => {
-      const el = document.getElementById('item-' + id);
-      if (!el) return;
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      el.classList.add('highlight');
-      setTimeout(() => el.classList.remove('highlight'), 1800);
-    });
-
-    markers[id] = { marker, color };
-  });
-
-  function updateMarkerOpacity(id, checked) {
-    const m = markers[id];
-    if (!m) return;
-    const op = checked ? 0.25 : 0.85;
-    m.marker.setStyle({ fillOpacity: op, opacity: op });
-  }
-
-  // ── Checklist logic ──
-
-  function getItems() {
-    return document.querySelectorAll('.item');
-  }
-
-  function toggle(item) {
-    const cb = item.querySelector('input');
-    cb.checked = !cb.checked;
-    item.classList.toggle('checked', cb.checked);
-    const id = parseInt(item.id.replace('item-', ''));
-    updateMarkerOpacity(id, cb.checked);
-    saveState();
-  }
-
-  function toggleCheck(cb) {
-    const item = cb.closest('.item');
-    item.classList.toggle('checked', cb.checked);
-    const id = parseInt(item.id.replace('item-', ''));
-    updateMarkerOpacity(id, cb.checked);
-    saveState();
-  }
-
-  function saveState() {
-    const state = {};
-    getItems().forEach((item, i) => {
-      state[i] = item.querySelector('input').checked;
-    });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    updateStats();
-  }
-
-  function loadState() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    const state = saved ? JSON.parse(saved) : {};
-    getItems().forEach((item, i) => {
-      if (state[i]) {
-        item.querySelector('input').checked = true;
-        item.classList.add('checked');
-        const id = parseInt(item.id.replace('item-', ''));
-        updateMarkerOpacity(id, true);
-      }
-    });
-    updateStats();
-  }
-
-  function updateStats() {
-    const items = getItems();
-    const total = items.length;
-    const visited = Array.from(items).filter(i => i.querySelector('input').checked).length;
-    document.getElementById('count-total').textContent = total;
-    document.getElementById('count-visited').textContent = visited;
-    document.getElementById('count-remaining').textContent = total - visited;
-  }
-
-  function checkAll() {
-    getItems().forEach(item => {
-      item.querySelector('input').checked = true;
-      item.classList.add('checked');
-      const id = parseInt(item.id.replace('item-', ''));
-      updateMarkerOpacity(id, true);
-    });
-    saveState();
-  }
-
-  function uncheckAll() {
-    getItems().forEach(item => {
-      item.querySelector('input').checked = false;
-      item.classList.remove('checked');
-      const id = parseInt(item.id.replace('item-', ''));
-      updateMarkerOpacity(id, false);
-    });
-    saveState();
-  }
-
-  function clearStorage() {
-    localStorage.removeItem(STORAGE_KEY);
-    uncheckAll();
-  }
-
-  loadState();
-
-  // ── Dog-friendly icons & filter ──
-
-  // Inject paw icon into every item that isn't marked .no-dogs
-  document.querySelectorAll('.item:not(.no-dogs) .item-name').forEach(nameEl => {
-    const paw = document.createElement('span');
-    paw.className = 'paw';
-    paw.textContent = '🐾';
-    paw.title = 'Dogs allowed on leash';
-    nameEl.appendChild(paw);
-  });
-
-  let dogFilterActive = false;
-
-  function toggleDogFilter(btn) {
-    dogFilterActive = !dogFilterActive;
-    btn.classList.toggle('btn-active', dogFilterActive);
-    document.querySelectorAll('.item').forEach(item => {
-      if (dogFilterActive && item.classList.contains('no-dogs')) {
-        item.classList.add('dog-hidden');
-      } else {
-        item.classList.remove('dog-hidden');
-      }
-    });
-  }
-</script>
 </body>
 </html>
