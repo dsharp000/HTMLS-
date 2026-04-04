@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loan Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 60px;
+    }
+
+    h1 {
+      font-family: 'Oswald', sans-serif;
+      font-size: clamp(2rem, 6vw, 3.2rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: #475569;
+      font-size: 0.9rem;
+      margin-bottom: 36px;
+    }
+
+    .loan-summary {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 32px;
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    .loan-summary span strong {
+      color: #94a3b8;
+    }
+
+    /* ── Date picker ── */
+    .picker-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 36px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .picker-wrap label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #64748b;
+    }
+
+    .picker-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .picker-row select {
+      flex: 1;
+      padding: 12px 14px;
+      background: #1e293b;
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+      transition: border-color 0.2s;
+    }
+
+    .picker-row select:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+
+    /* ── No-match message ── */
+    #no-match {
+      display: none;
+      color: #f87171;
+      font-size: 0.85rem;
+    }
+
+    /* ── Dashboard ── */
+    #dashboard {
+      width: 100%;
+      max-width: 680px;
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    #dashboard.visible { display: flex; }
+
+    .selected-date {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* ── Progress bar ── */
+    .progress-block {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 20px 22px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: #64748b;
+      margin-bottom: 10px;
+    }
+
+    .progress-header strong { color: #94a3b8; }
+
+    .progress-track {
+      background: #0f172a;
+      border-radius: 99px;
+      height: 10px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      transition: width 0.6s ease;
+      width: 0%;
+    }
+
+    .progress-pct {
+      text-align: right;
+      font-size: 0.78rem;
+      color: #475569;
+    }
+
+    /* ── Stat cards ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--accent, #38bdf8);
+      border-radius: 3px 3px 0 0;
+    }
+
+    .card-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #64748b;
+    }
+
+    .card-value {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.7rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      line-height: 1.1;
+    }
+
+    .card-sub {
+      font-size: 0.75rem;
+      color: #475569;
+      margin-top: 2px;
+    }
+
+    /* accent colors per card */
+    .card-principal { --accent: #38bdf8; }
+    .card-interest  { --accent: #fb923c; }
+    .card-balance   { --accent: #f87171; }
+    .card-time      { --accent: #a78bfa; }
+
+    /* ── Total paid row ── */
+    .total-row {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 16px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .total-row .label {
+      font-size: 0.82rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .total-row .value {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.4rem;
+      color: #e2e8f0;
+    }
+
+    .back-link {
+      margin-top: 40px;
+      font-size: 0.8rem;
+      color: #334155;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: #64748b; }
+
+    @media (max-width: 480px) {
+      .cards { grid-template-columns: 1fr; }
+      .card-value { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<h1>Loan Tracker</h1>
+<p class="subtitle">Pick a month to see where you stand</p>
+
+<div class="loan-summary">
+  <span>Starting Balance: <strong>$176,000</strong></span>
+  <span>Loan Start: <strong>May 2024</strong></span>
+  <span>Payoff: <strong>March 2054</strong></span>
+  <span>Term: <strong>30 years</strong></span>
+</div>
+
+<div class="picker-wrap">
+  <label>Select a month</label>
+  <div class="picker-row">
+    <select id="month-select">
+      <option value="">Month</option>
+      <option value="01">January</option>
+      <option value="02">February</option>
+      <option value="03">March</option>
+      <option value="04">April</option>
+      <option value="05">May</option>
+      <option value="06">June</option>
+      <option value="07">July</option>
+      <option value="08">August</option>
+      <option value="09">September</option>
+      <option value="10">October</option>
+      <option value="11">November</option>
+      <option value="12">December</option>
+    </select>
+    <select id="year-select">
+      <option value="">Year</option>
+    </select>
+  </div>
+  <p id="no-match">No data found for that month.</p>
+</div>
+
+<div id="dashboard">
+  <p class="selected-date" id="selected-date-label"></p>
+
+  <div class="progress-block">
+    <div class="progress-header">
+      <span>Loan paid off</span>
+      <span><strong id="prog-paid">$0</strong> of <strong>$176,000</strong></span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <p class="progress-pct" id="progress-pct">0%</p>
+  </div>
+
+  <div class="cards">
+    <div class="card card-principal">
+      <div class="card-label">Principal Paid</div>
+      <div class="card-value" id="val-principal">—</div>
+      <div class="card-sub">Equity built toward $176,000</div>
+    </div>
+    <div class="card card-interest">
+      <div class="card-label">Interest Paid</div>
+      <div class="card-value" id="val-interest">—</div>
+      <div class="card-sub">Cost of borrowing to date</div>
+    </div>
+    <div class="card card-balance">
+      <div class="card-label">Remaining Balance</div>
+      <div class="card-value" id="val-balance">—</div>
+      <div class="card-sub">Still owed on the loan</div>
+    </div>
+    <div class="card card-time">
+      <div class="card-label">Time Remaining</div>
+      <div class="card-value" id="val-time">—</div>
+      <div class="card-sub">Until payoff</div>
+    </div>
+  </div>
+
+  <div class="total-row">
+    <span class="label">Total Paid to Date (Principal + Interest)</span>
+    <span class="value" id="val-total">—</span>
+  </div>
+</div>
+
+<a class="back-link" href="index.html">← Back to Razor's Edge</a>
+
+<script>
+  // Data: [date (YYYY-MM-DD), cumPrincipal, cumInterest, balance, timeLeft]
+  const DATA = [["2024-05-01",192.28,808.13,175807.72,"29 years 11 months"],["2024-06-01",385.44,1615.38,175614.56,"29 years 10 months"],["2024-07-01",579.49,2421.74,175420.51,"29 years 9 months"],["2024-08-01",774.43,3227.21,175225.57,"29 years 8 months"],["2024-09-01",970.27,4031.79,175029.73,"29 years 7 months"],["2024-10-01",1167.0,4835.47,174833.0,"29 years 6 months"],["2024-11-01",1364.64,5638.24,174635.36,"29 years 5 months"],["2024-12-01",1563.19,6440.11,174436.81,"29 years 4 months"],["2025-01-01",1762.65,7241.07,174237.35,"29 years 3 months"],["2025-02-01",1963.02,8041.11,174036.98,"29 years 2 months"],["2025-03-01",2164.31,8840.23,173835.69,"29 years 1 months"],["2025-04-01",2366.53,9638.43,173633.47,"29 years 0 months"],["2025-05-01",2569.68,10435.7,173430.32,"28 years 11 months"],["2025-06-01",2773.76,11232.03,173226.25,"28 years 10 months"],["2025-07-01",2978.78,12027.43,173021.23,"28 years 9 months"],["2025-08-01",3184.74,12821.89,172815.27,"28 years 8 months"],["2025-09-01",3391.64,13615.4,172608.37,"28 years 7 months"],["2025-10-01",3599.49,14407.96,172400.52,"28 years 6 months"],["2025-11-01",3808.3,15199.57,172191.71,"28 years 5 months"],["2025-12-01",4018.07,15990.22,171981.94,"28 years 4 months"],["2026-01-01",4228.8,16779.9,171771.21,"28 years 3 months"],["2026-02-01",4440.5,17568.62,171559.52,"28 years 2 months"],["2026-03-01",4653.17,18356.36,171346.85,"28 years 1 months"],["2026-04-01",4866.82,19143.13,171133.2,"28 years 0 months"],["2026-05-01",5081.45,19928.92,170918.57,"27 years 11 months"],["2026-06-01",5297.06,20713.72,170702.96,"27 years 10 months"],["2026-07-01",5513.66,21497.53,170486.36,"27 years 9 months"],["2026-08-01",5731.26,22280.35,170268.76,"27 years 8 months"],["2026-09-01",5949.86,23062.17,170050.17,"27 years 7 months"],["2026-10-01",6169.46,23842.98,169830.57,"27 years 6 months"],["2026-11-01",6390.07,24622.79,169609.96,"27 years 5 months"],["2026-12-01",6611.69,25401.58,169388.34,"27 years 4 months"],["2027-01-01",6834.33,26179.35,169165.7,"27 years 3 months"],["2027-02-01",7057.99,26956.1,168942.04,"27 years 2 months"],["2027-03-01",7282.68,27731.83,168717.35,"27 years 1 months"],["2027-04-01",7508.4,28506.52,168491.63,"27 years 0 months"],["2027-05-01",7735.16,29280.18,168264.88,"26 years 11 months"],["2027-06-01",7962.96,30052.8,168037.08,"26 years 10 months"],["2027-07-01",8191.8,30824.37,167808.24,"26 years 9 months"],["2027-08-01",8421.69,31594.89,167578.34,"26 years 8 months"],["2027-09-01",8652.64,32364.35,167347.4,"26 years 7 months"],["2027-10-01",8884.65,33132.75,167115.39,"26 years 6 months"],["2027-11-01",9117.73,33900.09,166882.31,"26 years 5 months"],["2027-12-01",9351.88,34666.36,166648.17,"26 years 4 months"],["2028-01-01",9587.1,35431.55,166412.95,"26 years 3 months"],["2028-02-01",9823.4,36195.66,166176.64,"26 years 2 months"],["2028-03-01",10060.79,36958.69,165939.26,"26 years 1 months"],["2028-04-01",10299.27,37720.63,165700.78,"26 years 0 months"],["2028-05-01",10538.84,38481.47,165461.21,"25 years 11 months"],["2028-06-01",10779.51,39241.21,165220.54,"25 years 10 months"],["2028-07-01",11021.29,39999.85,164978.77,"25 years 9 months"],["2028-08-01",11264.18,40757.38,164735.88,"25 years 8 months"],["2028-09-01",11508.18,41513.79,164491.88,"25 years 7 months"],["2028-10-01",11753.3,42269.08,164246.76,"25 years 6 months"],["2028-11-01",11999.55,43023.25,164000.51,"25 years 5 months"],["2028-12-01",12246.93,43776.29,163753.14,"25 years 4 months"],["2029-01-01",12495.44,44528.19,163504.62,"25 years 3 months"],["2029-02-01",12745.09,45278.95,163254.97,"25 years 2 months"],["2029-03-01",12995.89,46028.56,163004.17,"25 years 1 months"],["2029-04-01",13247.84,46777.02,162752.21,"25 years 0 months"],["2029-05-01",13500.95,47524.32,162499.11,"24 years 11 months"],["2029-06-01",13755.22,48270.46,162244.83,"24 years 10 months"],["2029-07-01",14010.66,49015.43,161989.39,"24 years 9 months"],["2029-08-01",14267.27,49759.23,161732.78,"24 years 8 months"],["2029-09-01",14525.06,50501.85,161474.99,"24 years 7 months"],["2029-10-01",14784.03,51243.29,161216.02,"24 years 6 months"],["2029-11-01",15044.19,51983.54,160955.86,"24 years 5 months"],["2029-12-01",15305.55,52722.6,160694.5,"24 years 4 months"],["2030-01-01",15568.11,53460.46,160431.94,"24 years 3 months"],["2030-02-01",15831.87,54197.11,160168.18,"24 years 2 months"],["2030-03-01",16096.84,54932.55,159903.2,"24 years 1 months"],["2030-04-01",16363.03,55666.77,159637.01,"24 years 0 months"],["2030-05-01",16630.44,56399.77,159369.6,"23 years 11 months"],["2030-06-01",16899.08,57131.54,159100.96,"23 years 10 months"],["2030-07-01",17168.95,57862.08,158831.08,"23 years 9 months"],["2030-08-01",17440.06,58591.38,158559.97,"23 years 8 months"],["2030-09-01",17712.42,59319.43,158287.61,"23 years 7 months"],["2030-10-01",17986.03,60046.23,158014.0,"23 years 6 months"],["2030-11-01",18260.9,60771.78,157739.14,"23 years 5 months"],["2030-12-01",18537.03,61496.07,157463.01,"23 years 4 months"],["2031-01-01",18814.43,62219.09,157185.61,"23 years 3 months"],["2031-02-01",19093.1,62940.83,156906.94,"23 years 2 months"],["2031-03-01",19373.05,63661.29,156627.0,"23 years 1 months"],["2031-04-01",19654.28,64380.47,156345.76,"23 years 0 months"],["2031-05-01",19936.81,65098.36,156063.24,"22 years 11 months"],["2031-06-01",20220.63,65814.95,155779.41,"22 years 10 months"],["2031-07-01",20505.76,66530.24,155494.29,"22 years 9 months"],["2031-08-01",20792.2,67244.22,155207.85,"22 years 8 months"],["2031-09-01",21079.95,67956.88,154920.1,"22 years 7 months"],["2031-10-01",21369.02,68668.22,154631.03,"22 years 6 months"],["2031-11-01",21659.42,69378.23,154340.63,"22 years 5 months"],["2031-12-01",21951.15,70086.91,154048.9,"22 years 4 months"],["2032-01-01",22244.22,70794.25,153755.83,"22 years 3 months"],["2032-02-01",22538.64,71500.25,153461.41,"22 years 2 months"],["2032-03-01",22834.41,72204.89,153165.64,"22 years 1 months"],["2032-04-01",23131.54,72908.18,152868.51,"22 years 0 months"],["2032-05-01",23430.03,73610.1,152570.02,"21 years 11 months"],["2032-06-01",23729.89,74310.65,152270.16,"21 years 10 months"],["2032-07-01",24031.13,75009.82,151968.92,"21 years 9 months"],["2032-08-01",24333.75,75707.61,151666.29,"21 years 8 months"],["2032-09-01",24637.76,76404.01,151362.28,"21 years 7 months"],["2032-10-01",24943.17,77099.02,151056.87,"21 years 6 months"],["2032-11-01",25249.98,77792.62,150750.06,"21 years 5 months"],["2032-12-01",25558.2,78484.81,150441.84,"21 years 4 months"],["2033-01-01",25867.83,79175.59,150132.21,"21 years 3 months"],["2033-02-01",26178.89,79864.95,149821.15,"21 years 2 months"],["2033-03-01",26491.37,80552.88,149508.67,"21 years 1 months"],["2033-04-01",26805.29,81239.37,149194.75,"21 years 0 months"],["2033-05-01",27120.65,81924.42,148879.39,"20 years 11 months"],["2033-06-01",27437.46,82608.02,148562.58,"20 years 10 months"],["2033-07-01",27755.72,83290.17,148244.32,"20 years 9 months"],["2033-08-01",28075.44,83970.86,147924.59,"20 years 8 months"],["2033-09-01",28396.63,84650.08,147603.4,"20 years 7 months"],["2033-10-01",28719.3,85327.83,147280.73,"20 years 6 months"],["2033-11-01",29043.45,86004.09,146956.58,"20 years 5 months"],["2033-12-01",29369.09,86678.87,146630.95,"20 years 4 months"],["2034-01-01",29696.22,87352.15,146303.81,"20 years 3 months"],["2034-02-01",30024.85,88023.93,145975.18,"20 years 2 months"],["2034-03-01",30354.99,88694.2,145645.04,"20 years 1 months"],["2034-04-01",30686.65,89362.95,145313.38,"20 years 0 months"],["2034-05-01",31019.83,90030.18,144980.19,"19 years 11 months"],["2034-06-01",31354.54,90695.88,144645.48,"19 years 10 months"],["2034-07-01",31690.79,91360.04,144309.23,"19 years 9 months"],["2034-08-01",32028.58,92022.66,143971.44,"19 years 8 months"],["2034-09-01",32367.92,92683.73,143632.09,"19 years 7 months"],["2034-10-01",32708.82,93343.24,143291.19,"19 years 6 months"],["2034-11-01",33051.29,94001.19,142948.72,"19 years 5 months"],["2034-12-01",33395.33,94657.56,142604.68,"19 years 4 months"],["2035-01-01",33740.95,95312.35,142259.06,"19 years 3 months"],["2035-02-01",34088.16,95965.56,141911.86,"19 years 2 months"],["2035-03-01",34436.96,96617.17,141563.05,"19 years 1 months"],["2035-04-01",34787.36,97267.18,141212.65,"19 years 0 months"],["2035-05-01",35139.37,97915.58,140860.64,"18 years 11 months"],["2035-06-01",35493.0,98562.37,140507.01,"18 years 10 months"],["2035-07-01",35848.25,99207.53,140151.76,"18 years 9 months"],["2035-08-01",36205.13,99851.06,139794.88,"18 years 8 months"],["2035-09-01",36563.65,100492.95,139436.36,"18 years 7 months"],["2035-10-01",36923.82,101133.2,139076.19,"18 years 6 months"],["2035-11-01",37285.64,101771.79,138714.37,"18 years 5 months"],["2035-12-01",37649.12,102408.72,138350.88,"18 years 4 months"],["2036-01-01",38014.27,103043.98,137985.73,"18 years 3 months"],["2036-02-01",38381.1,103677.56,137618.9,"18 years 2 months"],["2036-03-01",38749.61,104309.46,137250.39,"18 years 1 months"],["2036-04-01",39119.82,104939.67,136880.18,"18 years 0 months"],["2036-05-01",39491.72,105568.18,136508.28,"17 years 11 months"],["2036-06-01",39865.33,106194.98,136134.67,"17 years 10 months"],["2036-07-01",40240.66,106820.07,135759.34,"17 years 9 months"],["2036-08-01",40617.71,107443.43,135382.29,"17 years 8 months"],["2036-09-01",40996.49,108065.06,135003.5,"17 years 7 months"],["2036-10-01",41377.01,108684.95,134622.98,"17 years 6 months"],["2036-11-01",41759.28,109303.09,134240.71,"17 years 5 months"],["2036-12-01",42143.3,109919.48,133856.69,"17 years 4 months"],["2037-01-01",42529.09,110534.11,133470.9,"17 years 3 months"],["2037-02-01",42916.65,111146.96,133083.34,"17 years 2 months"],["2037-03-01",43305.99,111758.03,132694.0,"17 years 1 months"],["2037-04-01",43697.12,112367.32,132302.88,"17 years 0 months"],["2037-05-01",44090.04,112974.81,131909.95,"16 years 11 months"],["2037-06-01",44484.77,113580.5,131515.23,"16 years 10 months"],["2037-07-01",44881.31,114184.37,131118.69,"16 years 9 months"],["2037-08-01",45279.67,114786.42,130720.33,"16 years 8 months"],["2037-09-01",45679.86,115386.64,130320.14,"16 years 7 months"],["2037-10-01",46081.89,115985.03,129918.11,"16 years 6 months"],["2037-11-01",46485.76,116581.57,129514.24,"16 years 5 months"],["2037-12-01",46891.49,117176.26,129108.51,"16 years 4 months"],["2038-01-01",47299.08,117769.08,128700.92,"16 years 3 months"],["2038-02-01",47708.54,118360.03,128291.46,"16 years 2 months"],["2038-03-01",48119.88,118949.1,127880.12,"16 years 1 months"],["2038-04-01",48533.11,119536.28,127466.89,"16 years 0 months"],["2038-05-01",48948.24,120121.57,127051.76,"15 years 11 months"],["2038-06-01",49365.27,120704.95,126634.73,"15 years 10 months"],["2038-07-01",49784.22,121286.41,126215.78,"15 years 9 months"],["2038-08-01",50205.09,121865.95,125794.91,"15 years 8 months"],["2038-09-01",50627.89,122443.56,125372.1,"15 years 7 months"],["2038-10-01",51052.64,123019.23,124947.36,"15 years 6 months"],["2038-11-01",51479.34,123592.95,124520.66,"15 years 5 months"],["2038-12-01",51908.0,124164.71,124092.0,"15 years 4 months"],["2039-01-01",52338.62,124734.5,123661.38,"15 years 3 months"],["2039-02-01",52771.22,125302.31,123228.78,"15 years 2 months"],["2039-03-01",53205.81,125868.14,122794.19,"15 years 1 months"],["2039-04-01",53642.39,126431.97,122357.61,"15 years 0 months"],["2039-05-01",54080.98,126993.8,121919.02,"14 years 11 months"],["2039-06-01",54521.58,127553.61,121478.42,"14 years 10 months"],["2039-07-01",54964.2,128111.4,121035.79,"14 years 9 months"],["2039-08-01",55408.86,128667.16,120591.14,"14 years 8 months"],["2039-09-01",55855.56,129220.87,120144.44,"14 years 7 months"],["2039-10-01",56304.31,129772.53,119695.69,"14 years 6 months"],["2039-11-01",56755.12,130322.13,119244.88,"14 years 5 months"],["2039-12-01",57208.0,130869.66,118792.0,"14 years 4 months"],["2040-01-01",57662.96,131415.11,118337.04,"14 years 3 months"],["2040-02-01",58120.01,131958.47,117879.99,"14 years 2 months"],["2040-03-01",58579.16,132499.74,117420.84,"14 years 1 months"],["2040-04-01",59040.42,133038.9,116959.58,"14 years 0 months"],["2040-05-01",59503.79,133575.94,116496.21,"13 years 11 months"],["2040-06-01",59969.29,134110.85,116030.71,"13 years 10 months"],["2040-07-01",60436.93,134643.62,115563.07,"13 years 9 months"],["2040-08-01",60906.72,135174.25,115093.28,"13 years 8 months"],["2040-09-01",61378.66,135702.72,114621.34,"13 years 7 months"],["2040-10-01",61852.77,136229.02,114147.23,"13 years 6 months"],["2040-11-01",62329.06,136753.15,113670.94,"13 years 5 months"],["2040-12-01",62807.53,137275.09,113192.47,"13 years 4 months"],["2041-01-01",63288.2,137794.83,112711.8,"13 years 3 months"],["2041-02-01",63771.08,138312.37,112228.92,"13 years 2 months"],["2041-03-01",64256.18,138827.69,111743.82,"13 years 1 months"],["2041-04-01",64743.5,139340.78,111256.5,"13 years 0 months"],["2041-05-01",65233.06,139851.63,110766.94,"12 years 11 months"],["2041-06-01",65724.87,140360.23,110275.13,"12 years 10 months"],["2041-07-01",66218.94,140866.58,109781.07,"12 years 9 months"],["2041-08-01",66715.28,141370.66,109284.73,"12 years 8 months"],["2041-09-01",67213.89,141872.46,108786.12,"12 years 7 months"],["2041-10-01",67714.79,142371.97,108285.21,"12 years 6 months"],["2041-11-01",68217.99,142869.18,107782.01,"12 years 5 months"],["2041-12-01",68723.5,143364.08,107276.5,"12 years 4 months"],["2042-01-01",69231.34,143856.66,106768.66,"12 years 3 months"],["2042-02-01",69741.51,144346.91,106258.49,"12 years 2 months"],["2042-03-01",70254.02,144834.81,105745.98,"12 years 1 months"],["2042-04-01",70768.88,145320.36,105231.12,"12 years 0 months"],["2042-05-01",71286.11,145803.55,104713.89,"11 years 11 months"],["2042-06-01",71805.71,146284.36,104194.29,"11 years 10 months"],["2042-07-01",72327.7,146762.79,103672.3,"11 years 9 months"],["2042-08-01",72852.08,147238.82,103147.92,"11 years 8 months"],["2042-09-01",73378.87,147712.44,102621.13,"11 years 7 months"],["2042-10-01",73908.08,148183.64,102091.92,"11 years 6 months"],["2042-11-01",74439.72,148652.41,101560.27,"11 years 5 months"],["2042-12-01",74973.8,149118.74,101026.19,"11 years 4 months"],["2043-01-01",75510.33,149582.62,100489.66,"11 years 3 months"],["2043-02-01",76049.33,150044.04,99950.66,"11 years 2 months"],["2043-03-01",76590.8,150502.98,99409.19,"11 years 1 months"],["2043-04-01",77134.76,150959.43,98865.23,"11 years 0 months"],["2043-05-01",77681.22,151413.39,98318.77,"10 years 11 months"],["2043-06-01",78230.19,151864.84,97769.8,"10 years 10 months"],["2043-07-01",78781.68,152313.77,97218.32,"10 years 9 months"],["2043-08-01",79335.7,152760.16,96664.3,"10 years 8 months"],["2043-09-01",79892.26,153204.01,96107.74,"10 years 7 months"],["2043-10-01",80451.38,153645.3,95548.62,"10 years 6 months"],["2043-11-01",81013.07,154084.03,94986.93,"10 years 5 months"],["2043-12-01",81577.33,154520.18,94422.67,"10 years 4 months"],["2044-01-01",82144.19,154953.74,93855.81,"10 years 3 months"],["2044-02-01",82713.65,155384.69,93286.35,"10 years 2 months"],["2044-03-01",83285.72,155813.03,92714.28,"10 years 1 months"],["2044-04-01",83860.42,156238.74,92139.58,"10 years 0 months"],["2044-05-01",84437.76,156661.81,91562.24,"9 years 11 months"],["2044-06-01",85017.75,157082.23,90982.25,"9 years 10 months"],["2044-07-01",85600.4,157499.99,90399.6,"9 years 9 months"],["2044-08-01",86185.73,157915.07,89814.27,"9 years 8 months"],["2044-09-01",86773.75,158327.47,89226.25,"9 years 7 months"],["2044-10-01",87364.47,158737.17,88635.54,"9 years 6 months"],["2044-11-01",87957.9,159144.15,88042.11,"9 years 5 months"],["2044-12-01",88554.05,159548.41,87445.96,"9 years 4 months"],["2045-01-01",89152.94,159949.93,86847.06,"9 years 3 months"],["2045-02-01",89754.58,160348.7,86245.42,"9 years 2 months"],["2045-03-01",90358.98,160744.71,85641.02,"9 years 1 months"],["2045-04-01",90966.16,161137.95,85033.84,"9 years 0 months"],["2045-05-01",91576.13,161528.4,84423.88,"8 years 11 months"],["2045-06-01",92188.9,161916.05,83811.11,"8 years 10 months"],["2045-07-01",92804.48,162300.88,83195.53,"8 years 9 months"],["2045-08-01",93422.89,162682.89,82577.12,"8 years 8 months"],["2045-09-01",94044.14,163062.06,81955.88,"8 years 7 months"],["2045-10-01",94668.24,163438.37,81331.78,"8 years 6 months"],["2045-11-01",95295.2,163811.82,80704.81,"8 years 5 months"],["2045-12-01",95925.04,164182.39,80074.97,"8 years 4 months"],["2046-01-01",96557.78,164550.07,79442.23,"8 years 3 months"],["2046-02-01",97193.42,164914.84,78806.59,"8 years 2 months"],["2046-03-01",97831.98,165276.69,78168.03,"8 years 1 months"],["2046-04-01",98473.47,165635.61,77526.54,"8 years 0 months"],["2046-05-01",99117.91,165991.59,76882.1,"7 years 11 months"],["2046-06-01",99765.31,166344.61,76234.71,"7 years 10 months"],["2046-07-01",100415.68,166694.65,75584.34,"7 years 9 months"],["2046-08-01",101069.04,167041.71,74930.98,"7 years 8 months"],["2046-09-01",101725.4,167385.77,74274.63,"7 years 7 months"],["2046-10-01",102384.77,167726.81,73615.26,"7 years 6 months"],["2046-11-01",103047.17,168064.83,72952.86,"7 years 5 months"],["2046-12-01",103712.61,168399.81,72287.43,"7 years 4 months"],["2047-01-01",104381.1,168731.73,71618.93,"7 years 3 months"],["2047-02-01",105052.66,169060.58,70947.37,"7 years 2 months"],["2047-03-01",105727.31,169386.35,70272.72,"7 years 1 months"],["2047-04-01",106405.05,169709.02,69594.98,"7 years 0 months"],["2047-05-01",107085.91,170028.58,68914.12,"6 years 11 months"],["2047-06-01",107769.89,170345.01,68230.14,"6 years 10 months"],["2047-07-01",108457.01,170658.3,67543.02,"6 years 9 months"],["2047-08-01",109147.29,170968.44,66852.74,"6 years 8 months"],["2047-09-01",109840.74,171275.41,66159.29,"6 years 7 months"],["2047-10-01",110537.37,171579.19,65462.66,"6 years 6 months"],["2047-11-01",111237.2,171879.77,64762.83,"6 years 5 months"],["2047-12-01",111940.24,172177.14,64059.78,"6 years 4 months"],["2048-01-01",112646.51,172471.28,63353.51,"6 years 3 months"],["2048-02-01",113356.02,172762.18,62644.0,"6 years 2 months"],["2048-03-01",114068.79,173049.82,61931.22,"6 years 1 months"],["2048-04-01",114784.84,173334.19,61215.18,"6 years 0 months"],["2048-05-01",115504.17,173615.27,60495.85,"5 years 11 months"],["2048-06-01",116226.81,173893.05,59773.21,"5 years 10 months"],["2048-07-01",116952.76,174167.51,59047.25,"5 years 9 months"],["2048-08-01",117682.05,174438.64,58317.97,"5 years 8 months"],["2048-09-01",118414.69,174706.42,57585.33,"5 years 7 months"],["2048-10-01",119150.69,174970.83,56849.33,"5 years 6 months"],["2048-11-01",119890.07,175231.86,56109.95,"5 years 5 months"],["2048-12-01",120632.84,175489.5,55367.17,"5 years 4 months"],["2049-01-01",121379.03,175743.73,54620.99,"5 years 3 months"],["2049-02-01",122128.64,175994.53,53871.38,"5 years 2 months"],["2049-03-01",122881.69,176241.89,53118.32,"5 years 1 months"],["2049-04-01",123638.2,176485.79,52361.81,"5 years 0 months"],["2049-05-01",124398.19,176726.22,51601.83,"4 years 11 months"],["2049-06-01",125161.66,176963.16,50838.35,"4 years 10 months"],["2049-07-01",125928.64,177196.59,50071.37,"4 years 9 months"],["2049-08-01",126699.14,177426.5,49300.87,"4 years 8 months"],["2049-09-01",127473.18,177652.87,48526.83,"4 years 7 months"],["2049-10-01",128250.77,177875.69,47749.24,"4 years 6 months"],["2049-11-01",129031.93,178094.94,46968.07,"4 years 5 months"],["2049-12-01",129816.68,178310.6,46183.32,"4 years 4 months"],["2050-01-01",130605.03,178522.66,45394.96,"4 years 3 months"],["2050-02-01",131397.0,178731.1,44602.99,"4 years 2 months"],["2050-03-01",132192.61,178935.9,43807.38,"4 years 1 months"],["2050-04-01",132991.87,179137.05,43008.11,"4 years 0 months"],["2050-05-01",133794.8,179334.53,42205.18,"3 years 11 months"],["2050-06-01",134601.42,179528.32,41398.56,"3 years 10 months"],["2050-07-01",135411.74,179718.41,40588.23,"3 years 9 months"],["2050-08-01",136225.79,179904.78,39774.19,"3 years 8 months"],["2050-09-01",137043.57,180087.41,38956.41,"3 years 7 months"],["2050-10-01",137865.11,180266.28,38134.87,"3 years 6 months"],["2050-11-01",138690.42,180441.38,37309.56,"3 years 5 months"],["2050-12-01",139519.52,180612.69,36480.46,"3 years 4 months"],["2051-01-01",140352.43,180780.2,35647.55,"3 years 3 months"],["2051-02-01",141189.16,180943.88,34810.82,"3 years 2 months"],["2051-03-01",142029.73,181103.72,33970.24,"3 years 1 months"],["2051-04-01",142874.16,181259.7,33125.81,"3 years 0 months"],["2051-05-01",143722.47,181411.8,32277.5,"2 years 11 months"],["2051-06-01",144574.68,181560.01,31425.3,"2 years 10 months"],["2051-07-01",145430.8,181704.3,30569.18,"2 years 9 months"],["2051-08-01",146290.85,181844.66,29709.13,"2 years 8 months"],["2051-09-01",147154.85,181981.07,28845.13,"2 years 7 months"],["2051-10-01",148022.82,182113.52,27977.16,"2 years 6 months"],["2051-11-01",148894.77,182241.98,27105.21,"2 years 5 months"],["2051-12-01",149770.73,182366.44,26229.26,"2 years 4 months"],["2052-01-01",150650.71,182486.88,25349.28,"2 years 3 months"],["2052-02-01",151534.73,182603.28,24465.26,"2 years 2 months"],["2052-03-01",152422.81,182715.62,23577.18,"2 years 1 months"],["2052-04-01",153314.96,182823.88,22685.03,"2 years 0 months"],["2052-05-01",154211.21,182928.04,21788.78,"1 years 11 months"],["2052-06-01",155111.58,183028.09,20888.41,"1 years 10 months"],["2052-07-01",156016.08,183124.0,19983.91,"1 years 9 months"],["2052-08-01",156924.73,183215.76,19075.26,"1 years 8 months"],["2052-09-01",157837.56,183303.35,18162.43,"1 years 7 months"],["2052-10-01",158754.58,183386.75,17245.41,"1 years 6 months"],["2052-11-01",159675.81,183465.94,16324.19,"1 years 5 months"],["2052-12-01",160601.27,183540.9,15398.73,"1 years 4 months"],["2053-01-01",161530.98,183611.61,14469.02,"1 years 3 months"],["2053-02-01",162464.96,183678.05,13535.05,"1 years 2 months"],["2053-03-01",163403.22,183740.2,12596.78,"1 years 1 months"],["2053-04-01",164345.79,183798.04,11654.21,"1 years 0 months"],["2053-05-01",165292.69,183851.55,10707.31,"0 years 11 months"],["2053-06-01",166243.94,183900.71,9756.06,"0 years 10 months"],["2053-07-01",167199.56,183945.51,8800.44,"0 years 9 months"],["2053-08-01",168159.56,183985.92,7840.44,"0 years 8 months"],["2053-09-01",169123.97,184021.92,6876.02,"0 years 7 months"],["2053-10-01",170092.81,184053.49,5907.18,"0 years 6 months"],["2053-11-01",171066.1,184080.61,4933.89,"0 years 5 months"],["2053-12-01",172043.86,184103.26,3956.14,"0 years 4 months"],["2054-01-01",173026.11,184121.43,2973.89,"0 years 3 months"],["2054-02-01",174012.87,184135.09,1987.13,"0 years 2 months"],["2054-03-01",175004.16,184144.21,995.84,"0 years 1 months"]];
+
+  const STARTING_BALANCE = 176000;
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  // Build a lookup map keyed by YYYY-MM
+  const lookup = {};
+  DATA.forEach(row => {
+    const key = row[0].slice(0, 7); // "YYYY-MM"
+    lookup[key] = row;
+  });
+
+  // Populate year dropdown
+  const yearSelect  = document.getElementById('year-select');
+  const monthSelect = document.getElementById('month-select');
+  const years = [...new Set(DATA.map(r => r[0].slice(0,4)))];
+  years.forEach(y => {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    yearSelect.appendChild(opt);
+  });
+
+  // Default to current month
+  const now = new Date();
+  monthSelect.value = String(now.getMonth() + 1).padStart(2, '0');
+  yearSelect.value  = String(now.getFullYear());
+
+  function dollar(n) {
+    return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  function update() {
+    const m = monthSelect.value;
+    const y = yearSelect.value;
+    if (!m || !y) return;
+
+    const key = `${y}-${m}`;
+    const row = lookup[key];
+    const noMatch = document.getElementById('no-match');
+    const dashboard = document.getElementById('dashboard');
+
+    if (!row) {
+      noMatch.style.display = 'block';
+      dashboard.classList.remove('visible');
+      return;
+    }
+
+    noMatch.style.display = 'none';
+    dashboard.classList.add('visible');
+
+    const [date, cumPrincipal, cumInterest, balance, timeLeft] = row;
+    const total = cumPrincipal + cumInterest;
+    const pct   = (cumPrincipal / STARTING_BALANCE) * 100;
+
+    // Header
+    const d = new Date(date + 'T12:00:00');
+    document.getElementById('selected-date-label').textContent =
+      `Snapshot: ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+
+    // Progress
+    document.getElementById('progress-fill').style.width = pct.toFixed(2) + '%';
+    document.getElementById('prog-paid').textContent     = dollar(cumPrincipal);
+    document.getElementById('progress-pct').textContent  = pct.toFixed(1) + '% paid off';
+
+    // Cards
+    document.getElementById('val-principal').textContent = dollar(cumPrincipal);
+    document.getElementById('val-interest').textContent  = dollar(cumInterest);
+    document.getElementById('val-balance').textContent   = dollar(balance);
+    document.getElementById('val-time').textContent      = timeLeft.replace(' 0 months','').replace(' months', ' mo').replace(' years', ' yr');
+
+    // Total
+    document.getElementById('val-total').textContent = dollar(total);
+  }
+
+  monthSelect.addEventListener('change', update);
+  yearSelect.addEventListener('change', update);
+
+  // Run on load
+  update();
+</script>
+</body>
+</html>
