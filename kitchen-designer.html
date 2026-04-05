@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kitchen Designer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      height: 48px;
+    }
+    .header h1 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: 0.04em;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      white-space: nowrap;
+    }
+    .header-hint { color:#475569; font-size:0.78rem; }
+    .header-right { margin-left:auto; display:flex; gap:8px; align-items:center; }
+
+    /* ── App body ── */
+    .app-body { display:flex; flex:1; overflow:hidden; }
+
+    /* ── Sidebars ── */
+    .sidebar {
+      background: #1e293b;
+      border-right: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    .sidebar.right { border-right:none; border-left:1px solid #334155; width:230px; }
+    .sidebar.left  { width:195px; }
+
+    .sec {
+      padding: 10px 11px;
+      border-bottom: 1px solid #1e2d40;
+    }
+    .sec h3 {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      color: #64748b;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    /* Inputs */
+    input[type="number"], input[type="text"] {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      padding: 5px 6px;
+      font-size: 0.78rem;
+      width: 100%;
+    }
+    input:focus { outline:none; border-color:#38bdf8; }
+
+    .dim-row { display:flex; align-items:center; gap:4px; margin-bottom:5px; }
+    .dim-row label { font-size:0.72rem; color:#64748b; width:42px; flex-shrink:0; }
+    .dim-row input { width:38px; flex-shrink:0; text-align:center; }
+    .dim-row span { font-size:0.68rem; color:#475569; flex-shrink:0; }
+
+    /* Palette */
+    .palette { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
+    .pal-item {
+      background: #0f172a;
+      border: 1px solid #2d3e50;
+      border-radius: 7px;
+      padding: 6px 4px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 0.64rem;
+      color: #94a3b8;
+      transition: border-color 0.15s, background 0.15s;
+      line-height: 1.3;
+    }
+    .pal-item:hover { border-color:#38bdf8; background:#0d2033; color:#e2e8f0; }
+    .pal-item .ico { font-size:1.1rem; display:block; margin-bottom:2px; }
+
+    /* Buttons */
+    .btn {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.76rem;
+      font-weight: 600;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn:active { transform:scale(0.96); }
+    .btn-blue   { background:#38bdf8; color:#0f172a; }
+    .btn-slate  { background:#334155; color:#94a3b8; }
+    .btn-red    { background:#7f1d1d; color:#fca5a5; }
+    .btn-green  { background:#14532d; color:#86efac; }
+    .btn-full   { width:100%; margin-bottom:5px; }
+
+    .slot-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; margin-bottom:5px; }
+    .slot-btn {
+      padding: 5px 4px;
+      font-size: 0.7rem;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      cursor: pointer;
+      background: #0f172a;
+      color: #64748b;
+      font-family: 'Inter', sans-serif;
+      text-align: center;
+      transition: border-color 0.15s;
+    }
+    .slot-btn:hover  { border-color:#38bdf8; color:#e2e8f0; }
+    .slot-btn.filled { border-color:#38bdf8; color:#38bdf8; }
+
+    /* Canvas area */
+    .canvas-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #080f1e;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .canvas-toolbar {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 5px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 5px 10px;
+      z-index: 10;
+    }
+    .tool-btn {
+      padding: 4px 11px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 0.74rem;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .tool-btn:hover  { background:#334155; color:#e2e8f0; }
+    .tool-btn.active { background:#38bdf8; color:#0f172a; font-weight:600; }
+    .tool-btn.danger { color:#f87171; }
+    .tool-btn.danger:hover { background:#7f1d1d; color:#fca5a5; }
+
+    .wall-bar {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      gap: 5px;
+      align-items: center;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 5px 12px;
+    }
+    .wall-bar.show { display:flex; }
+    .wall-bar span { font-size:0.72rem; color:#64748b; }
+
+    canvas { cursor:default; border-radius:3px; }
+
+    .status {
+      position: absolute;
+      bottom: 12px;
+      right: 14px;
+      font-size: 0.68rem;
+      color: #475569;
+      background: #1e293b;
+      padding: 3px 10px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      pointer-events: none;
+    }
+
+    /* Right panel */
+    .prop-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #64748b;
+      margin-bottom: 4px;
+      margin-top: 10px;
+      display: block;
+    }
+    .prop-label:first-child { margin-top: 0; }
+    .no-sel {
+      padding: 20px 14px;
+      text-align: center;
+      color: #334155;
+      font-size: 0.8rem;
+      line-height: 1.7;
+    }
+    .prop-btns { display:flex; gap:5px; margin-top:10px; }
+
+    .legend-row { display:flex; align-items:center; gap:7px; font-size:0.72rem; color:#475569; margin-bottom:4px; }
+    .legend-swatch { width:12px; height:12px; border-radius:3px; flex-shrink:0; }
+    .save-msg { font-size:0.68rem; color:#64748b; text-align:center; margin-top:6px; min-height:14px; }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <h1>Kitchen Designer</h1>
+  <span class="header-hint">Add items from the left · drag to position · edit in the right panel</span>
+  <div class="header-right">
+    <button class="btn btn-blue" onclick="exportPNG()">⬇ Export PNG</button>
+    <a href="index.html" style="padding:5px 12px;background:#334155;color:#94a3b8;border-radius:7px;text-decoration:none;font-size:0.76rem;font-weight:600;">← Home</a>
+  </div>
+</div>
+
+<div class="app-body">
+
+  <!-- ── LEFT SIDEBAR ── -->
+  <div class="sidebar left">
+
+    <div class="sec">
+      <h3>Room Size</h3>
+      <div class="dim-row">
+        <label>Width</label>
+        <input type="number" id="rw-ft" min="1" max="100" value="12"> <span>ft</span>
+        <input type="number" id="rw-in" min="0" max="11.5" step="0.5" value="0"> <span>in</span>
+      </div>
+      <div class="dim-row">
+        <label>Depth</label>
+        <input type="number" id="rd-ft" min="1" max="100" value="10"> <span>ft</span>
+        <input type="number" id="rd-in" min="0" max="11.5" step="0.5" value="0"> <span>in</span>
+      </div>
+      <div class="dim-row">
+        <label>Height</label>
+        <input type="number" id="rh-ft" min="6" max="20" value="9"> <span>ft</span>
+        <input type="number" id="rh-in" min="0" max="11.5" step="0.5" value="0"> <span>in</span>
+      </div>
+      <button class="btn btn-slate btn-full" style="margin-top:6px;" onclick="applyRoom()">Apply Room Size</button>
+    </div>
+
+    <div class="sec">
+      <h3>Cabinets &amp; Surfaces</h3>
+      <div class="palette">
+        <div class="pal-item" onclick="addItem('base-cabinet')"><span class="ico">🗄️</span>Base Cabinet</div>
+        <div class="pal-item" onclick="addItem('wall-cabinet')"><span class="ico">🗃️</span>Wall Cabinet</div>
+        <div class="pal-item" onclick="addItem('countertop')"><span class="ico">▬</span>Countertop</div>
+        <div class="pal-item" onclick="addItem('island')"><span class="ico">🏝️</span>Island</div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h3>Appliances</h3>
+      <div class="palette">
+        <div class="pal-item" onclick="addItem('refrigerator')"><span class="ico">🧊</span>Refrigerator</div>
+        <div class="pal-item" onclick="addItem('stove')"><span class="ico">🍳</span>Stove/Range</div>
+        <div class="pal-item" onclick="addItem('sink')"><span class="ico">🪣</span>Sink</div>
+        <div class="pal-item" onclick="addItem('dishwasher')"><span class="ico">🫧</span>Dishwasher</div>
+        <div class="pal-item" onclick="addItem('microwave')"><span class="ico">📦</span>Microwave</div>
+        <div class="pal-item" onclick="addItem('oven')"><span class="ico">⬛</span>Wall Oven</div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h3>Structure</h3>
+      <div class="palette">
+        <div class="pal-item" onclick="addItem('window')"><span class="ico">🪟</span>Window</div>
+        <div class="pal-item" onclick="addItem('door')"><span class="ico">🚪</span>Door</div>
+        <div class="pal-item" onclick="addItem('fireplace')"><span class="ico">🔥</span>Fireplace</div>
+        <div class="pal-item" onclick="addItem('closet')"><span class="ico">👔</span>Closet</div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h3>Save / Load</h3>
+      <div class="slot-grid">
+        <button class="slot-btn" id="save-a" onclick="saveSlot('a')">💾 A</button>
+        <button class="slot-btn" id="save-b" onclick="saveSlot('b')">💾 B</button>
+        <button class="slot-btn" id="save-c" onclick="saveSlot('c')">💾 C</button>
+      </div>
+      <div class="slot-grid">
+        <button class="slot-btn" onclick="loadSlot('a')">📂 A</button>
+        <button class="slot-btn" onclick="loadSlot('b')">📂 B</button>
+        <button class="slot-btn" onclick="loadSlot('c')">📂 C</button>
+      </div>
+      <p class="save-msg" id="save-msg"></p>
+    </div>
+
+  </div>
+
+  <!-- ── CANVAS ── -->
+  <div class="canvas-wrap">
+
+    <div class="canvas-toolbar">
+      <button class="tool-btn active" id="btn-plan"      onclick="setView('plan')">📐 Floor Plan</button>
+      <button class="tool-btn"        id="btn-elev"      onclick="setView('elevation')">🧱 Elevation</button>
+      <button class="tool-btn active" id="btn-grid"      onclick="toggleGrid()">▦ Grid</button>
+      <button class="tool-btn active" id="btn-snap"      onclick="toggleSnap()">🧲 Snap</button>
+      <button class="tool-btn"                           onclick="rotateSelected()">↻ Rotate</button>
+      <button class="tool-btn danger"                    onclick="deleteSelected()">🗑 Delete</button>
+      <button class="tool-btn"        style="color:#475569;" onclick="clearAll()">✕ Clear All</button>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="wall-bar" id="wall-bar">
+      <span>Elevation wall:</span>
+      <button class="tool-btn" id="wb-n" onclick="setElevWall('north')">↑ North</button>
+      <button class="tool-btn" id="wb-s" onclick="setElevWall('south')">↓ South</button>
+      <button class="tool-btn" id="wb-w" onclick="setElevWall('west')">← West</button>
+      <button class="tool-btn" id="wb-e" onclick="setElevWall('east')">→ East</button>
+    </div>
+
+    <div class="status" id="status">Ready · Keyboard: R = rotate, Del = delete</div>
+  </div>
+
+  <!-- ── RIGHT SIDEBAR ── -->
+  <div class="sidebar right">
+
+    <div class="sec" style="flex:1;">
+      <h3>Properties</h3>
+
+      <div id="no-sel" class="no-sel">
+        Click any item<br>on the canvas<br>to edit it here
+      </div>
+
+      <div id="props" style="display:none;">
+
+        <span class="prop-label">Label</span>
+        <input type="text" id="p-label" oninput="setProp('label', this.value)">
+
+        <span class="prop-label">Width</span>
+        <div class="dim-row" style="margin-bottom:0;">
+          <input type="number" id="p-w-ft" min="0" max="50" step="1" oninput="setDim('w')"> <span>ft</span>
+          <input type="number" id="p-w-in" min="0" max="11.5" step="0.5" oninput="setDim('w')"> <span>in</span>
+        </div>
+
+        <span class="prop-label">Depth</span>
+        <div class="dim-row" style="margin-bottom:0;">
+          <input type="number" id="p-d-ft" min="0" max="50" step="1" oninput="setDim('d')"> <span>ft</span>
+          <input type="number" id="p-d-in" min="0" max="11.5" step="0.5" oninput="setDim('d')"> <span>in</span>
+        </div>
+
+        <span class="prop-label">Height</span>
+        <div class="dim-row" style="margin-bottom:0;">
+          <input type="number" id="p-h-ft" min="0" max="20" step="1" oninput="setDim('h')"> <span>ft</span>
+          <input type="number" id="p-h-in" min="0" max="11.5" step="0.5" oninput="setDim('h')"> <span>in</span>
+        </div>
+
+        <span class="prop-label">Floor Height (elevation offset)</span>
+        <div class="dim-row" style="margin-bottom:0;">
+          <input type="number" id="p-fh-ft" min="0" max="15" step="1" oninput="setDim('floorH')"> <span>ft</span>
+          <input type="number" id="p-fh-in" min="0" max="11.5" step="0.5" oninput="setDim('floorH')"> <span>in</span>
+        </div>
+
+        <span class="prop-label">Position X</span>
+        <div class="dim-row" style="margin-bottom:0;">
+          <input type="number" id="p-x-ft" min="0" step="1" oninput="setDim('x')"> <span>ft</span>
+          <input type="number" id="p-x-in" min="0" max="11.5" step="0.5" oninput="setDim('x')"> <span>in</span>
+        </div>
+
+        <span class="prop-label">Position Y</span>
+        <div class="dim-row" style="margin-bottom:0;">
+          <input type="number" id="p-y-ft" min="0" step="1" oninput="setDim('y')"> <span>ft</span>
+          <input type="number" id="p-y-in" min="0" max="11.5" step="0.5" oninput="setDim('y')"> <span>in</span>
+        </div>
+
+        <div class="prop-btns">
+          <button class="btn btn-slate" style="flex:1;" onclick="rotateSelected()">↻ Rotate</button>
+          <button class="btn btn-red"   style="flex:1;" onclick="deleteSelected()">🗑 Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h3>Legend</h3>
+      <div class="legend-row"><div class="legend-swatch" style="background:#7C5C2A;"></div>Base Cabinet</div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#A07840;"></div>Wall Cabinet</div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#B0A898;"></div>Countertop</div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#5B8DB8;"></div>Sink / Window</div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#2D2D2D;"></div>Appliances</div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#8B2020;"></div>Fireplace</div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#C8A060;"></div>Door / Closet</div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#A08060;"></div>Island</div>
+      <div style="margin-top:8px;font-size:0.68rem;color:#334155;line-height:1.5;">
+        <b style="color:#475569;">Tip:</b> Items near a wall appear in Elevation view. Set Floor Height to offset items above the floor (e.g. countertop = 2'11").
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!--
+  ═══════════════════════════════════════
+  FIREBASE RULES — paste into Firebase Console → Realtime Database → Rules
+  ═══════════════════════════════════════
+  {
+    "rules": {
+      "lunch-picker": { ".read": true, ".write": true },
+      "kitchen-designer": { ".read": true, ".write": true }
+    }
+  }
+  ═══════════════════════════════════════
+-->
+
+<script type="module">
+import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCp2PBbqdj_g6NPR9iYQb7Z6tgXbqLtHIA",
+  authDomain:        "lunch-f7021.firebaseapp.com",
+  databaseURL:       "https://lunch-f7021-default-rtdb.firebaseio.com",
+  projectId:         "lunch-f7021",
+  storageBucket:     "lunch-f7021.firebasestorage.app",
+  messagingSenderId: "1053755216064",
+  appId:             "1:1053755216064:web:14b749200f825a4e9bdd25"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+// ── Item type definitions (all dims in feet) ──────────────────────────────
+const TYPES = {
+  'base-cabinet':  { label:'Base Cabinet',   w:2,      d:2,      h:2.875,  floorH:0,     fill:'#7C5C2A', stroke:'#4A3010', text:'#F5DEB3' },
+  'wall-cabinet':  { label:'Wall Cabinet',   w:2,      d:1,      h:2.5,    floorH:4.5,   fill:'#A07840', stroke:'#6A4C20', text:'#FFF8DC' },
+  'countertop':    { label:'Countertop',     w:2,      d:2.083,  h:0.125,  floorH:2.875, fill:'#C0B8A8', stroke:'#8A8070', text:'#1a1a1a' },
+  'island':        { label:'Island',         w:4,      d:2.5,    h:3,      floorH:0,     fill:'#A08060', stroke:'#6A5030', text:'#FFF8DC' },
+  'refrigerator':  { label:'Refrigerator',   w:2.5,    d:2.5,    h:5.833,  floorH:0,     fill:'#C8C8C8', stroke:'#909090', text:'#1a1a1a' },
+  'stove':         { label:'Stove/Range',    w:2.5,    d:2.083,  h:3,      floorH:0,     fill:'#2D2D2D', stroke:'#111',    text:'#fff'    },
+  'sink':          { label:'Sink',           w:1.5,    d:1.833,  h:0.667,  floorH:2.875, fill:'#5B8DB8', stroke:'#3A6080', text:'#fff'    },
+  'dishwasher':    { label:'Dishwasher',     w:2,      d:2,      h:2.875,  floorH:0,     fill:'#A8A8A8', stroke:'#707070', text:'#fff'    },
+  'microwave':     { label:'Microwave',      w:2.5,    d:1.25,   h:1.333,  floorH:5,     fill:'#222',    stroke:'#000',    text:'#fff'    },
+  'oven':          { label:'Wall Oven',      w:2,      d:2,      h:2.5,    floorH:0,     fill:'#1a1a1a', stroke:'#000',    text:'#fff'    },
+  'window':        { label:'Window',         w:3,      d:0.333,  h:3.5,    floorH:3,     fill:'#7EC8E3', stroke:'#3A88A0', text:'#fff'    },
+  'door':          { label:'Door',           w:2.667,  d:0.333,  h:6.667,  floorH:0,     fill:'#C8A060', stroke:'#8B6020', text:'#1a1a1a' },
+  'fireplace':     { label:'Fireplace',      w:4,      d:1.667,  h:3.5,    floorH:0,     fill:'#8B2020', stroke:'#5C0A0A', text:'#fff'    },
+  'closet':        { label:'Closet',         w:3,      d:2,      h:8,      floorH:0,     fill:'#B8A020', stroke:'#8A7010', text:'#1a1a1a' },
+};
+
+// ── State ─────────────────────────────────────────────────────────────────
+const S = {
+  room:     { w:12, d:10, h:9 },
+  items:    [],
+  sel:      null,
+  view:     'plan',
+  elevWall: 'north',
+  grid:     true,
+  snap:     true,
+};
+
+let nextId = 1;
+const SNAP_GRID  = 0.25;   // 3-inch snap
+const SNAP_WALL  = 0.25;   // auto-snap to wall within 3"
+const SNAP_ITEM  = 0.15;   // auto-snap to adjacent items
+
+// ── Canvas ────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+
+// Fit canvas to available area
+function sizeCanvas() {
+  const wrap = canvas.parentElement;
+  canvas.width  = wrap.clientWidth  - 30;
+  canvas.height = wrap.clientHeight - 70;
+}
+sizeCanvas();
+window.addEventListener('resize', () => { sizeCanvas(); render(); });
+
+const PAD = 44;
+let scale=1, offX=0, offY=0;
+
+function calcLayout() {
+  scale = Math.min((canvas.width - PAD*2) / S.room.w, (canvas.height - PAD*2) / S.room.d);
+  offX  = (canvas.width  - S.room.w * scale) / 2;
+  offY  = (canvas.height - S.room.d * scale) / 2;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function toFt(ft, inches) { return parseFloat(ft||0) + parseFloat(inches||0)/12; }
+function fromFt(v) {
+  v = Math.max(0, v);
+  const ft = Math.floor(v);
+  const inches = Math.round((v - ft) * 12 * 10) / 10;
+  return { ft, inches };
+}
+function snapV(v) { return S.snap ? Math.round(v/SNAP_GRID)*SNAP_GRID : v; }
+function effW(it) { return it.rotation%180===0 ? it.w : it.d; }
+function effD(it) { return it.rotation%180===0 ? it.d : it.w; }
+function fmtFt(v) {
+  const {ft, inches} = fromFt(v);
+  return inches > 0 ? `${ft}'${inches}"` : `${ft}'`;
+}
+
+// ── Drawing — Floor Plan ──────────────────────────────────────────────────
+function drawPlan() {
+  calcLayout();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // bg
+  ctx.fillStyle = '#06101f';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // grid
+  if (S.grid) {
+    ctx.strokeStyle = 'rgba(56,189,248,0.07)';
+    ctx.lineWidth = 0.5;
+    for (let x=0; x<=S.room.w; x+=1) {
+      ctx.beginPath(); ctx.moveTo(offX+x*scale, offY); ctx.lineTo(offX+x*scale, offY+S.room.d*scale); ctx.stroke();
+    }
+    for (let y=0; y<=S.room.d; y+=1) {
+      ctx.beginPath(); ctx.moveTo(offX, offY+y*scale); ctx.lineTo(offX+S.room.w*scale, offY+y*scale); ctx.stroke();
+    }
+  }
+
+  // room
+  ctx.fillStyle = 'rgba(255,255,255,0.025)';
+  ctx.fillRect(offX, offY, S.room.w*scale, S.room.d*scale);
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(offX, offY, S.room.w*scale, S.room.d*scale);
+
+  // compass labels
+  ctx.fillStyle = '#334155';
+  ctx.font = '10px Inter';
+  ctx.textAlign = 'center';
+  ctx.fillText('N', offX + S.room.w*scale/2, offY - 6);
+  ctx.fillText('S', offX + S.room.w*scale/2, offY + S.room.d*scale + 14);
+  ctx.textAlign = 'right';
+  ctx.fillText('W', offX - 6, offY + S.room.d*scale/2 + 4);
+  ctx.textAlign = 'left';
+  ctx.fillText('E', offX + S.room.w*scale + 6, offY + S.room.d*scale/2 + 4);
+
+  // room dimensions
+  ctx.fillStyle = '#64748b';
+  ctx.font = '11px Inter';
+  ctx.textAlign = 'center';
+  ctx.fillText(fmtFt(S.room.w), offX + S.room.w*scale/2, offY - 16);
+  ctx.save();
+  ctx.translate(offX - 20, offY + S.room.d*scale/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText(fmtFt(S.room.d), 0, 0);
+  ctx.restore();
+
+  // items
+  S.items.forEach(it => drawPlanItem(it));
+}
+
+function drawPlanItem(it) {
+  const ew = effW(it), ed = effD(it);
+  const px = offX + it.x*scale, py = offY + it.y*scale;
+  const pw = ew*scale,          ph = ed*scale;
+  const def = TYPES[it.type] || TYPES['base-cabinet'];
+  const sel = it.id === S.sel;
+
+  // selection halo
+  if (sel) {
+    ctx.strokeStyle = 'rgba(245,158,11,0.35)';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(px-4, py-4, pw+8, ph+8);
+  }
+
+  // fill
+  ctx.fillStyle = def.fill;
+  ctx.fillRect(px, py, pw, ph);
+
+  // window pane detail
+  if (it.type === 'window') {
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 1;
+    if (pw > ph) {
+      ctx.beginPath(); ctx.moveTo(px+pw/2, py); ctx.lineTo(px+pw/2, py+ph); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(px, py+ph/2); ctx.lineTo(px+pw, py+ph/2); ctx.stroke();
+    }
+  }
+
+  // door swing arc
+  if (it.type === 'door') {
+    ctx.strokeStyle = 'rgba(200,160,96,0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(px, py, Math.max(pw,ph), 0, Math.PI/2);
+    ctx.stroke();
+  }
+
+  // stove burners
+  if (it.type === 'stove') {
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 1;
+    [[0.25,0.25],[0.75,0.25],[0.25,0.75],[0.75,0.75]].forEach(([fx,fy]) => {
+      ctx.beginPath();
+      ctx.arc(px+pw*fx, py+ph*fy, Math.min(pw,ph)*0.12, 0, Math.PI*2);
+      ctx.stroke();
+    });
+  }
+
+  // border
+  ctx.strokeStyle = sel ? '#f59e0b' : def.stroke;
+  ctx.lineWidth = sel ? 2 : 1.2;
+  ctx.strokeRect(px, py, pw, ph);
+
+  // label
+  if (pw > 16 && ph > 10) {
+    const fs = Math.min(10, Math.max(7, Math.min(pw,ph)/4));
+    ctx.font = `600 ${fs}px Inter`;
+    ctx.fillStyle = def.text;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const lbl = (it.label || def.label);
+    const maxChars = Math.floor(pw / (fs*0.6));
+    ctx.fillText(lbl.length > maxChars ? lbl.slice(0,maxChars-1)+'…' : lbl, px+pw/2, py+ph/2 - (ph>22?4:0));
+    if (ph > 22) {
+      ctx.font = `${Math.max(6, fs-1)}px Inter`;
+      ctx.fillStyle = def.text + '99';
+      ctx.fillText(`${fmtFt(ew)} × ${fmtFt(ed)}`, px+pw/2, py+ph/2+6);
+    }
+    ctx.textBaseline = 'alphabetic';
+  }
+}
+
+// ── Drawing — Elevation ───────────────────────────────────────────────────
+function drawElevation() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#06101f';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  const wall = S.elevWall;
+  const wallLen = (wall==='north'||wall==='south') ? S.room.w : S.room.d;
+  const wallH   = S.room.h;
+  const hs = Math.min((canvas.width-PAD*2)/wallLen, (canvas.height-PAD*2)/wallH);
+  const wPxW = wallLen*hs, wPxH = wallH*hs;
+  const eX = (canvas.width-wPxW)/2, eY = (canvas.height-wPxH)/2;
+
+  // wall surface
+  ctx.fillStyle = 'rgba(255,255,255,0.025)';
+  ctx.fillRect(eX, eY, wPxW, wPxH);
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(eX, eY, wPxW, wPxH);
+
+  // floor line
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(eX, eY+wPxH); ctx.lineTo(eX+wPxW, eY+wPxH); ctx.stroke();
+
+  // labels
+  ctx.fillStyle = '#64748b';
+  ctx.font = '11px Inter';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${wall.charAt(0).toUpperCase()+wall.slice(1)} Wall   ${fmtFt(wallLen)} wide × ${fmtFt(wallH)} tall`, canvas.width/2, eY - 8);
+
+  // height ticks
+  ctx.fillStyle = '#334155';
+  ctx.font = '9px Inter';
+  ctx.textAlign = 'right';
+  for (let h=0; h<=Math.floor(wallH); h++) {
+    const py = eY + wPxH - h*hs;
+    ctx.fillText(`${h}'`, eX-4, py+3);
+    ctx.strokeStyle = 'rgba(56,189,248,0.06)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(eX, py); ctx.lineTo(eX+wPxW, py); ctx.stroke();
+  }
+
+  // filter items near this wall
+  const THRESH = 2;
+  S.items.forEach(it => {
+    const ew = effW(it), ed = effD(it);
+    let pos, size, near;
+
+    if (wall==='north') { near = it.y <= THRESH;            pos = it.x; size = ew; }
+    else if (wall==='south') { near = (it.y+ed) >= S.room.d-THRESH; pos = it.x; size = ew; }
+    else if (wall==='west')  { near = it.x <= THRESH;            pos = it.y; size = ed; }
+    else                     { near = (it.x+ew) >= S.room.w-THRESH; pos = it.y; size = ed; }
+
+    if (!near) return;
+
+    const def = TYPES[it.type] || TYPES['base-cabinet'];
+    const sel = it.id === S.sel;
+    const px  = eX + pos*hs;
+    const py  = eY + wPxH - (it.floorH + it.h)*hs;
+    const pw  = size*hs;
+    const ph  = it.h*hs;
+
+    if (sel) {
+      ctx.strokeStyle = 'rgba(245,158,11,0.3)';
+      ctx.lineWidth = 7;
+      ctx.strokeRect(px-3, py-3, pw+6, ph+6);
+    }
+
+    ctx.fillStyle = def.fill;
+    ctx.fillRect(px, py, pw, ph);
+    ctx.strokeStyle = sel ? '#f59e0b' : def.stroke;
+    ctx.lineWidth = sel ? 2 : 1.2;
+    ctx.strokeRect(px, py, pw, ph);
+
+    if (pw > 16 && ph > 10) {
+      const fs = Math.min(10, Math.max(7, Math.min(pw,ph)/4));
+      ctx.font = `600 ${fs}px Inter`;
+      ctx.fillStyle = def.text;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(it.label || def.label, px+pw/2, py+ph/2);
+      ctx.textBaseline = 'alphabetic';
+    }
+  });
+}
+
+function render() {
+  if (S.view === 'plan') drawPlan();
+  else drawElevation();
+}
+
+// ── Mouse / drag ─────────────────────────────────────────────────────────
+let drag = { on:false, it:null, sx:0, sy:0, ox:0, oy:0 };
+
+function roomPt(cx, cy) {
+  return { x:(cx-offX)/scale, y:(cy-offY)/scale };
+}
+
+function hitTest(rx, ry) {
+  for (let i=S.items.length-1; i>=0; i--) {
+    const it = S.items[i];
+    if (rx>=it.x && rx<=it.x+effW(it) && ry>=it.y && ry<=it.y+effD(it)) return it;
+  }
+  return null;
+}
+
+canvas.addEventListener('mousedown', e => {
+  if (S.view !== 'plan') return;
+  const r = canvas.getBoundingClientRect();
+  const cx = e.clientX-r.left, cy = e.clientY-r.top;
+  calcLayout();
+  const {x,y} = roomPt(cx,cy);
+  const it = hitTest(x,y);
+  if (it) {
+    selectItem(it.id);
+    drag = { on:true, it, sx:cx, sy:cy, ox:it.x, oy:it.y };
+    canvas.style.cursor = 'grabbing';
+  } else {
+    selectItem(null);
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  const cx = e.clientX-r.left, cy = e.clientY-r.top;
+
+  if (drag.on) {
+    const dx = (cx-drag.sx)/scale, dy = (cy-drag.sy)/scale;
+    let nx = drag.ox+dx, ny = drag.oy+dy;
+    const it = drag.it;
+    const ew = effW(it), ed = effD(it);
+
+    // clamp
+    nx = Math.max(0, Math.min(S.room.w-ew, nx));
+    ny = Math.max(0, Math.min(S.room.d-ed, ny));
+
+    // snap to grid
+    if (S.snap) {
+      nx = snapV(nx); ny = snapV(ny);
+      // snap to walls
+      if (nx < SNAP_WALL)              nx = 0;
+      if (ny < SNAP_WALL)              ny = 0;
+      if (nx+ew > S.room.w-SNAP_WALL) nx = S.room.w-ew;
+      if (ny+ed > S.room.d-SNAP_WALL) ny = S.room.d-ed;
+      // snap to other items
+      S.items.forEach(o => {
+        if (o.id===it.id) return;
+        const ow=effW(o), od=effD(o);
+        if (Math.abs(nx+ew - o.x)     < SNAP_ITEM) nx = o.x-ew;
+        if (Math.abs(nx   -(o.x+ow))  < SNAP_ITEM) nx = o.x+ow;
+        if (Math.abs(ny+ed - o.y)     < SNAP_ITEM) ny = o.y-ed;
+        if (Math.abs(ny   -(o.y+od))  < SNAP_ITEM) ny = o.y+od;
+        if (Math.abs(nx   - o.x)      < SNAP_ITEM) nx = o.x;
+        if (Math.abs(ny   - o.y)      < SNAP_ITEM) ny = o.y;
+      });
+    }
+
+    it.x = nx; it.y = ny;
+    refreshProps();
+    render();
+    document.getElementById('status').textContent = `${it.label||''} → x:${fmtFt(nx)}  y:${fmtFt(ny)}`;
+    return;
+  }
+
+  // hover cursor
+  if (S.view==='plan') {
+    calcLayout();
+    const {x,y} = roomPt(cx,cy);
+    canvas.style.cursor = hitTest(x,y) ? 'grab' : 'default';
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  drag.on = false;
+  canvas.style.cursor = 'default';
+  document.getElementById('status').textContent = 'Ready · R = rotate, Del = delete';
+});
+canvas.addEventListener('mouseleave', () => { drag.on=false; canvas.style.cursor='default'; });
+
+// keyboard
+document.addEventListener('keydown', e => {
+  const tag = document.activeElement?.tagName;
+  if (tag==='INPUT' || tag==='TEXTAREA') return;
+  if (e.key==='Delete'||e.key==='Backspace') deleteSelected();
+  if (e.key==='r'||e.key==='R') rotateSelected();
+  if (e.key==='Escape') selectItem(null);
+});
+
+// ── Item management ───────────────────────────────────────────────────────
+window.addItem = type => {
+  const def = TYPES[type];
+  const it = {
+    id: nextId++, type,
+    label: def.label,
+    x: snapV(Math.max(0,(S.room.w-def.w)/2)),
+    y: snapV(Math.max(0,(S.room.d-def.d)/2)),
+    w: def.w, d: def.d, h: def.h,
+    floorH: def.floorH,
+    rotation: 0,
+  };
+  S.items.push(it);
+  selectItem(it.id);
+  render();
+};
+
+window.deleteSelected = () => {
+  if (!S.sel) return;
+  S.items = S.items.filter(i=>i.id!==S.sel);
+  selectItem(null);
+  render();
+};
+
+window.rotateSelected = () => {
+  const it = S.items.find(i=>i.id===S.sel);
+  if (!it) return;
+  it.rotation = (it.rotation+90)%360;
+  it.x = Math.max(0, Math.min(S.room.w-effW(it), it.x));
+  it.y = Math.max(0, Math.min(S.room.d-effD(it), it.y));
+  refreshProps(); render();
+};
+
+window.clearAll = () => {
+  if (!confirm('Clear all items from the canvas?')) return;
+  S.items = []; selectItem(null); render();
+};
+
+// ── Selection & properties ────────────────────────────────────────────────
+function selectItem(id) {
+  S.sel = id;
+  render();
+  const it = S.items.find(i=>i.id===id);
+  document.getElementById('no-sel').style.display  = it ? 'none' : 'block';
+  document.getElementById('props').style.display   = it ? 'block': 'none';
+  if (it) refreshProps();
+}
+
+function refreshProps() {
+  const it = S.items.find(i=>i.id===S.sel);
+  if (!it) return;
+  document.getElementById('p-label').value = it.label;
+  const fill = (id, v) => {
+    const {ft, inches} = fromFt(v);
+    document.getElementById(`${id}-ft`).value = ft;
+    document.getElementById(`${id}-in`).value = inches;
+  };
+  fill('p-w', it.w); fill('p-d', it.d); fill('p-h', it.h);
+  fill('p-fh', it.floorH); fill('p-x', it.x); fill('p-y', it.y);
+}
+
+window.setProp = (k, v) => {
+  const it = S.items.find(i=>i.id===S.sel);
+  if (it) { it[k]=v; render(); }
+};
+
+window.setDim = dim => {
+  const it = S.items.find(i=>i.id===S.sel);
+  if (!it) return;
+  const key = {'w':'p-w','d':'p-d','h':'p-h','floorH':'p-fh','x':'p-x','y':'p-y'}[dim];
+  const ft  = parseFloat(document.getElementById(`${key}-ft`).value)||0;
+  const inc = parseFloat(document.getElementById(`${key}-in`).value)||0;
+  it[dim] = Math.max(dim==='x'||dim==='y'?0:0.1, toFt(ft,inc));
+  // clamp position
+  if (dim==='x') it.x = Math.min(it.x, S.room.w-effW(it));
+  if (dim==='y') it.y = Math.min(it.y, S.room.d-effD(it));
+  render();
+};
+
+// ── Room ─────────────────────────────────────────────────────────────────
+window.applyRoom = () => {
+  S.room.w = toFt(document.getElementById('rw-ft').value, document.getElementById('rw-in').value);
+  S.room.d = toFt(document.getElementById('rd-ft').value, document.getElementById('rd-in').value);
+  S.room.h = toFt(document.getElementById('rh-ft').value, document.getElementById('rh-in').value);
+  render();
+};
+
+function setRoomInputs() {
+  const s = (id, v) => {
+    const {ft, inches} = fromFt(v);
+    document.getElementById(`${id}-ft`).value = ft;
+    document.getElementById(`${id}-in`).value = inches;
+  };
+  s('rw', S.room.w); s('rd', S.room.d); s('rh', S.room.h);
+}
+
+// ── View & tools ──────────────────────────────────────────────────────────
+window.setView = v => {
+  S.view = v;
+  document.getElementById('btn-plan').classList.toggle('active', v==='plan');
+  document.getElementById('btn-elev').classList.toggle('active', v==='elevation');
+  document.getElementById('wall-bar').classList.toggle('show', v==='elevation');
+  render();
+};
+
+window.setElevWall = wall => {
+  S.elevWall = wall;
+  ['n','s','w','e'].forEach(k => {
+    const map = {n:'north',s:'south',w:'west',e:'east'};
+    document.getElementById(`wb-${k}`).classList.toggle('active', map[k]===wall);
+  });
+  render();
+};
+
+window.toggleGrid = () => {
+  S.grid = !S.grid;
+  document.getElementById('btn-grid').classList.toggle('active', S.grid);
+  render();
+};
+
+window.toggleSnap = () => {
+  S.snap = !S.snap;
+  document.getElementById('btn-snap').classList.toggle('active', S.snap);
+};
+
+// ── Save / Load ───────────────────────────────────────────────────────────
+window.saveSlot = async slot => {
+  try {
+    await set(ref(db, `kitchen-designer/saves/${slot}`), {
+      room: S.room, items: S.items, savedAt: Date.now()
+    });
+    document.getElementById(`save-${slot}`).classList.add('filled');
+    showMsg(`Saved to slot ${slot.toUpperCase()} ✓`);
+  } catch(e) { showMsg('Save failed: ' + e.message); }
+};
+
+window.loadSlot = async slot => {
+  try {
+    const snap = await get(ref(db, `kitchen-designer/saves/${slot}`));
+    if (!snap.exists()) { showMsg(`Slot ${slot.toUpperCase()} is empty`); return; }
+    const data = snap.val();
+    S.room  = data.room;
+    S.items = data.items || [];
+    nextId  = Math.max(0, ...S.items.map(i=>i.id||0)) + 1;
+    // back-fill floorH if missing
+    S.items.forEach(it => { if (it.floorH===undefined) it.floorH = TYPES[it.type]?.floorH||0; });
+    setRoomInputs();
+    selectItem(null);
+    render();
+    showMsg(`Loaded slot ${slot.toUpperCase()} ✓`);
+  } catch(e) { showMsg('Load failed: ' + e.message); }
+};
+
+async function checkSlots() {
+  for (const s of ['a','b','c']) {
+    try {
+      const snap = await get(ref(db, `kitchen-designer/saves/${s}`));
+      if (snap.exists()) document.getElementById(`save-${s}`).classList.add('filled');
+    } catch {}
+  }
+}
+
+function showMsg(msg) {
+  const el = document.getElementById('save-msg');
+  el.textContent = msg;
+  setTimeout(() => el.textContent='', 3500);
+}
+
+// ── Export PNG ────────────────────────────────────────────────────────────
+window.exportPNG = () => {
+  const link = document.createElement('a');
+  link.download = `kitchen-${S.view}-${Date.now()}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+};
+
+// ── Init ──────────────────────────────────────────────────────────────────
+checkSlots();
+render();
+</script>
+</body>
+</html>
