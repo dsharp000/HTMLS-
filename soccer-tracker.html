@@ -183,6 +183,28 @@
     border-radius: 50%;
     box-shadow: 0 0 8px #7fff7f;
   }
+  #halftime-tick {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 14px;
+    background: #ffca28;
+    border-radius: 1px;
+  }
+  #halftime-tick::after {
+    content: 'HT';
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 7px;
+    color: #ffca28;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
 
   /* ── SCORE ── */
   #score-section {
@@ -604,6 +626,7 @@
       <div id="progress-fill" style="width:0%">
         <div id="progress-dot"></div>
       </div>
+      <div id="halftime-tick"></div>
     </div>
 
     <!-- Score -->
@@ -633,7 +656,7 @@
     <button class="btn-primary" onclick="openNewMatchModal()">⚽ New Match</button>
     <button class="btn-primary" id="btn-kickoff" onclick="kickOff()">▶ Kick Off</button>
     <button class="btn-ghost" id="btn-pause" onclick="pauseMatch()" disabled>⏸ Pause</button>
-    <button class="btn-ghost" id="btn-halftime" onclick="doHalftime()" disabled>⏱ Halftime</button>
+
     <button class="btn-ghost" id="btn-reset" onclick="resetMatch()">↺ Reset</button>
     <button class="btn-primary" id="btn-end" onclick="endMatch()">✓ Save Match</button>
   </div>
@@ -982,7 +1005,7 @@ function renderControls() {
   document.getElementById('btn-kickoff').textContent =
     phase === 'stopped' ? '▶ Kick Off' : '▶ Resume';
   document.getElementById('btn-pause').disabled    = phase !== 'running';
-  document.getElementById('btn-halftime').disabled = !hasMatch || phase === 'done';
+
   document.getElementById('btn-end').disabled      = !hasMatch;
 }
 
