@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parks & Hikes Within ~90 Min of Newton, NJ</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f4f6f0;
+      color: #2c3a22;
+      line-height: 1.6;
+    }
+
+    .page-header {
+      padding: 1.5rem 1.5rem 1rem;
+      background: #fff;
+      border-bottom: 1px solid #d4e8c2;
+    }
+
+    .page-header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #2c3a22;
+      margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+      color: #5a6e47;
+      font-size: 0.9rem;
+      font-style: italic;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin: 0.75rem 0 0;
+      font-size: 0.9rem;
+      color: #5a6e47;
+    }
+
+    .stats-bar span strong {
+      color: #3a6b2a;
+      font-size: 1.05rem;
+    }
+
+    #map {
+      width: 100%;
+      height: 420px;
+      border-bottom: 3px solid #d4e8c2;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem 1.2rem;
+      padding: 0.6rem 1.5rem;
+      background: #fff;
+      border-bottom: 1px solid #d4e8c2;
+      font-size: 0.8rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #3a4a2a;
+    }
+
+    .legend-dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 2px solid rgba(0,0,0,0.25);
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      padding: 0.75rem 1.5rem;
+      background: #f4f6f0;
+      border-bottom: 1px solid #d4e8c2;
+    }
+
+    .controls button {
+      padding: 0.35rem 0.9rem;
+      border: 1.5px solid #7aab5a;
+      border-radius: 20px;
+      background: white;
+      color: #3a6b2a;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .controls button:hover { background: #3a6b2a; color: white; }
+
+    .list-area {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 4rem;
+    }
+
+    section { margin-bottom: 2.25rem; }
+
+    h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #2c3a22;
+      background: #d4e8c2;
+      padding: 0.45rem 1rem;
+      border-radius: 6px;
+      margin-bottom: 0.6rem;
+    }
+
+    h3 {
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #5a6e47;
+      margin: 1rem 0 0.4rem 0.25rem;
+    }
+
+    .item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.12s;
+      user-select: none;
+    }
+
+    .item:hover { background: #eaf3e0; }
+
+    .item.checked { opacity: 0.5; }
+    .item.checked .item-name { text-decoration: line-through; color: #7a8f6a; }
+
+    .item.highlight {
+      background: #fff9c4;
+      outline: 2px solid #e6c84a;
+    }
+
+    .item input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      flex-shrink: 0;
+      margin-top: 3px;
+      accent-color: #3a6b2a;
+      cursor: pointer;
+    }
+
+    .cat-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 6px;
+      border: 1.5px solid rgba(0,0,0,0.2);
+    }
+
+    .item-body { flex: 1; }
+
+    .item-name {
+      font-weight: 600;
+      font-size: 0.93rem;
+      color: #2c3a22;
+    }
+
+    .item-meta {
+      font-size: 0.8rem;
+      color: #6a7f5a;
+      margin-top: 0.05rem;
+    }
+
+    .badge-boundary {
+      display: inline-block;
+      background: #fff3cd;
+      border: 1px solid #e6c84a;
+      color: #7a6010;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.05rem 0.4rem;
+      border-radius: 10px;
+      margin-left: 0.35rem;
+      vertical-align: middle;
+    }
+
+    .badge-dog {
+      display: inline-block;
+      font-size: 0.72rem;
+      margin-left: 0.35rem;
+      vertical-align: middle;
+      title: "Dogs welcome on leash";
+    }
+
+    .notes {
+      margin-top: 2rem;
+      background: #fff;
+      border: 1px solid #cdd9bb;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      font-size: 0.82rem;
+      color: #5a6e47;
+    }
+
+    .notes p { margin-bottom: 0.35rem; }
+    .notes p:last-child { margin-bottom: 0; }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Parks &amp; Hikes Within ~90 Min of Newton, NJ</h1>
+  <p class="subtitle">Drive times from 57 Cottage Ave, Newton, NJ 07860. Click a map marker to jump to that entry. 🐾 = dogs welcome on leash.</p>
+  <div class="stats-bar">
+    <span>Visited: <strong id="count-visited">0</strong></span>
+    <span>Remaining: <strong id="count-remaining">0</strong></span>
+    <span>Total: <strong id="count-total">0</strong></span>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#2e7d32"></div> NPS Unit</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div> NJ State Park/Forest</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e65100"></div> NY State Park/Forest</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#6a1b9a"></div> PA State Park</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#c62828"></div> Nature Preserve / Wildlife Refuge</div>
+  <div class="legend-item"><span style="font-size:0.8rem;">🐾 Dogs on leash welcome</span></div>
+</div>
+
+<div class="controls">
+  <button onclick="checkAll()">Check All</button>
+  <button onclick="uncheckAll()">Uncheck All</button>
+  <button onclick="clearStorage()">Reset</button>
+</div>
+
+<div class="list-area">
+
+  <!-- ===================== NPS ===================== -->
+  <section>
+    <h2>National Park Service Units</h2>
+
+    <div class="item" id="item-0" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#2e7d32"></div>
+      <div class="item-body">
+        <div class="item-name">Delaware Water Gap National Recreation Area <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~20–40 min &mdash; Hardwick/Columbia, NJ &amp; PA &mdash; 70,000 acres along 40 miles of the Delaware River; 100+ miles of trails including 27 miles of the Appalachian Trail; swimming, paddling, waterfalls</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-1" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#2e7d32"></div>
+      <div class="item-body">
+        <div class="item-name">Appalachian National Scenic Trail (NJ Section) <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~10–40 min &mdash; Multiple access points, Sussex County, NJ &mdash; 72 miles through NJ crossing Kittatinny Ridge; access at Culvers Gap, Brink Road, Millbrook, High Point</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-2" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#2e7d32"></div>
+      <div class="item-body">
+        <div class="item-name">Wallkill River National Wildlife Refuge <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~15 min &mdash; Sussex, NJ &mdash; 8,000+ acres of wetlands, grasslands, and upland forest; Liberty Loop and Timberdoodle Trails; exceptional birding</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-3" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#2e7d32"></div>
+      <div class="item-body">
+        <div class="item-name">Middle Delaware National Scenic &amp; Recreational River <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~25 min &mdash; Warren/Sussex counties, NJ &mdash; 40-mile river corridor within Delaware Water Gap NRA; canoe/kayak, fishing, riverside trails</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-4" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#2e7d32"></div>
+      <div class="item-body">
+        <div class="item-name">Morristown National Historical Park</div>
+        <div class="item-meta">~60 min &mdash; Morristown, NJ &mdash; Washington's Revolutionary War winter encampment; Jockey Hollow trails through old-growth forest; 27 miles of trails</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== NJ STATE ===================== -->
+  <section>
+    <h2>New Jersey State Parks &amp; Forests</h2>
+
+    <h3>Sussex County — Immediate Area (~5–30 min)</h3>
+
+    <div class="item" id="item-5" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#1565c0"></div>
+      <div class="item-body">
+        <div class="item-name">High Point State Park <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~20 min &mdash; Sussex, NJ &mdash; 15,413 acres; NJ's highest point at 1,803 ft; 50+ miles of trails; AT corridor; Lake Marcia swimming; spectacular ridge views</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-6" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#1565c0"></div>
+      <div class="item-body">
+        <div class="item-name">Stokes State Forest <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~15 min &mdash; Branchville, NJ &mdash; 16,000+ acres on Kittatinny Ridge; 46 miles of trails including AT; Tillman Ravine, Sunrise Mountain overlook; camping</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-7" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#1565c0"></div>
+      <div class="item-body">
+        <div class="item-name">Swartswood State Park <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~10 min &mdash; Swartswood, NJ &mdash; 1,500+ acres; two glacial lakes; boating, swimming, fishing; wooded trails; excellent birding</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-8" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#1565c0"></div>
+      <div class="item-body">
+        <div class="item-name">Kittatinny Valley State Park <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~10 min &mdash; Andover, NJ &mdash; 4,000+ acres; Lake Aeroflex; Paulinskill Valley Trail (27 mi) and Sussex Branch Trail (20 mi) rail-trails; fishing, birding</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-9" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#1565c0"></div>
+      <div class="item-body">
+        <div class="item-name">Jenny Jump State Forest <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~25 min &mdash; Hope, NJ &mdash; 4,800 acres; dramatic ridge views over Great Meadows; 12 miles of trails; camping; ghost lake</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-10" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#1565c0"></div>
+      <div class="item-body">
+        <div class="item-name">Worthington State Forest <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~25 min &mdash; Columbia, NJ &mdash; 6,600 acres along the Delaware River at the Water Gap; AT corridor; rugged ridge hiking; Sunfish Pond (NJ's first natural landmark)</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-11" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#1565c0"></div>
+      <div class="item-body">
+        <div class="item-name">Allamuchy Mountain State Park <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~25 min &mdash; Hackettstown, NJ &mdash; 9,200 acres; Stephens Section on the Musconetcong River; Allamuchy Section with 35+ miles of trails; mountain biking</div>
+      </div>
+    </div>
+
+    <h3>Morris/Warren Counties (~30–60 min)</h3>
+
+    <div class="item" id="item-12" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#1565c0"></div>
+      <div class="item-body">
+        <div class="item-name">Ringwood State Park <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~55 min &mdash; Ringwood, NJ &mdash; 5,000+ acres on Ramapo Ridge; Skylands Manor; Shepherd Lake; 35+ miles of trails connecting to NY Ramapo</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-13" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#1565c0"></div>
+      <div class="item-body">
+        <div class="item-name">Wawayanda State Park <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~40 min &mdash; Hewitt, NJ &mdash; 16,000+ acres; Wawayanda Lake; AT corridor; 60 miles of trails; connections to NY Sterling Forest; camping</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-14" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#1565c0"></div>
+      <div class="item-body">
+        <div class="item-name">Ramapo Mountain State Forest <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~60 min &mdash; Oakland, NJ &mdash; 4,600 acres; Ramapo Lake; dramatic rocky ridges; connects to Ringwood and NY Ramapo; great views of NYC skyline</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-15" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#1565c0"></div>
+      <div class="item-body">
+        <div class="item-name">Chestnut Ridge County Park / Mahlon Dickerson Reservation <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~35 min &mdash; Jefferson, NJ &mdash; 3,200+ acres; Morris County's largest park; 20+ miles of trails; Headley Overlook; camping; AT access</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-16" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#1565c0"></div>
+      <div class="item-body">
+        <div class="item-name">Delaware &amp; Raritan Canal State Park <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~55 min &mdash; Various, NJ &mdash; 70-mile linear park along historic D&amp;R Canal; flat towpath trail; great for cycling and walking</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-17" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#1565c0"></div>
+      <div class="item-body">
+        <div class="item-name">Voorhees State Park <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~50 min &mdash; Glen Gardner, NJ &mdash; 1,400 acres; hilltop observatory; 8 miles of trails; camping; quiet and uncrowded</div>
+      </div>
+    </div>
+
+    <h3>Passaic/Bergen Counties (~60–85 min)</h3>
+
+    <div class="item" id="item-18" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#1565c0"></div>
+      <div class="item-body">
+        <div class="item-name">Norvin Green State Forest <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~65 min &mdash; Bloomingdale, NJ &mdash; 5,400 acres in Ramapo Mountains; rugged rocky terrain; Wyanokie High Point views; connects to Wawayanda and Ringwood</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-19" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#1565c0"></div>
+      <div class="item-body">
+        <div class="item-name">Abram S. Hewitt State Forest <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~55 min &mdash; West Milford, NJ &mdash; 2,000 acres bordering NY; Bearfort Ridge; Bearfort Waters boardwalk trail; connects to Wawayanda</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== NY STATE ===================== -->
+  <section>
+    <h2>New York State Parks &amp; Forests</h2>
+
+    <h3>Orange/Rockland Counties (~45–80 min)</h3>
+
+    <div class="item" id="item-20" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#e65100"></div>
+      <div class="item-body">
+        <div class="item-name">Sterling Forest State Park <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~55 min &mdash; Tuxedo, NY &mdash; 22,000 acres straddling NJ/NY border; AT corridor; 35+ miles of trails; Sterling Lake; excellent birding; no entry fee</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-21" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#e65100"></div>
+      <div class="item-body">
+        <div class="item-name">Harriman State Park <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~70 min &mdash; Harriman, NY &mdash; 47,000 acres; 200+ miles of marked trails; glacial lakes; AT corridor; one of the great hiking parks in the Northeast</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-22" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#e65100"></div>
+      <div class="item-body">
+        <div class="item-name">Bear Mountain State Park <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~75 min &mdash; Bear Mountain, NY &mdash; 5,000+ acres; Perkins Memorial Tower at 1,305 ft; Appalachian Trail; Hessian Lake; dramatic Hudson Valley views</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-23" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#e65100"></div>
+      <div class="item-body">
+        <div class="item-name">Ramapo Valley County Reservation (NY) <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~70 min &mdash; Mahwah, NY &mdash; 4,000+ acres; Ramapo Lake; rocky ridges; connects to Ringwood NJ and Harriman NY; excellent varied terrain</div>
+      </div>
+    </div>
+
+    <h3>Ulster County (~75–90 min)</h3>
+
+    <div class="item" id="item-24" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#e65100"></div>
+      <div class="item-body">
+        <div class="item-name">Minnewaska State Park Preserve <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~85 min &mdash; Kerhonkson, NY &mdash; 22,000 acres in the Shawangunks; sky lakes, carriage roads, dramatic cliffs; world-class rock climbing; Verkeerderkill Falls <span class="badge-boundary">~90 min</span></div>
+      </div>
+    </div>
+
+    <div class="item" id="item-25" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#e65100"></div>
+      <div class="item-body">
+        <div class="item-name">Sam's Point Preserve (Minnewaska) <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~85 min &mdash; Cragsmoor, NY &mdash; Shawangunk Ridge; ice caves, dwarf pine barrens, 360° views; one of the most unique landscapes in the Northeast <span class="badge-boundary">~90 min</span></div>
+      </div>
+    </div>
+
+    <div class="item" id="item-26" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#e65100"></div>
+      <div class="item-body">
+        <div class="item-name">Bashakill Wildlife Management Area <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~50 min &mdash; Wurtsboro, NY &mdash; 3,000+ acres; largest freshwater wetland in southern NY; exceptional birding; flat canal towpath walks; canoe/kayak</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-27" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#e65100"></div>
+      <div class="item-body">
+        <div class="item-name">Catskill Center / Catskill Park (southern edge) <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~85–90 min &mdash; Various, NY &mdash; Southern gateway to the 700,000-acre Catskill Park; Slide Mountain, Table, Peekamoose; wilderness hiking <span class="badge-boundary">~90 min</span></div>
+      </div>
+    </div>
+
+    <h3>Sullivan County (~45–75 min)</h3>
+
+    <div class="item" id="item-28" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#e65100"></div>
+      <div class="item-body">
+        <div class="item-name">Delaware State Forest (NY) / Upper Delaware Scenic Byway <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~45 min &mdash; Barryville/Narrowsburg, NY &mdash; Upper Delaware River corridor; riverside trails, fishing, paddling; Hawks Nest overlook</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-29" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#e65100"></div>
+      <div class="item-body">
+        <div class="item-name">Mongaup Valley Wildlife Management Area <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~55 min &mdash; Mongaup Valley, NY &mdash; 7,000+ acres; bald eagle viewing (winter); Mongaup Falls; reservoir system; excellent birding and hunting</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-30" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#e65100"></div>
+      <div class="item-body">
+        <div class="item-name">Bethel Woods / Sullivan County Rail Trail <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~65 min &mdash; Bethel, NY &mdash; Historic Woodstock Festival site; rail trail through rural Sullivan County; Museum at Bethel Woods</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PA STATE ===================== -->
+  <section>
+    <h2>Pennsylvania State Parks</h2>
+
+    <h3>Pike/Monroe Counties (~30–75 min)</h3>
+
+    <div class="item" id="item-31" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#6a1b9a"></div>
+      <div class="item-body">
+        <div class="item-name">Delaware Water Gap NRA (PA side) <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~35 min &mdash; Dingmans Ferry, PA &mdash; PA side of the NRA; Dingmans Falls (tallest waterfall in PA); Silverthread Falls; family-friendly boardwalk trails</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-32" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#6a1b9a"></div>
+      <div class="item-body">
+        <div class="item-name">Pocono Environmental Education Center Area <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~35 min &mdash; Dingmans Ferry, PA &mdash; Within Delaware Water Gap NRA; educational trails; Pocono region access point</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-33" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#6a1b9a"></div>
+      <div class="item-body">
+        <div class="item-name">Delaware State Forest (PA) <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~40 min &mdash; Swiftwater, PA &mdash; 750,000+ acres of state forest land in the Poconos; extensive trail network; Bruce Lake Natural Area; wilderness camping</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-34" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#6a1b9a"></div>
+      <div class="item-body">
+        <div class="item-name">Promised Land State Park <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~60 min &mdash; Greentown, PA &mdash; 3,000 acres; two lakes; 30 miles of trails through Delaware State Forest; excellent swimming and camping</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-35" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#6a1b9a"></div>
+      <div class="item-body">
+        <div class="item-name">Lehigh Gorge State Park <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~75 min &mdash; White Haven, PA &mdash; 4,548 acres; dramatic gorge along the Lehigh River; rail-trail; whitewater rafting; stunning scenery <span class="badge-boundary">~90 min</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PRESERVES ===================== -->
+  <section>
+    <h2>Nature Preserves &amp; Wildlife Areas</h2>
+
+    <h3>Sussex/Warren County NJ Preserves</h3>
+
+    <div class="item" id="item-36" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#c62828"></div>
+      <div class="item-body">
+        <div class="item-name">Johnsonburg Swamp Preserve (The Nature Conservancy) <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~15 min &mdash; Johnsonburg, NJ &mdash; 1,200 acres; Warren &amp; Sussex counties; 4 miles of trails through pristine wetlands; rare plants; exceptional wildlife habitat</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-37" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#c62828"></div>
+      <div class="item-body">
+        <div class="item-name">Paulinskill Valley Trail <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~5–20 min &mdash; Various, Warren/Sussex counties, NJ &mdash; 27-mile rail trail through forests, wetlands, and farmland; flat and easy; multiple trailheads</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-38" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#c62828"></div>
+      <div class="item-body">
+        <div class="item-name">Sussex Branch Trail <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~5 min &mdash; Newton, NJ &mdash; 20-mile rail trail from Branchville to Stanhope; passes right through Sussex County; easy flat walking and biking</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-39" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#c62828"></div>
+      <div class="item-body">
+        <div class="item-name">Whittingham Wildlife Management Area <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~20 min &mdash; Fredon, NJ &mdash; 2,200+ acres; grasslands, marshes, upland forest; excellent birding especially for grassland species; hunting permitted</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-40" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#c62828"></div>
+      <div class="item-body">
+        <div class="item-name">Black Creek Preserve / Ridge &amp; Valley Conservancy <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~20 min &mdash; Warren County, NJ &mdash; Multiple Ridge &amp; Valley Conservancy properties in Warren/Sussex counties; open meadows, forested ridges, stream corridors</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-41" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#c62828"></div>
+      <div class="item-body">
+        <div class="item-name">Pequest Wildlife Management Area <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~20 min &mdash; Oxford, NJ &mdash; 5,000+ acres along the Pequest River; trout hatchery; walking trails; hunting and fishing; good birding</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-42" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#c62828"></div>
+      <div class="item-body">
+        <div class="item-name">Hyper Humus / Sparta Mountain WMA <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~25 min &mdash; Sparta, NJ &mdash; 3,500+ acres on Sparta Mountain; rugged trails; connections to Wawayanda; mountain biking popular</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-43" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#c62828"></div>
+      <div class="item-body">
+        <div class="item-name">Flatbrook-Roy Wildlife Management Area <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~20 min &mdash; Sandyston, NJ &mdash; 9,000+ acres; Flat Brook (premier NJ trout stream); AT corridor; adjacent to Stokes State Forest</div>
+      </div>
+    </div>
+
+    <h3>New York Preserves (~40–80 min)</h3>
+
+    <div class="item" id="item-44" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#c62828"></div>
+      <div class="item-body">
+        <div class="item-name">Shawangunk Ridge Trail Corridor <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~70 min &mdash; Wurtsboro Hills, NY &mdash; 70-mile trail along the Shawangunk Ridge from NJ border to Rosendale; ridge-top walking with sweeping views</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-45" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#c62828"></div>
+      <div class="item-body">
+        <div class="item-name">Wurtsboro Ridge / Yankee Lake Area <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~45 min &mdash; Wurtsboro, NY &mdash; Popular soaring site with ridge views; hiking trails on the Shawangunk Ridge; quiet and uncrowded</div>
+      </div>
+    </div>
+
+    <div class="item" id="item-46" onclick="toggle(this)">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
+      <div class="cat-dot" style="background:#c62828"></div>
+      <div class="item-body">
+        <div class="item-name">Hudson Highlands State Park Preserve <span class="badge-dog">🐾</span></div>
+        <div class="item-meta">~80 min &mdash; Cold Spring, NY &mdash; 7,000+ acres on the Hudson River; rugged trails; Bull Hill (Mount Taurus); stunning river views <span class="badge-boundary">~90 min</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="notes">
+    <p><strong>Notes:</strong></p>
+    <p>Drive times are estimates from 57 Cottage Ave, Newton, NJ 07860 without traffic. Entries marked <span class="badge-boundary">~90 min</span> may exceed 90 minutes in traffic.</p>
+    <p>🐾 indicates dogs are generally welcome on leash — always verify current rules at each park before visiting, as regulations can vary by section.</p>
+    <p>The Delaware Water Gap NRA is practically in your backyard — Worthington State Forest and Stokes are within 15–25 minutes. You're surrounded by incredible hiking.</p>
+    <p>Your progress is saved automatically in your browser.</p>
+  </div>
+
+</div>
+
+<script>
+  const STORAGE_KEY = 'parks-checklist-newton-nj';
+
+  const PARKS = [
+    // NPS
+    [0,  'Delaware Water Gap NRA',         41.0534, -74.9240, '#2e7d32'],
+    [1,  'Appalachian Trail (NJ)',          41.1800, -74.7900, '#2e7d32'],
+    [2,  'Wallkill River NWR',             41.1854, -74.5768, '#2e7d32'],
+    [3,  'Middle Delaware Scenic River',   41.0200, -74.8800, '#2e7d32'],
+    [4,  'Morristown NHP',                 40.7968, -74.4773, '#2e7d32'],
+    // NJ State
+    [5,  'High Point State Park',          41.3168, -74.6637, '#1565c0'],
+    [6,  'Stokes State Forest',            41.2326, -74.7954, '#1565c0'],
+    [7,  'Swartswood State Park',          41.0804, -74.8176, '#1565c0'],
+    [8,  'Kittatinny Valley State Park',   41.0268, -74.7437, '#1565c0'],
+    [9,  'Jenny Jump State Forest',        40.8868, -74.8876, '#1565c0'],
+    [10, 'Worthington State Forest',       40.9726, -75.0826, '#1565c0'],
+    [11, 'Allamuchy Mountain State Park',  40.9226, -74.8126, '#1565c0'],
+    [12, 'Ringwood State Park',            41.1226, -74.2426, '#1565c0'],
+    [13, 'Wawayanda State Park',           41.1726, -74.4176, '#1565c0'],
+    [14, 'Ramapo Mountain State Forest',   41.0576, -74.2876, '#1565c0'],
+    [15, 'Mahlon Dickerson Reservation',   41.0176, -74.6376, '#1565c0'],
+    [16, 'Delaware & Raritan Canal SP',    40.5226, -74.8576, '#1565c0'],
+    [17, 'Voorhees State Park',            40.7026, -74.8876, '#1565c0'],
+    [18, 'Norvin Green State Forest',      41.0076, -74.3176, '#1565c0'],
+    [19, 'Abram S. Hewitt State Forest',   41.1476, -74.4376, '#1565c0'],
+    // NY State
+    [20, 'Sterling Forest State Park',     41.2026, -74.2876, '#e65100'],
+    [21, 'Harriman State Park',            41.2376, -74.1276, '#e65100'],
+    [22, 'Bear Mountain State Park',       41.3126, -74.0026, '#e65100'],
+    [23, 'Ramapo Valley County Reservation',41.0926, -74.1676, '#e65100'],
+    [24, 'Minnewaska State Park Preserve', 41.7326, -74.2376, '#e65100'],
+    [25, "Sam's Point Preserve",           41.6676, -74.3576, '#e65100'],
+    [26, 'Bashakill WMA',                  41.5376, -74.5476, '#e65100'],
+    [27, 'Catskill Park (south)',          41.9026, -74.4176, '#e65100'],
+    [28, 'Upper Delaware / Hawks Nest',    41.4376, -74.7826, '#e65100'],
+    [29, 'Mongaup Valley WMA',             41.5276, -74.7076, '#e65100'],
+    [30, 'Bethel Woods / Rail Trail',      41.6976, -74.9076, '#e65100'],
+    // PA State
+    [31, 'Delaware Water Gap (PA/Dingmans)',41.2276, -74.9026, '#6a1b9a'],
+    [32, 'PEEC Area',                      41.2126, -74.8676, '#6a1b9a'],
+    [33, 'Delaware State Forest (PA)',     41.1576, -75.1076, '#6a1b9a'],
+    [34, 'Promised Land State Park',       41.3076, -75.2076, '#6a1b9a'],
+    [35, 'Lehigh Gorge State Park',        41.0668, -75.7176, '#6a1b9a'],
+    // Preserves
+    [36, 'Johnsonburg Swamp Preserve',     40.9476, -74.9576, '#c62828'],
+    [37, 'Paulinskill Valley Trail',       40.9876, -74.9076, '#c62828'],
+    [38, 'Sussex Branch Trail',            41.0376, -74.7476, '#c62828'],
+    [39, 'Whittingham WMA',               41.0576, -74.7976, '#c62828'],
+    [40, 'Black Creek / Ridge & Valley',   40.9276, -74.9276, '#c62828'],
+    [41, 'Pequest WMA',                    40.8976, -74.9776, '#c62828'],
+    [42, 'Sparta Mountain WMA',            41.0276, -74.5876, '#c62828'],
+    [43, 'Flatbrook-Roy WMA',             41.1476, -74.8276, '#c62828'],
+    [44, 'Shawangunk Ridge Trail',         41.5576, -74.4776, '#c62828'],
+    [45, 'Wurtsboro Ridge',               41.5776, -74.4876, '#c62828'],
+    [46, 'Hudson Highlands SP',            41.4276, -73.9876, '#c62828'],
+  ];
+
+  // Map
+  const map = L.map('map').setView([41.05, -74.75], 9);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 18
+  }).addTo(map);
+
+  // Home marker
+  const homeIcon = L.divIcon({
+    html: '<div style="font-size:20px;line-height:1;filter:drop-shadow(0 1px 2px #000)">&#9733;</div>',
+    className: '', iconAnchor: [10, 10]
+  });
+  L.marker([41.0483, -74.7526], { icon: homeIcon })
+    .addTo(map)
+    .bindTooltip('Newton, NJ (home base)', { permanent: false });
+
+  const markers = {};
+  PARKS.forEach(([id, name, lat, lng, color]) => {
+    const marker = L.circleMarker([lat, lng], {
+      radius: 7, fillColor: color,
+      color: 'rgba(0,0,0,0.4)', weight: 1.5,
+      fillOpacity: 0.85, opacity: 1
+    }).addTo(map);
+    marker.bindTooltip(name, { sticky: true });
+    marker.on('click', () => {
+      const el = document.getElementById('item-' + id);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('highlight');
+      setTimeout(() => el.classList.remove('highlight'), 1800);
+    });
+    markers[id] = { marker, color };
+  });
+
+  function updateMarkerOpacity(id, checked) {
+    const m = markers[id];
+    if (!m) return;
+    const op = checked ? 0.25 : 0.85;
+    m.marker.setStyle({ fillOpacity: op, opacity: op });
+  }
+
+  // Checklist
+  function getItems() { return document.querySelectorAll('.item'); }
+
+  function toggle(item) {
+    const cb = item.querySelector('input');
+    cb.checked = !cb.checked;
+    item.classList.toggle('checked', cb.checked);
+    const id = parseInt(item.id.replace('item-', ''));
+    updateMarkerOpacity(id, cb.checked);
+    saveState();
+  }
+
+  function toggleCheck(cb) {
+    const item = cb.closest('.item');
+    item.classList.toggle('checked', cb.checked);
+    const id = parseInt(item.id.replace('item-', ''));
+    updateMarkerOpacity(id, cb.checked);
+    saveState();
+  }
+
+  function saveState() {
+    const state = {};
+    getItems().forEach((item, i) => { state[i] = item.querySelector('input').checked; });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    updateStats();
+  }
+
+  function loadState() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    const state = saved ? JSON.parse(saved) : {};
+    getItems().forEach((item, i) => {
+      if (state[i]) {
+        item.querySelector('input').checked = true;
+        item.classList.add('checked');
+        const id = parseInt(item.id.replace('item-', ''));
+        updateMarkerOpacity(id, true);
+      }
+    });
+    updateStats();
+  }
+
+  function updateStats() {
+    const items = getItems();
+    const total   = items.length;
+    const visited = Array.from(items).filter(i => i.querySelector('input').checked).length;
+    document.getElementById('count-total').textContent     = total;
+    document.getElementById('count-visited').textContent   = visited;
+    document.getElementById('count-remaining').textContent = total - visited;
+  }
+
+  function checkAll() {
+    getItems().forEach(item => {
+      item.querySelector('input').checked = true;
+      item.classList.add('checked');
+      const id = parseInt(item.id.replace('item-', ''));
+      updateMarkerOpacity(id, true);
+    });
+    saveState();
+  }
+
+  function uncheckAll() {
+    getItems().forEach(item => {
+      item.querySelector('input').checked = false;
+      item.classList.remove('checked');
+      const id = parseInt(item.id.replace('item-', ''));
+      updateMarkerOpacity(id, false);
+    });
+    saveState();
+  }
+
+  function clearStorage() {
+    localStorage.removeItem(STORAGE_KEY);
+    uncheckAll();
+  }
+
+  loadState();
+</script>
+</body>
+</html>
