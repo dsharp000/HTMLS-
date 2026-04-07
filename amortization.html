@@ -247,6 +247,115 @@
       color: #e2e8f0;
     }
 
+    /* ── Zestimate block ── */
+    .zestimate-block {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .zestimate-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .zestimate-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #64748b;
+    }
+
+    .zillow-link {
+      font-size: 0.75rem;
+      color: #38bdf8;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.2s;
+    }
+    .zillow-link:hover { color: #7dd3fc; }
+
+    .zestimate-input-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .zestimate-input-row input {
+      flex: 1;
+      padding: 10px 14px;
+      background: #0f172a;
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    .zestimate-input-row input:focus { outline: none; border-color: #38bdf8; }
+    .zestimate-input-row input::placeholder { color: #334155; }
+
+    .zestimate-save-btn {
+      padding: 10px 16px;
+      background: #38bdf8;
+      color: #0f172a;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .zestimate-save-btn:hover { background: #7dd3fc; }
+
+    .zestimate-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .zest-stat {
+      background: #0f172a;
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .zest-stat-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #475569;
+    }
+
+    .zest-stat-value {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .zest-stat-value.positive { color: #4ade80; }
+    .zest-stat-value.negative { color: #f87171; }
+
+    .zest-empty {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #334155;
+      padding: 8px 0;
+    }
+
     .back-link {
       margin-top: 40px;
       font-size: 0.8rem;
@@ -342,6 +451,24 @@
   </div>
 </div>
 
+  <div class="zestimate-block">
+    <div class="zestimate-header">
+      <span class="zestimate-title">Zestimate &amp; Equity</span>
+      <a class="zillow-link" href="https://www.zillow.com/homedetails/57-Cottage-Ave-Newton-NJ-07860/39928380_zpid/" target="_blank" rel="noopener">
+        🏡 Open on Zillow ↗
+      </a>
+    </div>
+    <div class="zestimate-input-row">
+      <input type="number" id="zestimate-input" placeholder="Enter Zestimate (e.g. 425000)" min="0">
+      <button class="zestimate-save-btn" onclick="saveZestimate()">Save</button>
+    </div>
+    <div id="zestimate-stats">
+      <p class="zest-empty">Enter a Zestimate above to see your equity breakdown.</p>
+    </div>
+  </div>
+
+</div>
+
 <a class="back-link" href="index.html">← Back to Razor's Edge</a>
 
 <script>
@@ -423,6 +550,70 @@
 
   monthSelect.addEventListener('change', update);
   yearSelect.addEventListener('change', update);
+
+  // ── Zestimate ──────────────────────────────────────────────────────
+  const PURCHASE_PRICE = 381000;
+  const ZEST_KEY = 'lake-zestimate';
+
+  function saveZestimate() {
+    const raw = document.getElementById('zestimate-input').value.trim();
+    const val = parseFloat(raw);
+    if (!val || val < 1000) return;
+    localStorage.setItem(ZEST_KEY, val);
+    renderZestimate(val);
+  }
+
+  function renderZestimate(zestimate) {
+    // Get current balance from whatever month is selected, or starting balance
+    const m = monthSelect.value, y = yearSelect.value;
+    const key = `${y}-${m}`;
+    const row = lookup[key];
+    const balance = row ? row[3] : STARTING_BALANCE;
+
+    const equity        = zestimate - balance;
+    const appreciation  = zestimate - PURCHASE_PRICE;
+    const ltv           = (balance / zestimate) * 100;
+
+    const statsEl = document.getElementById('zestimate-stats');
+    statsEl.innerHTML = `
+      <div class="zestimate-stats">
+        <div class="zest-stat">
+          <div class="zest-stat-label">Zestimate</div>
+          <div class="zest-stat-value">${dollar(zestimate)}</div>
+        </div>
+        <div class="zest-stat">
+          <div class="zest-stat-label">Est. Equity</div>
+          <div class="zest-stat-value ${equity >= 0 ? 'positive' : 'negative'}">${dollar(equity)}</div>
+        </div>
+        <div class="zest-stat">
+          <div class="zest-stat-label">Appreciation</div>
+          <div class="zest-stat-value ${appreciation >= 0 ? 'positive' : 'negative'}">${appreciation >= 0 ? '+' : ''}${dollar(appreciation)}</div>
+        </div>
+        <div class="zest-stat">
+          <div class="zest-stat-label">Loan-to-Value</div>
+          <div class="zest-stat-value">${ltv.toFixed(1)}%</div>
+        </div>
+        <div class="zest-stat">
+          <div class="zest-stat-label">Purchase Price</div>
+          <div class="zest-stat-value">${dollar(PURCHASE_PRICE)}</div>
+        </div>
+        <div class="zest-stat">
+          <div class="zest-stat-label">Loan Balance</div>
+          <div class="zest-stat-value">${dollar(balance)}</div>
+        </div>
+      </div>
+    `;
+    document.getElementById('zestimate-input').value = zestimate;
+  }
+
+  // Load saved Zestimate on page open
+  const savedZest = localStorage.getItem(ZEST_KEY);
+  if (savedZest) renderZestimate(parseFloat(savedZest));
+
+  // Re-render Zestimate stats whenever month changes (balance changes)
+  const origUpdate = update;
+  monthSelect.addEventListener('change', () => { const z = localStorage.getItem(ZEST_KEY); if (z) renderZestimate(parseFloat(z)); });
+  yearSelect.addEventListener('change',  () => { const z = localStorage.getItem(ZEST_KEY); if (z) renderZestimate(parseFloat(z)); });
 
   // Run on load
   update();
