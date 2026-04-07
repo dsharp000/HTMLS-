@@ -766,7 +766,7 @@ const db  = getDatabase(app);
 
 // ── CONSTANTS ──────────────────────────────────────────────────────────────
 const ROSTER_NAMES = ['Abel','Anthony','Blake','Braxton','Graham','Louis','Luis','Maddox','Roman','Sila','Xavier'];
-const POSITIONS    = ['','GK','LB','CB','RB','LM','CM','RM','LW','ST','RW','SUB'];
+const POSITIONS    = ['','GK','DEF','MID','FOR'];
 
 function makePlayers() {
   return ROSTER_NAMES.map((name, i) => ({
@@ -875,7 +875,7 @@ function fmtTime(secs) {
 }
 
 function matchMinute() {
-  return Math.floor(currentElapsed() / 60);
+  return currentElapsed(); // returns total seconds for precise MM:SS logging
 }
 
 function halfLabel() {
@@ -1057,14 +1057,19 @@ function renderSubLog(p) {
   if (!p.subLog || p.subLog.length === 0) {
     return `<li><span class="sub-empty">No substitutions yet</span></li>`;
   }
-  return p.subLog.map(entry => `
-    <li>
-      <span class="${entry.type === 'on' ? 'sub-on' : 'sub-off'}">
-        ${entry.type === 'on' ? '▶ ON' : '◼ OFF'}
-      </span>
-      min ${entry.matchMinute}'
-    </li>
-  `).join('');
+  return p.subLog.map(entry => {
+    const totalSec = Math.round(entry.matchMinute || 0);
+    const mm = Math.floor(totalSec / 60).toString().padStart(2,'0');
+    const ss = (totalSec % 60).toString().padStart(2,'0');
+    return `
+      <li>
+        <span class="${entry.type === 'on' ? 'sub-on' : 'sub-off'}">
+          ${entry.type === 'on' ? '▶ ON' : '◼ OFF'}
+        </span>
+        ${mm}:${ss}
+      </li>
+    `;
+  }).join('');
 }
 
 // ── SCREEN NAVIGATION ──────────────────────────────────────────────────────
@@ -1384,9 +1389,12 @@ function renderMatchHistory() {
       : 0;
     const playerRows = m.players ? m.players.map(p => {
       const mins = Math.round((p.totalTime||0)/60);
-      const subStr = (p.subLog||[]).map(e =>
-        `<span class="${e.type==='on'?'sub-on':'sub-off'}">${e.type==='on'?'▶':'◼'} ${e.matchMinute}'</span>`
-      ).join(' ');
+      const subStr = (p.subLog||[]).map(e => {
+        const sec = Math.round(e.matchMinute||0);
+        const mm  = Math.floor(sec/60).toString().padStart(2,'0');
+        const ss  = (sec%60).toString().padStart(2,'0');
+        return `<span class="${e.type==='on'?'sub-on':'sub-off'}">${e.type==='on'?'▶':'◼'} ${mm}:${ss}</span>`;
+      }).join(' ');
       return `<tr>
         <td>${p.name}</td>
         <td>${mins} min</td>
