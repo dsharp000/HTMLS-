@@ -372,6 +372,20 @@
   </style>
 </head>
 <body>
+<script>
+  (function() {
+    const key = 'lake-auth';
+    if (sessionStorage.getItem(key) !== '1') {
+      const pw = prompt('Enter password:');
+      if (pw !== '57cottage') {
+        document.write('<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#64748b;font-family:sans-serif;font-size:14px;">Access denied.</div>');
+        document.close();
+        return;
+      }
+      sessionStorage.setItem(key, '1');
+    }
+  })();
+</script>
 
 <h1>Lake Loan Tracker</h1>
 <p class="subtitle">Pick a month to see where you stand</p>
