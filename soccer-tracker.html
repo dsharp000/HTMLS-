@@ -606,6 +606,56 @@
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  /* ── SUB PANEL ── */
+  #sub-panel {
+    background: #0d2010;
+    border: 1px solid #1e4a20;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .sub-panel-title {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #4a7a4a;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .sub-panel-cols {
+    display: flex;
+    gap: 16px;
+  }
+  .sub-col { flex: 1; }
+  .sub-col-label {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: #4a7a4a;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #1a3a1a;
+  }
+  .sub-col-label.label-off { color: #ff9a9a; border-color: #3a1a1a; }
+  .sub-col-label.label-on  { color: #7fff7f; border-color: #1a3a1a; }
+  .sub-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+    font-size: 11px;
+  }
+  .sub-row-num { color: #2a5a2a; font-size: 9px; margin-right: 4px; min-width: 12px; }
+  .sub-row-name { color: #e8f5e0; }
+  .sub-row-time { color: #4a6a4a; font-size: 10px; }
+  .sub-row:first-child .sub-row-name { color: #7fff7f; }
+  .sub-row:first-child .sub-col-off .sub-row-name { color: #ff9a9a; }
+  .sub-empty-msg { font-size: 10px; color: #2a4a2a; font-style: italic; }
+
+  /* ── UNAVAILABLE ── */
+  .is-unavailable { opacity: 0.3; filter: grayscale(80%); }
+  .status-out { background: #2a0a0a; color: #ff6060; border: 1px solid #5a1a1a; }
+  .icon-btn.unavail-on { color: #ff5a5a; }
+
   @media (max-width: 400px) {
     #clock-display { font-size: 40px; }
     .player-card-wrapper { height: 210px; }
@@ -661,6 +711,8 @@
     <button class="btn-primary" id="btn-end" onclick="endMatch()">✓ Save Match</button>
   </div>
   <div id="pitch-count">ON PITCH: <span id="pitch-count-num">0</span> / 11</div>
+
+  <div id="sub-panel" style="display:none"></div>
 
   <div id="player-grid"></div>
 </div>
@@ -800,7 +852,8 @@ function makePlayers() {
     totalTime: 0,
     startedAt: null,
     goals: 0,
-    subLog: []
+    subLog: [],
+    unavailable: false
   }));
 }
 
@@ -852,7 +905,8 @@ onValue(ref(db, 'soccer/live'), snap => {
         totalTime: p.totalTime || 0,
         startedAt: p.startedAt || null,
         goals: p.goals || 0,
-        subLog: p.subLog || []
+        subLog: p.subLog || [],
+        unavailable: !!p.unavailable
       };
     });
   }
@@ -919,6 +973,7 @@ function setupLocalTick() {
   if (state.live.phase === 'running') {
     localTickInterval = setInterval(() => {
       renderClockAndBars();
+      renderSubPanel();
     }, 500);
   }
 }
@@ -927,6 +982,7 @@ function setupLocalTick() {
 function renderAll() {
   renderMatchHeader();
   renderControls();
+  renderSubPanel();
   renderPlayerGrid();
 }
 
@@ -1018,9 +1074,12 @@ function renderPlayerGrid() {
   });
 
   grid.innerHTML = '';
-  state.live.players.forEach((p, i) => {
+  const sortedPlayers = state.live.players
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => playerElapsed(b.p) - playerElapsed(a.p));
+  sortedPlayers.forEach(({ p, i }) => {
     const wrapper = document.createElement('div');
-    wrapper.className = 'player-card-wrapper' + (flipped[i] ? ' flipped' : '');
+    wrapper.className = 'player-card-wrapper' + (flipped[i] ? ' flipped' : '') + (p.unavailable ? ' is-unavailable' : '');
     wrapper.dataset.pid = i;
     wrapper.id = `card-${i}`;
 
@@ -1035,6 +1094,7 @@ function renderPlayerGrid() {
           <div class="card-top-row">
             <span class="pos-badge" title="Click to change position" onclick="cyclePosition(event,${i})">${posLabel}</span>
             <div class="card-actions">
+              <button class="icon-btn ${p.unavailable ? 'unavail-on' : ''}" title="${p.unavailable ? 'Mark available' : 'Mark unavailable'}" onclick="toggleUnavailable(event,${i})">⛔</button>
               <button class="icon-btn" title="Edit name" onclick="editName(event,${i})">✏</button>
               <button class="icon-btn" title="Timeline" onclick="flipCard(event,${i})">🕐</button>
             </div>
@@ -1043,8 +1103,8 @@ function renderPlayerGrid() {
           <div class="player-time">${fmtTime(playerSecs)}</div>
           <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:${pPct}%"></div></div>
           <div class="card-bottom-row">
-            <span class="status-badge ${p.onPitch ? 'status-on' : 'status-off'}">
-              ${p.onPitch ? 'ON PITCH' : 'BENCH'}
+            <span class="status-badge ${p.onPitch ? 'status-on' : p.unavailable ? 'status-out' : 'status-off'}">
+              ${p.onPitch ? 'ON PITCH' : p.unavailable ? 'OUT' : 'BENCH'}
             </span>
             <div class="goals-row">
               ⚽<span class="goals-count">${p.goals}</span>
@@ -1075,6 +1135,84 @@ function renderPlayerGrid() {
     grid.appendChild(wrapper);
   });
 }
+
+function renderSubPanel() {
+  const panel = document.getElementById('sub-panel');
+  const { matchId, phase } = state.live;
+
+  if (!matchId || phase === 'done') {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = '';
+
+  const elapsed = currentElapsed();
+  const players = state.live.players;
+
+  // Sub OFF: on pitch, available, sorted by most time on pitch (longest first)
+  const subOff = players
+    .filter(p => p.onPitch && !p.unavailable)
+    .map(p => ({ p, secs: playerElapsed(p) }))
+    .sort((a, b) => b.secs - a.secs)
+    .slice(0, 3);
+
+  // Sub ON: off pitch, available, sorted by most time off (longest sit first)
+  const subOn = players
+    .filter(p => !p.onPitch && !p.unavailable)
+    .map(p => ({ p, timeOff: elapsed - playerElapsed(p) }))
+    .sort((a, b) => b.timeOff - a.timeOff)
+    .slice(0, 3);
+
+  const offRows = subOff.length
+    ? subOff.map((r, idx) => `
+        <div class="sub-row">
+          <span class="sub-row-num">${idx + 1}.</span>
+          <span class="sub-row-name">${r.p.name}</span>
+          <span class="sub-row-time">${fmtTime(r.secs)}</span>
+        </div>`).join('')
+    : `<div class="sub-empty-msg">None on pitch</div>`;
+
+  const onRows = subOn.length
+    ? subOn.map((r, idx) => `
+        <div class="sub-row">
+          <span class="sub-row-num">${idx + 1}.</span>
+          <span class="sub-row-name">${r.p.name}</span>
+          <span class="sub-row-time">${fmtTime(Math.max(0, r.timeOff))} off</span>
+        </div>`).join('')
+    : `<div class="sub-empty-msg">None on bench</div>`;
+
+  panel.innerHTML = `
+    <div class="sub-panel-title">⇄ Sub Recommendations</div>
+    <div class="sub-panel-cols">
+      <div class="sub-col">
+        <div class="sub-col-label label-off">Take Off</div>
+        ${offRows}
+      </div>
+      <div class="sub-col">
+        <div class="sub-col-label label-on">Bring On</div>
+        ${onRows}
+      </div>
+    </div>`;
+}
+
+window.toggleUnavailable = function(e, i) {
+  e.stopPropagation();
+  const p = state.live.players[i];
+  p.unavailable = !p.unavailable;
+  // If they're on the pitch, take them off when marked unavailable
+  if (p.unavailable && p.onPitch) {
+    const nowSec = Date.now() / 1000;
+    if (p.startedAt && state.live.phase === 'running') {
+      p.totalTime = (p.totalTime || 0) + (nowSec - p.startedAt);
+    }
+    p.startedAt = null;
+    p.onPitch   = false;
+    p.subLog    = [...(p.subLog || []), { type: 'off', matchMinute: matchMinute() }];
+  }
+  writeLive();
+  renderSubPanel();
+  renderPlayerGrid();
+};
 
 function renderSubLog(p) {
   if (!p.subLog || p.subLog.length === 0) {
@@ -1558,6 +1696,7 @@ window.switchScreen      = switchScreen;
 window.switchSeasonTab   = switchSeasonTab;
 window.toggleMatchDetail = toggleMatchDetail;
 window.exportCSV         = exportCSV;
+window.toggleUnavailable = toggleUnavailable;
 </script>
 </body>
 </html>
