@@ -1154,14 +1154,14 @@ function renderSubPanel() {
     .filter(p => p.onPitch && !p.unavailable)
     .map(p => ({ p, secs: playerElapsed(p) }))
     .sort((a, b) => b.secs - a.secs)
-    .slice(0, 3);
+    .slice(0, 4);
 
   // Sub ON: off pitch, available, sorted by most time off (longest sit first)
   const subOn = players
     .filter(p => !p.onPitch && !p.unavailable)
     .map(p => ({ p, timeOff: elapsed - playerElapsed(p) }))
     .sort((a, b) => b.timeOff - a.timeOff)
-    .slice(0, 3);
+    .slice(0, 4);
 
   const offRows = subOff.length
     ? subOff.map((r, idx) => `
