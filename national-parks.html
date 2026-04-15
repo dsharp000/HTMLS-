@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>63 National Parks Checklist</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1a1f2e;
+      color: #e8ecf0;
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: linear-gradient(180deg, #0f1623 0%, #1a1f2e 100%);
+      padding: 2rem 1.25rem 1.5rem;
+      text-align: center;
+      border-bottom: 1px solid #2a3448;
+    }
+    .header-eyebrow {
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #6b8090;
+      margin-bottom: 0.4rem;
+    }
+    .header h1 {
+      font-family: 'Oswald', sans-serif;
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, #e8ecf0, #7eb8a0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .stat-pill {
+      background: #232b3e;
+      border: 1px solid #2a3448;
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stat-pill span { color: #7eb8a0; font-weight: 700; font-size: 1rem; }
+
+    /* Progress bar */
+    .progress-wrap {
+      max-width: 400px;
+      margin: 0 auto;
+      background: #232b3e;
+      border-radius: 4px;
+      height: 6px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4a8c6a, #7eb8a0);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    /* ── MAIN CONTAINER ── */
+    .main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem;
+    }
+
+    /* ── LEGEND ── */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      margin-bottom: 1.25rem;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: #8a9bae;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── MAP CONTAINER ── */
+    .map-outer {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    #main-map { height: 480px; width: 100%; }
+
+    /* Insets row overlaid at bottom of main map */
+    .insets-row {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      display: flex;
+      gap: 8px;
+      z-index: 800;
+      pointer-events: none;
+    }
+    .inset-box {
+      pointer-events: all;
+      border: 2px solid rgba(255,255,255,0.7);
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      overflow: hidden;
+      background: #8ab4c8;
+      flex-shrink: 0;
+    }
+    .inset-label {
+      background: rgba(255,255,255,0.88);
+      font-size: 8.5px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      padding: 2px 5px;
+      color: #222;
+      white-space: nowrap;
+    }
+    #ak-map { width: 210px; height: 158px; }
+    #hi-map { width: 148px; height: 108px; }
+    #as-map { width: 105px;  height: 82px; }
+    #vi-map { width: 132px; height: 100px; }
+
+    /* Mobile: stack insets under main map */
+    @media (max-width: 640px) {
+      #main-map { height: 300px; }
+      .insets-row {
+        position: static;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        padding: 8px;
+        background: #151b29;
+        border-radius: 0 0 10px 10px;
+      }
+      .inset-box { width: 100%; }
+      #ak-map, #hi-map, #as-map, #vi-map { width: 100%; height: 120px; }
+    }
+
+    /* ── CHECKLIST ── */
+    .checklist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+
+    .region-section {
+      background: #1e2638;
+      border: 1px solid #2a3448;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .region-header {
+      padding: 10px 14px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-left: 4px solid currentColor;
+      background: #232b3e;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .region-count { font-size: 0.65rem; opacity: 0.7; font-weight: 400; }
+
+    .park-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      border-bottom: 1px solid #232b3e;
+      cursor: pointer;
+      transition: background 0.12s;
+      user-select: none;
+    }
+    .park-item:last-child { border-bottom: none; }
+    .park-item:hover { background: #263040; }
+    .park-item.visited { background: #1a2c22; }
+    .park-item.visited:hover { background: #1e3228; }
+
+    .park-cb {
+      width: 16px;
+      height: 16px;
+      accent-color: #7eb8a0;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .park-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #d0d8e0;
+      flex: 1;
+    }
+    .park-item.visited .park-name { color: #7eb8a0; text-decoration: line-through; text-decoration-color: #4a7a5a; }
+    .park-state {
+      font-size: 0.72rem;
+      color: #56687a;
+      flex-shrink: 0;
+    }
+    .park-item.visited .park-state { color: #4a6050; }
+
+    .remaining-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #232b3e;
+      border: 1px solid #2a3448;
+      border-left: 3px solid var(--rc);
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      color: #c0cad6;
+      cursor: pointer;
+      transition: background 0.12s;
+      user-select: none;
+    }
+    .remaining-tag:hover { background: #2a3650; }
+    .remaining-tag .rt-state { font-size: 0.65rem; color: #56687a; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <p class="header-eyebrow">National Park Service</p>
+  <h1>63 National Parks</h1>
+  <div class="stats-bar">
+    <div class="stat-pill">Visited: <span id="stat-visited">0</span></div>
+    <div class="stat-pill">Remaining: <span id="stat-remaining">63</span></div>
+    <div class="stat-pill">Total: <span>63</span></div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Legend -->
+  <div class="legend" id="legend"></div>
+
+  <!-- Map -->
+  <div class="map-outer">
+    <div id="main-map"></div>
+    <div class="insets-row">
+      <div class="inset-box">
+        <div class="inset-label">Alaska</div>
+        <div id="ak-map"></div>
+      </div>
+      <div class="inset-box">
+        <div class="inset-label">Hawaii</div>
+        <div id="hi-map"></div>
+      </div>
+      <div class="inset-box">
+        <div class="inset-label">American Samoa</div>
+        <div id="as-map"></div>
+      </div>
+      <div class="inset-box">
+        <div class="inset-label">U.S. Virgin Islands</div>
+        <div id="vi-map"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checklist -->
+  <div class="checklist-grid" id="checklist"></div>
+
+  <!-- Remaining parks -->
+  <div id="remaining-box" style="display:none; margin-top:1.5rem; background:#1e2638; border:1px solid #2a3448; border-radius:10px; overflow:hidden;">
+    <div style="padding:10px 14px; background:#232b3e; font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#cc9933; display:flex; justify-content:space-between; align-items:center;">
+      <span>Still on the Bucket List</span>
+      <span id="remaining-count-label" style="font-weight:400; opacity:0.7;"></span>
+    </div>
+    <div id="remaining-list" style="display:flex; flex-wrap:wrap; gap:6px; padding:12px 14px;"></div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── REGIONS ───────────────────────────────────────────────────────────────────
+const REGIONS = [
+  { key: 'northeast',   label: 'Northeast & Appalachian', color: '#4a90d9' },
+  { key: 'southeast',   label: 'Southeast',               color: '#e07b39' },
+  { key: 'plains',      label: 'Midwest & Great Plains',  color: '#c9a620' },
+  { key: 'southwest',   label: 'Southwest',               color: '#cc4444' },
+  { key: 'rockies',     label: 'Rocky Mountains & Colorado Plateau', color: '#9b59b6' },
+  { key: 'pacific-nw',  label: 'Pacific Northwest',       color: '#27ae60' },
+  { key: 'california',  label: 'California',              color: '#16a085' },
+  { key: 'alaska',      label: 'Alaska',                  color: '#5dade2' },
+  { key: 'islands',     label: 'Islands & Territories',   color: '#e056a0' },
+];
+const REGION_MAP = {};
+REGIONS.forEach(r => REGION_MAP[r.key] = r);
+
+// ── PARKS DATA (all 63) ───────────────────────────────────────────────────────
+// inset: null = main map | 'alaska'|'hawaii'|'samoa'|'vi' = inset map
+const PARKS = [
+  // Northeast & Appalachian (6)
+  { id:'acadia',        name:'Acadia',                         state:'ME',           region:'northeast', lat:44.35,  lng:-68.21,  inset:null },
+  { id:'cuyahoga',      name:'Cuyahoga Valley',                state:'OH',           region:'northeast', lat:41.24,  lng:-81.55,  inset:null },
+  { id:'indiana-dunes', name:'Indiana Dunes',                  state:'IN',           region:'northeast', lat:41.65,  lng:-87.05,  inset:null },
+  { id:'isle-royale',   name:'Isle Royale',                    state:'MI',           region:'northeast', lat:48.00,  lng:-88.83,  inset:null },
+  { id:'new-river',     name:'New River Gorge',                state:'WV',           region:'northeast', lat:38.07,  lng:-81.08,  inset:null },
+  { id:'shenandoah',    name:'Shenandoah',                     state:'VA',           region:'northeast', lat:38.53,  lng:-78.35,  inset:null },
+
+  // Southeast (7)
+  { id:'biscayne',      name:'Biscayne',                       state:'FL',           region:'southeast', lat:25.48,  lng:-80.42,  inset:null },
+  { id:'congaree',      name:'Congaree',                       state:'SC',           region:'southeast', lat:33.78,  lng:-80.78,  inset:null },
+  { id:'dry-tortugas',  name:'Dry Tortugas',                   state:'FL',           region:'southeast', lat:24.63,  lng:-82.87,  inset:null },
+  { id:'everglades',    name:'Everglades',                     state:'FL',           region:'southeast', lat:25.39,  lng:-80.93,  inset:null },
+  { id:'great-smoky',   name:'Great Smoky Mountains',          state:'TN / NC',      region:'southeast', lat:35.61,  lng:-83.53,  inset:null },
+  { id:'hot-springs',   name:'Hot Springs',                    state:'AR',           region:'southeast', lat:34.51,  lng:-93.05,  inset:null },
+  { id:'mammoth-cave',  name:'Mammoth Cave',                   state:'KY',           region:'southeast', lat:37.19,  lng:-86.10,  inset:null },
+
+  // Midwest & Great Plains (5)
+  { id:'badlands',      name:'Badlands',                       state:'SD',           region:'plains',    lat:43.85,  lng:-102.34, inset:null },
+  { id:'gateway-arch',  name:'Gateway Arch',                   state:'MO',           region:'plains',    lat:38.62,  lng:-90.19,  inset:null },
+  { id:'theo-roosevelt',name:'Theodore Roosevelt',             state:'ND',           region:'plains',    lat:46.97,  lng:-103.54, inset:null },
+  { id:'voyageurs',     name:'Voyageurs',                      state:'MN',           region:'plains',    lat:48.49,  lng:-92.83,  inset:null },
+  { id:'wind-cave',     name:'Wind Cave',                      state:'SD',           region:'plains',    lat:43.56,  lng:-103.48, inset:null },
+
+  // Southwest (6)
+  { id:'big-bend',      name:'Big Bend',                       state:'TX',           region:'southwest', lat:29.13,  lng:-103.24, inset:null },
+  { id:'carlsbad',      name:'Carlsbad Caverns',               state:'NM',           region:'southwest', lat:32.15,  lng:-104.56, inset:null },
+  { id:'guadalupe',     name:'Guadalupe Mountains',            state:'TX',           region:'southwest', lat:31.92,  lng:-104.87, inset:null },
+  { id:'petrified',     name:'Petrified Forest',               state:'AZ',           region:'southwest', lat:35.07,  lng:-109.78, inset:null },
+  { id:'saguaro',       name:'Saguaro',                        state:'AZ',           region:'southwest', lat:32.25,  lng:-110.50, inset:null },
+  { id:'white-sands',   name:'White Sands',                    state:'NM',           region:'southwest', lat:32.78,  lng:-106.17, inset:null },
+
+  // Rocky Mountains & Colorado Plateau (13)
+  { id:'arches',        name:'Arches',                         state:'UT',           region:'rockies',   lat:38.68,  lng:-109.57, inset:null },
+  { id:'black-canyon',  name:'Black Canyon of the Gunnison',   state:'CO',           region:'rockies',   lat:38.57,  lng:-107.72, inset:null },
+  { id:'bryce',         name:'Bryce Canyon',                   state:'UT',           region:'rockies',   lat:37.57,  lng:-112.18, inset:null },
+  { id:'canyonlands',   name:'Canyonlands',                    state:'UT',           region:'rockies',   lat:38.20,  lng:-109.93, inset:null },
+  { id:'capitol-reef',  name:'Capitol Reef',                   state:'UT',           region:'rockies',   lat:38.37,  lng:-111.17, inset:null },
+  { id:'grand-canyon',  name:'Grand Canyon',                   state:'AZ',           region:'rockies',   lat:36.10,  lng:-112.11, inset:null },
+  { id:'grand-teton',   name:'Grand Teton',                    state:'WY',           region:'rockies',   lat:43.73,  lng:-110.80, inset:null },
+  { id:'great-basin',   name:'Great Basin',                    state:'NV',           region:'rockies',   lat:38.98,  lng:-114.30, inset:null },
+  { id:'great-sand',    name:'Great Sand Dunes',               state:'CO',           region:'rockies',   lat:37.73,  lng:-105.51, inset:null },
+  { id:'mesa-verde',    name:'Mesa Verde',                     state:'CO',           region:'rockies',   lat:37.18,  lng:-108.49, inset:null },
+  { id:'rocky-mtn',     name:'Rocky Mountain',                 state:'CO',           region:'rockies',   lat:40.40,  lng:-105.58, inset:null },
+  { id:'yellowstone',   name:'Yellowstone',                    state:'WY / MT / ID', region:'rockies',   lat:44.43,  lng:-110.59, inset:null },
+  { id:'zion',          name:'Zion',                           state:'UT',           region:'rockies',   lat:37.30,  lng:-113.05, inset:null },
+
+  // Pacific Northwest (5)
+  { id:'crater-lake',   name:'Crater Lake',                    state:'OR',           region:'pacific-nw',lat:42.94,  lng:-122.10, inset:null },
+  { id:'glacier',       name:'Glacier',                        state:'MT',           region:'pacific-nw',lat:48.70,  lng:-113.72, inset:null },
+  { id:'mt-rainier',    name:'Mount Rainier',                  state:'WA',           region:'pacific-nw',lat:46.85,  lng:-121.73, inset:null },
+  { id:'n-cascades',    name:'North Cascades',                 state:'WA',           region:'pacific-nw',lat:48.70,  lng:-121.20, inset:null },
+  { id:'olympic',       name:'Olympic',                        state:'WA',           region:'pacific-nw',lat:47.97,  lng:-123.50, inset:null },
+
+  // California (9)
+  { id:'channel-isl',   name:'Channel Islands',                state:'CA',           region:'california',lat:34.01,  lng:-119.42, inset:null },
+  { id:'death-valley',  name:'Death Valley',                   state:'CA / NV',      region:'california',lat:36.24,  lng:-116.82, inset:null },
+  { id:'joshua-tree',   name:'Joshua Tree',                    state:'CA',           region:'california',lat:33.88,  lng:-115.90, inset:null },
+  { id:'kings-canyon',  name:'Kings Canyon',                   state:'CA',           region:'california',lat:36.89,  lng:-118.55, inset:null },
+  { id:'lassen',        name:'Lassen Volcanic',                state:'CA',           region:'california',lat:40.49,  lng:-121.51, inset:null },
+  { id:'pinnacles',     name:'Pinnacles',                      state:'CA',           region:'california',lat:36.49,  lng:-121.20, inset:null },
+  { id:'redwood',       name:'Redwood',                        state:'CA',           region:'california',lat:41.30,  lng:-124.00, inset:null },
+  { id:'sequoia',       name:'Sequoia',                        state:'CA',           region:'california',lat:36.43,  lng:-118.68, inset:null },
+  { id:'yosemite',      name:'Yosemite',                       state:'CA',           region:'california',lat:37.75,  lng:-119.59, inset:null },
+
+  // Alaska (8)
+  { id:'denali',        name:'Denali',                         state:'AK',           region:'alaska',    lat:63.33,  lng:-150.50, inset:'alaska' },
+  { id:'gates-arctic',  name:'Gates of the Arctic',            state:'AK',           region:'alaska',    lat:67.78,  lng:-153.30, inset:'alaska' },
+  { id:'glacier-bay',   name:'Glacier Bay',                    state:'AK',           region:'alaska',    lat:58.67,  lng:-136.90, inset:'alaska' },
+  { id:'katmai',        name:'Katmai',                         state:'AK',           region:'alaska',    lat:58.50,  lng:-154.00, inset:'alaska' },
+  { id:'kenai-fjords',  name:'Kenai Fjords',                   state:'AK',           region:'alaska',    lat:59.92,  lng:-149.65, inset:'alaska' },
+  { id:'kobuk',         name:'Kobuk Valley',                   state:'AK',           region:'alaska',    lat:67.55,  lng:-159.28, inset:'alaska' },
+  { id:'lake-clark',    name:'Lake Clark',                     state:'AK',           region:'alaska',    lat:60.97,  lng:-153.42, inset:'alaska' },
+  { id:'wrangell',      name:'Wrangell–St. Elias',             state:'AK',           region:'alaska',    lat:61.71,  lng:-142.99, inset:'alaska' },
+
+  // Islands & Territories (4)
+  { id:'haleakala',     name:'Haleakalā',                      state:'HI',           region:'islands',   lat:20.72,  lng:-156.15, inset:'hawaii' },
+  { id:'hawaii-volc',   name:'Hawaiʻi Volcanoes',              state:'HI',           region:'islands',   lat:19.43,  lng:-155.26, inset:'hawaii' },
+  { id:'amer-samoa',    name:'National Park of American Samoa',state:'Am. Samoa',    region:'islands',   lat:-14.25, lng:-170.68, inset:'samoa'  },
+  { id:'virgin-isl',    name:'Virgin Islands',                 state:'U.S.V.I.',     region:'islands',   lat:18.34,  lng:-64.73,  inset:'vi'     },
+];
+
+// ── STORAGE ──────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'national-parks-visited';
+let visited = {};
+try { visited = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) {}
+
+function saveVisited() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(visited));
+}
+
+// ── STATS ────────────────────────────────────────────────────────────────────
+function updateStats() {
+  const count = Object.values(visited).filter(Boolean).length;
+  document.getElementById('stat-visited').textContent   = count;
+  document.getElementById('stat-remaining').textContent = 63 - count;
+  document.getElementById('prog-fill').style.width = (count / 63 * 100).toFixed(1) + '%';
+}
+
+// ── MAP SETUP ─────────────────────────────────────────────────────────────────
+const TILE = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const allMarkers = {}; // id → array of L.circleMarker
+
+function markerColor(park) {
+  return visited[park.id] ? '#7eb8a0' : REGION_MAP[park.region].color;
+}
+function markerStyle(park) {
+  const isVisited = visited[park.id];
+  return {
+    radius: 7,
+    fillColor: markerColor(park),
+    color: isVisited ? '#3a6a50' : '#fff',
+    weight: 2,
+    opacity: 1,
+    fillOpacity: isVisited ? 0.95 : 0.82,
+  };
+}
+
+function makeMarker(park, map) {
+  const m = L.circleMarker([park.lat, park.lng], markerStyle(park)).addTo(map);
+  m.bindTooltip(`<b>${park.name}</b><br><span style="font-size:11px">${park.state}</span>`, {
+    direction: 'top', offset: [0, -6]
+  });
+  m.on('click', () => togglePark(park.id));
+  return m;
+}
+
+function initMaps() {
+  const tileOpts = { maxZoom: 18, attribution: '' };
+
+  // Main map — continental US
+  const mainMap = L.map('main-map', { zoomControl: true, attributionControl: false })
+    .fitBounds([[24.5, -125], [49.5, -66]]);
+  L.tileLayer(TILE, tileOpts).addTo(mainMap);
+
+  // Alaska inset
+  const akMap = L.map('ak-map', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false, doubleClickZoom:false, touchZoom:false })
+    .setView([64.5, -152], 3);
+  L.tileLayer(TILE, tileOpts).addTo(akMap);
+
+  // Hawaii inset
+  const hiMap = L.map('hi-map', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false, doubleClickZoom:false, touchZoom:false })
+    .setView([20.5, -157], 6);
+  L.tileLayer(TILE, tileOpts).addTo(hiMap);
+
+  // American Samoa inset
+  const asMap = L.map('as-map', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false, doubleClickZoom:false, touchZoom:false })
+    .setView([-14.3, -170.7], 9);
+  L.tileLayer(TILE, tileOpts).addTo(asMap);
+
+  // Virgin Islands inset
+  const viMap = L.map('vi-map', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false, doubleClickZoom:false, touchZoom:false })
+    .setView([18.33, -64.75], 10);
+  L.tileLayer(TILE, tileOpts).addTo(viMap);
+
+  // Add markers
+  PARKS.forEach(park => {
+    const markers = [];
+    if (!park.inset) {
+      markers.push(makeMarker(park, mainMap));
+    } else if (park.inset === 'alaska') {
+      markers.push(makeMarker(park, akMap));
+    } else if (park.inset === 'hawaii') {
+      markers.push(makeMarker(park, hiMap));
+    } else if (park.inset === 'samoa') {
+      markers.push(makeMarker(park, asMap));
+    } else if (park.inset === 'vi') {
+      markers.push(makeMarker(park, viMap));
+    }
+    allMarkers[park.id] = markers;
+  });
+
+  // Force inset maps to render correctly
+  setTimeout(() => {
+    [akMap, hiMap, asMap, viMap].forEach(m => m.invalidateSize());
+  }, 200);
+}
+
+// ── TOGGLE ───────────────────────────────────────────────────────────────────
+function togglePark(id) {
+  visited[id] = !visited[id];
+  saveVisited();
+  updateStats();
+
+  // Update marker styles
+  const park = PARKS.find(p => p.id === id);
+  if (park && allMarkers[id]) {
+    allMarkers[id].forEach(m => m.setStyle(markerStyle(park)));
+  }
+
+  // Update checklist item
+  const item = document.getElementById('item-' + id);
+  const cb   = document.getElementById('cb-' + id);
+  if (item) item.classList.toggle('visited', visited[id]);
+  if (cb)   cb.checked = visited[id];
+
+  renderRemaining();
+}
+
+// ── CHECKLIST ────────────────────────────────────────────────────────────────
+function renderChecklist() {
+  const container = document.getElementById('checklist');
+  container.innerHTML = REGIONS.map(r => {
+    const rParks = PARKS.filter(p => p.region === r.key);
+    const visitedCount = rParks.filter(p => visited[p.id]).length;
+    const items = rParks.map(p => `
+      <div class="park-item ${visited[p.id] ? 'visited' : ''}" id="item-${p.id}" onclick="togglePark('${p.id}')">
+        <input type="checkbox" class="park-cb" id="cb-${p.id}" ${visited[p.id] ? 'checked' : ''}
+          onclick="event.stopPropagation()" onchange="togglePark('${p.id}')">
+        <span class="park-name">${p.name}</span>
+        <span class="park-state">${p.state}</span>
+      </div>`).join('');
+    return `
+      <div class="region-section">
+        <div class="region-header" style="color:${r.color}">
+          ${r.label}
+          <span class="region-count">${visitedCount}/${rParks.length}</span>
+        </div>
+        ${items}
+      </div>`;
+  }).join('');
+}
+
+// ── LEGEND ───────────────────────────────────────────────────────────────────
+function renderLegend() {
+  document.getElementById('legend').innerHTML = REGIONS.map(r => `
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${r.color}"></div>
+      ${r.label}
+    </div>`).join('');
+}
+
+// ── REMAINING LIST ───────────────────────────────────────────────────────────
+function renderRemaining() {
+  const remaining = PARKS.filter(p => !visited[p.id]);
+  const box  = document.getElementById('remaining-box');
+  const list = document.getElementById('remaining-list');
+  const lbl  = document.getElementById('remaining-count-label');
+
+  if (remaining.length === 0 || remaining.length === PARKS.length) {
+    box.style.display = 'none';
+    return;
+  }
+
+  box.style.display = '';
+  lbl.textContent = remaining.length + ' park' + (remaining.length !== 1 ? 's' : '') + ' to go';
+  list.innerHTML = remaining.map(p => {
+    const color = REGION_MAP[p.region].color;
+    return `<div class="remaining-tag" style="--rc:${color}" onclick="togglePark('${p.id}')" title="Click to mark visited">
+      ${p.name} <span class="rt-state">${p.state}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+renderLegend();
+renderChecklist();
+updateStats();
+renderRemaining();
+initMaps();
+</script>
+</body>
+</html>
