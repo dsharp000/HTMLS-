@@ -237,6 +237,11 @@
     .legend-row { display:flex; align-items:center; gap:7px; font-size:0.72rem; color:#475569; margin-bottom:4px; }
     .legend-swatch { width:12px; height:12px; border-radius:3px; flex-shrink:0; }
     .save-msg { font-size:0.68rem; color:#64748b; text-align:center; margin-top:6px; min-height:14px; }
+
+    /* Unit toggle */
+    .ft-grp { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+    body.inches-mode .ft-grp { display:none; }
+    .btn-units-on { background:#0ea5e9; color:#0f172a; }
   </style>
 </head>
 <body>
@@ -246,6 +251,7 @@
   <h1>Kitchen Designer</h1>
   <span class="header-hint">Add items from the left · drag to position · edit in the right panel</span>
   <div class="header-right">
+    <button class="btn btn-slate" id="btn-units" onclick="toggleUnits()">📏 Inches Only</button>
     <button class="btn btn-blue" onclick="exportPNG()">⬇ Export PNG</button>
     <a href="index.html" style="padding:5px 12px;background:#334155;color:#94a3b8;border-radius:7px;text-decoration:none;font-size:0.76rem;font-weight:600;">← Home</a>
   </div>
@@ -260,18 +266,18 @@
       <h3>Room Size</h3>
       <div class="dim-row">
         <label>Width</label>
-        <input type="number" id="rw-ft" min="1" max="100" value="12"> <span>ft</span>
-        <input type="number" id="rw-in" min="0" max="11.5" step="0.5" value="0"> <span>in</span>
+        <span class="ft-grp"><input type="number" id="rw-ft" min="1" max="100" value="12"> <span>ft</span></span>
+        <input type="number" id="rw-in" min="0" max="11.5" step="0.5" value="0"> <span class="in-lbl">in</span>
       </div>
       <div class="dim-row">
         <label>Depth</label>
-        <input type="number" id="rd-ft" min="1" max="100" value="10"> <span>ft</span>
-        <input type="number" id="rd-in" min="0" max="11.5" step="0.5" value="0"> <span>in</span>
+        <span class="ft-grp"><input type="number" id="rd-ft" min="1" max="100" value="10"> <span>ft</span></span>
+        <input type="number" id="rd-in" min="0" max="11.5" step="0.5" value="0"> <span class="in-lbl">in</span>
       </div>
       <div class="dim-row">
         <label>Height</label>
-        <input type="number" id="rh-ft" min="6" max="20" value="9"> <span>ft</span>
-        <input type="number" id="rh-in" min="0" max="11.5" step="0.5" value="0"> <span>in</span>
+        <span class="ft-grp"><input type="number" id="rh-ft" min="6" max="20" value="9"> <span>ft</span></span>
+        <input type="number" id="rh-in" min="0" max="11.5" step="0.5" value="0"> <span class="in-lbl">in</span>
       </div>
       <button class="btn btn-slate btn-full" style="margin-top:6px;" onclick="applyRoom()">Apply Room Size</button>
     </div>
@@ -368,38 +374,38 @@
 
         <span class="prop-label">Width</span>
         <div class="dim-row" style="margin-bottom:0;">
-          <input type="number" id="p-w-ft" min="0" max="50" step="1" oninput="setDim('w')"> <span>ft</span>
-          <input type="number" id="p-w-in" min="0" max="11.5" step="0.5" oninput="setDim('w')"> <span>in</span>
+          <span class="ft-grp"><input type="number" id="p-w-ft" min="0" max="50" step="1" oninput="setDim('w')"> <span>ft</span></span>
+          <input type="number" id="p-w-in" min="0" max="11.5" step="0.5" oninput="setDim('w')"> <span class="in-lbl">in</span>
         </div>
 
         <span class="prop-label">Depth</span>
         <div class="dim-row" style="margin-bottom:0;">
-          <input type="number" id="p-d-ft" min="0" max="50" step="1" oninput="setDim('d')"> <span>ft</span>
-          <input type="number" id="p-d-in" min="0" max="11.5" step="0.5" oninput="setDim('d')"> <span>in</span>
+          <span class="ft-grp"><input type="number" id="p-d-ft" min="0" max="50" step="1" oninput="setDim('d')"> <span>ft</span></span>
+          <input type="number" id="p-d-in" min="0" max="11.5" step="0.5" oninput="setDim('d')"> <span class="in-lbl">in</span>
         </div>
 
         <span class="prop-label">Height</span>
         <div class="dim-row" style="margin-bottom:0;">
-          <input type="number" id="p-h-ft" min="0" max="20" step="1" oninput="setDim('h')"> <span>ft</span>
-          <input type="number" id="p-h-in" min="0" max="11.5" step="0.5" oninput="setDim('h')"> <span>in</span>
+          <span class="ft-grp"><input type="number" id="p-h-ft" min="0" max="20" step="1" oninput="setDim('h')"> <span>ft</span></span>
+          <input type="number" id="p-h-in" min="0" max="11.5" step="0.5" oninput="setDim('h')"> <span class="in-lbl">in</span>
         </div>
 
         <span class="prop-label">Floor Height (elevation offset)</span>
         <div class="dim-row" style="margin-bottom:0;">
-          <input type="number" id="p-fh-ft" min="0" max="15" step="1" oninput="setDim('floorH')"> <span>ft</span>
-          <input type="number" id="p-fh-in" min="0" max="11.5" step="0.5" oninput="setDim('floorH')"> <span>in</span>
+          <span class="ft-grp"><input type="number" id="p-fh-ft" min="0" max="15" step="1" oninput="setDim('floorH')"> <span>ft</span></span>
+          <input type="number" id="p-fh-in" min="0" max="11.5" step="0.5" oninput="setDim('floorH')"> <span class="in-lbl">in</span>
         </div>
 
         <span class="prop-label">Position X</span>
         <div class="dim-row" style="margin-bottom:0;">
-          <input type="number" id="p-x-ft" min="0" step="1" oninput="setDim('x')"> <span>ft</span>
-          <input type="number" id="p-x-in" min="0" max="11.5" step="0.5" oninput="setDim('x')"> <span>in</span>
+          <span class="ft-grp"><input type="number" id="p-x-ft" min="0" step="1" oninput="setDim('x')"> <span>ft</span></span>
+          <input type="number" id="p-x-in" min="0" max="11.5" step="0.5" oninput="setDim('x')"> <span class="in-lbl">in</span>
         </div>
 
         <span class="prop-label">Position Y</span>
         <div class="dim-row" style="margin-bottom:0;">
-          <input type="number" id="p-y-ft" min="0" step="1" oninput="setDim('y')"> <span>ft</span>
-          <input type="number" id="p-y-in" min="0" max="11.5" step="0.5" oninput="setDim('y')"> <span>in</span>
+          <span class="ft-grp"><input type="number" id="p-y-ft" min="0" step="1" oninput="setDim('y')"> <span>ft</span></span>
+          <input type="number" id="p-y-in" min="0" max="11.5" step="0.5" oninput="setDim('y')"> <span class="in-lbl">in</span>
         </div>
 
         <div class="prop-btns">
@@ -487,6 +493,8 @@ const S = {
   snap:     true,
 };
 
+let useInches = localStorage.getItem('kitchen-units') === 'inches';
+
 let nextId = 1;
 const SNAP_GRID  = 0.25;   // 3-inch snap
 const SNAP_WALL  = 0.25;   // auto-snap to wall within 3"
@@ -526,6 +534,10 @@ function snapV(v) { return S.snap ? Math.round(v/SNAP_GRID)*SNAP_GRID : v; }
 function effW(it) { return it.rotation%180===0 ? it.w : it.d; }
 function effD(it) { return it.rotation%180===0 ? it.d : it.w; }
 function fmtFt(v) {
+  if (useInches) {
+    const total = Math.round(v * 12 * 10) / 10;
+    return `${total}"`;
+  }
   const {ft, inches} = fromFt(v);
   return inches > 0 ? `${ft}'${inches}"` : `${ft}'`;
 }
@@ -899,9 +911,13 @@ function refreshProps() {
   if (!it) return;
   document.getElementById('p-label').value = it.label;
   const fill = (id, v) => {
-    const {ft, inches} = fromFt(v);
-    document.getElementById(`${id}-ft`).value = ft;
-    document.getElementById(`${id}-in`).value = inches;
+    if (useInches) {
+      document.getElementById(`${id}-in`).value = Math.round(v * 12 * 10) / 10;
+    } else {
+      const {ft, inches} = fromFt(v);
+      document.getElementById(`${id}-ft`).value = ft;
+      document.getElementById(`${id}-in`).value = inches;
+    }
   };
   fill('p-w', it.w); fill('p-d', it.d); fill('p-h', it.h);
   fill('p-fh', it.floorH); fill('p-x', it.x); fill('p-y', it.y);
@@ -916,9 +932,15 @@ window.setDim = dim => {
   const it = S.items.find(i=>i.id===S.sel);
   if (!it) return;
   const key = {'w':'p-w','d':'p-d','h':'p-h','floorH':'p-fh','x':'p-x','y':'p-y'}[dim];
-  const ft  = parseFloat(document.getElementById(`${key}-ft`).value)||0;
-  const inc = parseFloat(document.getElementById(`${key}-in`).value)||0;
-  it[dim] = Math.max(dim==='x'||dim==='y'?0:0.1, toFt(ft,inc));
+  let val;
+  if (useInches) {
+    val = (parseFloat(document.getElementById(`${key}-in`).value) || 0) / 12;
+  } else {
+    const ft  = parseFloat(document.getElementById(`${key}-ft`).value)||0;
+    const inc = parseFloat(document.getElementById(`${key}-in`).value)||0;
+    val = toFt(ft, inc);
+  }
+  it[dim] = Math.max(dim==='x'||dim==='y'?0:0.1, val);
   // clamp position
   if (dim==='x') it.x = Math.min(it.x, S.room.w-effW(it));
   if (dim==='y') it.y = Math.min(it.y, S.room.d-effD(it));
@@ -927,17 +949,27 @@ window.setDim = dim => {
 
 // ── Room ─────────────────────────────────────────────────────────────────
 window.applyRoom = () => {
-  S.room.w = toFt(document.getElementById('rw-ft').value, document.getElementById('rw-in').value);
-  S.room.d = toFt(document.getElementById('rd-ft').value, document.getElementById('rd-in').value);
-  S.room.h = toFt(document.getElementById('rh-ft').value, document.getElementById('rh-in').value);
+  if (useInches) {
+    S.room.w = (parseFloat(document.getElementById('rw-in').value)||0) / 12;
+    S.room.d = (parseFloat(document.getElementById('rd-in').value)||0) / 12;
+    S.room.h = (parseFloat(document.getElementById('rh-in').value)||0) / 12;
+  } else {
+    S.room.w = toFt(document.getElementById('rw-ft').value, document.getElementById('rw-in').value);
+    S.room.d = toFt(document.getElementById('rd-ft').value, document.getElementById('rd-in').value);
+    S.room.h = toFt(document.getElementById('rh-ft').value, document.getElementById('rh-in').value);
+  }
   render();
 };
 
 function setRoomInputs() {
   const s = (id, v) => {
-    const {ft, inches} = fromFt(v);
-    document.getElementById(`${id}-ft`).value = ft;
-    document.getElementById(`${id}-in`).value = inches;
+    if (useInches) {
+      document.getElementById(`${id}-in`).value = Math.round(v * 12 * 10) / 10;
+    } else {
+      const {ft, inches} = fromFt(v);
+      document.getElementById(`${id}-ft`).value = ft;
+      document.getElementById(`${id}-in`).value = inches;
+    }
   };
   s('rw', S.room.w); s('rd', S.room.d); s('rh', S.room.h);
 }
@@ -1014,6 +1046,27 @@ function showMsg(msg) {
   setTimeout(() => el.textContent='', 3500);
 }
 
+// ── Unit Toggle ───────────────────────────────────────────────────────────
+window.toggleUnits = () => {
+  useInches = !useInches;
+  localStorage.setItem('kitchen-units', useInches ? 'inches' : 'ft');
+  document.body.classList.toggle('inches-mode', useInches);
+  const btn = document.getElementById('btn-units');
+  btn.textContent = useInches ? '📐 ft + in' : '📏 Inches Only';
+  btn.classList.toggle('btn-units-on', useInches);
+  btn.classList.toggle('btn-slate', !useInches);
+  const inInputs = ['rw-in','rd-in','rh-in','p-w-in','p-d-in','p-h-in','p-fh-in','p-x-in','p-y-in'];
+  inInputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.step = '0.5';
+    el.max = useInches ? '9999' : '11.5';
+  });
+  setRoomInputs();
+  refreshProps();
+  render();
+};
+
 // ── Export PNG ────────────────────────────────────────────────────────────
 window.exportPNG = () => {
   const link = document.createElement('a');
@@ -1023,6 +1076,15 @@ window.exportPNG = () => {
 };
 
 // ── Init ──────────────────────────────────────────────────────────────────
+if (useInches) {
+  document.body.classList.add('inches-mode');
+  const btn = document.getElementById('btn-units');
+  if (btn) { btn.textContent = '📐 ft + in'; btn.classList.add('btn-units-on'); btn.classList.remove('btn-slate'); }
+  ['rw-in','rd-in','rh-in','p-w-in','p-d-in','p-h-in','p-fh-in','p-x-in','p-y-in'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.max = '9999';
+  });
+}
 checkSlots();
 render();
 </script>
