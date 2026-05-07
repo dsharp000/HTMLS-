@@ -652,6 +652,20 @@
   .sub-row:first-child .sub-col-off .sub-row-name { color: #ff9a9a; }
   .sub-empty-msg { font-size: 10px; color: #2a4a2a; font-style: italic; }
 
+  /* ── PITCH WARNING ── */
+  #pitch-warning {
+    display: none;
+    background: #2a1800;
+    border: 1px solid #ffca28;
+    border-radius: 6px;
+    color: #ffca28;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-align: center;
+    padding: 6px 12px;
+    margin-bottom: 8px;
+  }
+
   /* ── UNAVAILABLE ── */
   .is-unavailable { opacity: 0.3; filter: grayscale(80%); }
   .status-out { background: #2a0a0a; color: #ff6060; border: 1px solid #5a1a1a; }
@@ -711,7 +725,8 @@
     <button class="btn-ghost" id="btn-reset" onclick="resetMatch()">↺ Reset</button>
     <button class="btn-primary" id="btn-end" onclick="endMatch()">✓ Save Match</button>
   </div>
-  <div id="pitch-count">ON PITCH: <span id="pitch-count-num">0</span> / 11</div>
+  <div id="pitch-warning"></div>
+  <div id="pitch-count">ON PITCH: <span id="pitch-count-num">0</span> / 6</div>
 
   <div id="sub-panel" style="display:none"></div>
 
@@ -1043,9 +1058,19 @@ function renderClockAndBars() {
     }
   });
 
-  // Pitch count
+  // Pitch count + warning
   const onCount = state.live.players.filter(p => p.onPitch).length;
   document.getElementById('pitch-count-num').textContent = onCount;
+  const warnEl = document.getElementById('pitch-warning');
+  if (onCount === 5) {
+    warnEl.textContent = '⚠ ONE PLAYER SHORT — NEED 6 ON PITCH';
+    warnEl.style.display = '';
+  } else if (onCount >= 7) {
+    warnEl.textContent = '⚠ TOO MANY ON PITCH — NEED 6 ON PITCH';
+    warnEl.style.display = '';
+  } else {
+    warnEl.style.display = 'none';
+  }
 }
 
 function playerElapsed(p) {
