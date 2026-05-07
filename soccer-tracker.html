@@ -647,6 +647,7 @@
   .sub-row-num { color: #2a5a2a; font-size: 9px; margin-right: 4px; min-width: 12px; }
   .sub-row-name { color: #e8f5e0; }
   .sub-row-time { color: #4a6a4a; font-size: 10px; }
+  .stint-clock { color: #e8f5e0; font-weight: bold; font-size: 11px; letter-spacing: 1px; }
   .sub-row:first-child .sub-row-name { color: #7fff7f; }
   .sub-row:first-child .sub-col-off .sub-row-name { color: #ff9a9a; }
   .sub-empty-msg { font-size: 10px; color: #2a4a2a; font-style: italic; }
@@ -853,7 +854,8 @@ function makePlayers() {
     startedAt: null,
     goals: 0,
     subLog: [],
-    unavailable: false
+    unavailable: false,
+    stintStart: null
   }));
 }
 
@@ -906,7 +908,8 @@ onValue(ref(db, 'soccer/live'), snap => {
         startedAt: p.startedAt || null,
         goals: p.goals || 0,
         subLog: p.subLog || [],
-        unavailable: !!p.unavailable
+        unavailable: !!p.unavailable,
+        stintStart: p.stintStart || null
       };
     });
   }
@@ -1146,51 +1149,53 @@ function renderSubPanel() {
   }
   panel.style.display = '';
 
-  const elapsed = currentElapsed();
+  const now = Date.now() / 1000;
   const players = state.live.players;
 
-  // Sub OFF: on pitch, available, sorted by most time on pitch (longest first)
-  const subOff = players
+  function stintSecs(p) {
+    return p.stintStart ? Math.max(0, now - p.stintStart) : 0;
+  }
+
+  // ON PITCH: available, sorted by longest current stint
+  const onPitch = players
     .filter(p => p.onPitch && !p.unavailable)
-    .map(p => ({ p, secs: playerElapsed(p) }))
-    .sort((a, b) => b.secs - a.secs)
-    .slice(0, 4);
+    .map(p => ({ p, secs: stintSecs(p) }))
+    .sort((a, b) => b.secs - a.secs);
 
-  // Sub ON: off pitch, available, sorted by most time off (longest sit first)
-  const subOn = players
+  // ON BENCH: available, sorted by longest current bench sit
+  const onBench = players
     .filter(p => !p.onPitch && !p.unavailable)
-    .map(p => ({ p, timeOff: elapsed - playerElapsed(p) }))
-    .sort((a, b) => b.timeOff - a.timeOff)
-    .slice(0, 4);
+    .map(p => ({ p, secs: stintSecs(p) }))
+    .sort((a, b) => b.secs - a.secs);
 
-  const offRows = subOff.length
-    ? subOff.map((r, idx) => `
+  const pitchRows = onPitch.length
+    ? onPitch.map((r, idx) => `
         <div class="sub-row">
           <span class="sub-row-num">${idx + 1}.</span>
           <span class="sub-row-name">${r.p.name}</span>
-          <span class="sub-row-time">${fmtTime(r.secs)}</span>
+          <span class="sub-row-time stint-clock">${fmtTime(r.secs)}</span>
         </div>`).join('')
     : `<div class="sub-empty-msg">None on pitch</div>`;
 
-  const onRows = subOn.length
-    ? subOn.map((r, idx) => `
+  const benchRows = onBench.length
+    ? onBench.map((r, idx) => `
         <div class="sub-row">
           <span class="sub-row-num">${idx + 1}.</span>
           <span class="sub-row-name">${r.p.name}</span>
-          <span class="sub-row-time">${fmtTime(Math.max(0, r.timeOff))} off</span>
+          <span class="sub-row-time stint-clock">${fmtTime(r.secs)}</span>
         </div>`).join('')
     : `<div class="sub-empty-msg">None on bench</div>`;
 
   panel.innerHTML = `
-    <div class="sub-panel-title">⇄ Sub Recommendations</div>
+    <div class="sub-panel-title">⏱ TIME IN CURRENT STINT</div>
     <div class="sub-panel-cols">
       <div class="sub-col">
-        <div class="sub-col-label label-off">Take Off</div>
-        ${offRows}
+        <div class="sub-col-label label-on">On Pitch</div>
+        ${pitchRows}
       </div>
       <div class="sub-col">
-        <div class="sub-col-label label-on">Bring On</div>
-        ${onRows}
+        <div class="sub-col-label label-off">On Bench</div>
+        ${benchRows}
       </div>
     </div>`;
 }
@@ -1205,9 +1210,10 @@ window.toggleUnavailable = function(e, i) {
     if (p.startedAt && state.live.phase === 'running') {
       p.totalTime = (p.totalTime || 0) + (nowSec - p.startedAt);
     }
-    p.startedAt = null;
-    p.onPitch   = false;
-    p.subLog    = [...(p.subLog || []), { type: 'off', matchMinute: matchMinute() }];
+    p.startedAt  = null;
+    p.onPitch    = false;
+    p.stintStart = nowSec;
+    p.subLog     = [...(p.subLog || []), { type: 'off', matchMinute: matchMinute() }];
   }
   writeLive();
   renderSubPanel();
@@ -1284,10 +1290,11 @@ window.kickOff = function() {
   state.live.resumedAt = Date.now() / 1000;
   state.live.phase = 'running';
 
-  // Start all on-pitch players
+  // Start all on-pitch players; initialise stint clocks for everyone
   const now = Date.now() / 1000;
   state.live.players.forEach(p => {
     if (p.onPitch && !p.startedAt) p.startedAt = now;
+    if (!p.stintStart) p.stintStart = now;
   });
 
   writeLive();
@@ -1428,14 +1435,16 @@ window.togglePlayer = function(i) {
     if (p.startedAt && state.live.phase === 'running') {
       p.totalTime = (p.totalTime || 0) + (nowSec - p.startedAt);
     }
-    p.startedAt = null;
-    p.onPitch   = false;
-    p.subLog    = [...(p.subLog || []), { type: 'off', matchMinute: minute }];
+    p.startedAt  = null;
+    p.onPitch    = false;
+    p.stintStart = nowSec;
+    p.subLog     = [...(p.subLog || []), { type: 'off', matchMinute: minute }];
   } else {
     // Put on
-    p.onPitch   = true;
-    p.startedAt = state.live.phase === 'running' ? nowSec : null;
-    p.subLog    = [...(p.subLog || []), { type: 'on', matchMinute: minute }];
+    p.onPitch    = true;
+    p.startedAt  = state.live.phase === 'running' ? nowSec : null;
+    p.stintStart = nowSec;
+    p.subLog     = [...(p.subLog || []), { type: 'on', matchMinute: minute }];
   }
 
   writeLive();
