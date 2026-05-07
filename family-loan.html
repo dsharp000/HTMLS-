@@ -201,6 +201,17 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .yield-link {
+      display: inline-block;
+      margin-top: 0.5rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.06em;
+      color: var(--gold);
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+    .yield-link:hover { opacity: 0.7; }
+
     /* ── Buttons ───────────────────────────────────────────────── */
     .btn {
       display: inline-flex;
@@ -268,6 +279,84 @@
       font-variant-numeric: tabular-nums;
     }
     .stat.accent .stat-sub { color: var(--s400); }
+
+    /* ── Rate helper ───────────────────────────────────────────── */
+    .rate-helper {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      background: white;
+      border: 1px solid var(--s300);
+      padding: 1rem 1.25rem;
+      margin-bottom: 2.5rem;
+      flex-wrap: wrap;
+    }
+
+    .rate-helper-label {
+      display: block;
+      font-size: 0.63rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--s500);
+      margin-bottom: 0.35rem;
+    }
+
+    .rate-input-wrap { position: relative; display: flex; align-items: center; }
+
+    .rate-input {
+      width: 110px;
+      padding: 0.4rem 1.75rem 0.4rem 0.65rem;
+      border: 1px solid var(--s300);
+      background: var(--s50);
+      font-size: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+      color: var(--s900);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .rate-input:focus { border-color: var(--s900); }
+
+    .rate-suffix {
+      position: absolute;
+      right: 0.6rem;
+      color: var(--s500);
+      font-size: 0.85rem;
+      pointer-events: none;
+    }
+
+    .rate-helper-arrow {
+      font-size: 0.7rem;
+      letter-spacing: 0.06em;
+      color: var(--s400);
+      padding-top: 1.2rem;
+      white-space: nowrap;
+    }
+
+    .rate-computed {
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: var(--gold);
+      min-width: 80px;
+    }
+
+    .rate-helper-right { margin-left: auto; padding-top: 1.2rem; }
+
+    .rate-ref-line {
+      width: 100%;
+      padding-top: 0.65rem;
+      margin-top: 0.5rem;
+      border-top: 1px solid var(--s200);
+      font-size: 0.72rem;
+      color: var(--s500);
+    }
+    .rate-ref-line strong { color: var(--s700); font-weight: 600; }
+
+    @media (max-width: 600px) {
+      .rate-helper { gap: 1rem; }
+      .rate-helper-right { margin-left: 0; padding-top: 0; width: 100%; }
+      .rate-helper-right .btn { width: 100%; }
+    }
 
     /* ── Sections ──────────────────────────────────────────────── */
     section { margin-bottom: 2.5rem; }
@@ -557,6 +646,10 @@
       <p class="eyebrow">Family Loan Tracker</p>
       <h1 class="loan-title display" id="loan-title">Personal Loan</h1>
       <p class="origin-line mono" id="origin-line"></p>
+      <a href="https://investor.vanguard.com/investment-products/mutual-funds/profile/vmfxx"
+         target="_blank" rel="noopener" class="yield-link">
+        VMFXX 7-day yield ↗
+      </a>
     </div>
     <button class="btn" id="settings-btn">⚙ Settings</button>
   </header>
@@ -582,6 +675,28 @@
       <div class="stat-label">📅 Est. Monthly Interest</div>
       <div class="stat-value display" id="stat-monthly">—</div>
       <div class="stat-sub">at current balance</div>
+    </div>
+  </div>
+
+  <!-- Rate helper -->
+  <div class="rate-helper">
+    <div class="rate-helper-left">
+      <span class="rate-helper-label">VMFXX 7-Day Yield</span>
+      <div class="rate-input-wrap">
+        <input type="number" id="vmfxx-yield" class="mono rate-input" placeholder="0.00" step="0.01" min="0">
+        <span class="rate-suffix">%</span>
+      </div>
+    </div>
+    <div class="rate-helper-arrow">+25 bps</div>
+    <div class="rate-helper-mid">
+      <span class="rate-helper-label">Loan Rate</span>
+      <div class="rate-computed mono" id="rate-computed">—</div>
+    </div>
+    <div class="rate-helper-right">
+      <button class="btn btn-dark" id="use-rate-btn" disabled>Use as Interest Rate</button>
+    </div>
+    <div class="rate-ref-line" id="rate-ref-line" style="display:none">
+      <span id="rate-ref-text"></span>
     </div>
   </div>
 
@@ -664,6 +779,7 @@
           <tr>
             <th>Date</th>
             <th>Description</th>
+            <th class="r">Rate</th>
             <th class="r">Amount</th>
             <th class="r">→ Interest</th>
             <th class="r">→ Principal</th>
@@ -679,6 +795,20 @@
   </section>
 
   <footer class="page-footer" id="page-footer"></footer>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div style="font-size:2rem;margin-bottom:0.75rem">⚠️</div>
+    <h2 class="modal-title display" style="margin-bottom:0.75rem">Delete Payment?</h2>
+    <p id="delete-modal-desc" style="font-size:0.85rem;color:var(--s600);line-height:1.6;margin-bottom:2rem"></p>
+    <div class="modal-actions">
+      <button class="btn" id="delete-cancel-btn" style="flex:1">Keep It</button>
+      <button class="btn" id="delete-confirm-btn"
+              style="flex:1;background:#dc2626;border-color:#dc2626;color:white">Delete</button>
+    </div>
+  </div>
 </div>
 
 <!-- Settings modal -->
@@ -965,6 +1095,22 @@ function render() {
   document.getElementById('page-footer').innerHTML =
     `Interest accrues daily at <span class="mono">${config.rate}% / 365</span>. Synced live across all devices.`;
 
+  // Rate reference line
+  const refLine = document.getElementById('rate-ref-line');
+  const refText = document.getElementById('rate-ref-text');
+  if (config.vmfxxYield != null && config.rateSetDate) {
+    const spread   = Math.round((config.rate - config.vmfxxYield) * 1000) / 1000;
+    const setOn    = fmtDate(config.rateSetDate);
+    refText.innerHTML =
+      `Last set <strong>${setOn}</strong>: VMFXX yield
+       <strong class="mono">${config.vmfxxYield.toFixed(3)}%</strong>
+       + ${(spread * 100).toFixed(0)} bps =
+       <strong class="mono">${config.rate.toFixed(3)}%</strong>`;
+    refLine.style.display = '';
+  } else {
+    refLine.style.display = 'none';
+  }
+
   // Chart
   const chartSec = document.getElementById('chart-section');
   if (chartData.length > 1) {
@@ -993,10 +1139,15 @@ function render() {
       ? `<button class="del-btn" data-id="${esc(row.id)}" title="Delete">✕</button>`
       : '';
 
+    const rateCell = (row.type === 'interest' || row.type === 'principal') && row.rate != null
+      ? `<span class="mono" style="color:var(--s600)">${Number(row.rate).toFixed(3)}%</span>`
+      : '—';
+
     html += `
       <tr class="${rowClass}">
         <td class="mono">${fmtDate(row.date)}</td>
         <td><span class="${lblClass}">${esc(row.label)}</span></td>
+        <td class="r">${rateCell}</td>
         <td class="r mono">${row.amount > 0 ? `−${fmt$(row.amount)}` : '—'}</td>
         <td class="r mono">${row.appliedToInterest > 0 ? fmt$(row.appliedToInterest) : '—'}</td>
         <td class="r mono col-amber">${row.appliedToPrincipal > 0 ? fmt$(row.appliedToPrincipal) : '—'}</td>
@@ -1091,7 +1242,7 @@ function addPayment() {
   const note   = document.getElementById('np-note').value.trim();
   if (!amount || amount <= 0 || !date) return;
 
-  fbSavePayments([...payments, { id: Date.now().toString(), date, amount, type, note }]);
+  fbSavePayments([...payments, { id: Date.now().toString(), date, amount, type, note, rate: config.rate }]);
 
   document.getElementById('np-date').value   = todayISO();
   document.getElementById('np-amount').value = '';
@@ -1100,9 +1251,20 @@ function addPayment() {
   document.getElementById('add-btn').disabled = true;
 }
 
+let pendingDeleteId = null;
+
 function deletePayment(id) {
-  if (!confirm('Delete this payment? This cannot be undone.')) return;
-  fbSavePayments(payments.filter(p => p.id !== id));
+  const row = payments.find(p => p.id === id);
+  let desc = 'this payment';
+  if (row) {
+    const parts = [fmtDate(row.date), fmt$(row.amount)];
+    if (row.note) parts.push(`"${row.note}"`);
+    desc = parts.join(' · ');
+  }
+  document.getElementById('delete-modal-desc').textContent =
+    `You're about to permanently remove: ${desc}. This cannot be undone.`;
+  pendingDeleteId = id;
+  document.getElementById('delete-modal').classList.add('open');
 }
 
 // ── Settings ─────────────────────────────────────────────────────────
@@ -1190,6 +1352,35 @@ document.getElementById('gate-form').addEventListener('submit', e => {
   }
 });
 
+// ── Rate helper ──────────────────────────────────────────────────────
+
+const SPREAD = 0.25; // basis points in % terms (25 bps)
+
+document.getElementById('vmfxx-yield').addEventListener('input', () => {
+  const raw = parseFloat(document.getElementById('vmfxx-yield').value);
+  const btn = document.getElementById('use-rate-btn');
+  const out = document.getElementById('rate-computed');
+  if (isNaN(raw) || raw < 0) {
+    out.textContent = '—';
+    btn.disabled = true;
+    return;
+  }
+  const computed = Math.round((raw + SPREAD) * 1000) / 1000;
+  out.textContent = computed.toFixed(3) + '%';
+  btn.disabled = false;
+  btn.dataset.rate = computed;
+});
+
+document.getElementById('use-rate-btn').addEventListener('click', () => {
+  const rate       = parseFloat(document.getElementById('use-rate-btn').dataset.rate);
+  const vmfxxYield = parseFloat(document.getElementById('vmfxx-yield').value);
+  if (isNaN(rate)) return;
+  fbSaveConfig({ ...config, rate, vmfxxYield, rateSetDate: todayISO() });
+  document.getElementById('vmfxx-yield').value = '';
+  document.getElementById('rate-computed').textContent = '—';
+  document.getElementById('use-rate-btn').disabled = true;
+});
+
 // ── Wire up DOM events ───────────────────────────────────────────────
 
 document.getElementById('add-btn').addEventListener('click', addPayment);
@@ -1197,6 +1388,22 @@ document.getElementById('add-btn').addEventListener('click', addPayment);
 document.getElementById('np-amount').addEventListener('input', () => {
   const v = parseFloat(document.getElementById('np-amount').value);
   document.getElementById('add-btn').disabled = !(v > 0);
+});
+
+document.getElementById('delete-cancel-btn').addEventListener('click', () => {
+  pendingDeleteId = null;
+  document.getElementById('delete-modal').classList.remove('open');
+});
+document.getElementById('delete-confirm-btn').addEventListener('click', () => {
+  if (pendingDeleteId) fbSavePayments(payments.filter(p => p.id !== pendingDeleteId));
+  pendingDeleteId = null;
+  document.getElementById('delete-modal').classList.remove('open');
+});
+document.getElementById('delete-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('delete-modal')) {
+    pendingDeleteId = null;
+    document.getElementById('delete-modal').classList.remove('open');
+  }
 });
 
 document.getElementById('settings-btn').addEventListener('click', openSettings);
