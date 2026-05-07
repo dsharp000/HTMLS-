@@ -1156,17 +1156,19 @@ function renderSubPanel() {
     return p.stintStart ? Math.max(0, now - p.stintStart) : 0;
   }
 
-  // ON PITCH: available, sorted by longest current stint
+  // ON PITCH: available, sorted by longest current stint, top 4
   const onPitch = players
     .filter(p => p.onPitch && !p.unavailable)
     .map(p => ({ p, secs: stintSecs(p) }))
-    .sort((a, b) => b.secs - a.secs);
+    .sort((a, b) => b.secs - a.secs)
+    .slice(0, 4);
 
-  // ON BENCH: available, sorted by longest current bench sit
+  // ON BENCH: available, sorted by longest current bench sit, top 4
   const onBench = players
     .filter(p => !p.onPitch && !p.unavailable)
     .map(p => ({ p, secs: stintSecs(p) }))
-    .sort((a, b) => b.secs - a.secs);
+    .sort((a, b) => b.secs - a.secs)
+    .slice(0, 4);
 
   const pitchRows = onPitch.length
     ? onPitch.map((r, idx) => `
@@ -1187,14 +1189,14 @@ function renderSubPanel() {
     : `<div class="sub-empty-msg">None on bench</div>`;
 
   panel.innerHTML = `
-    <div class="sub-panel-title">⏱ TIME IN CURRENT STINT</div>
+    <div class="sub-panel-title">⇄ SUB RECOMMENDATIONS</div>
     <div class="sub-panel-cols">
       <div class="sub-col">
-        <div class="sub-col-label label-on">On Pitch</div>
+        <div class="sub-col-label label-off">Sub Out</div>
         ${pitchRows}
       </div>
       <div class="sub-col">
-        <div class="sub-col-label label-off">On Bench</div>
+        <div class="sub-col-label label-on">Sub In</div>
         ${benchRows}
       </div>
     </div>`;
