@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Loan Tracker · Razor's Edge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --s50:  #fafaf9;
+      --s100: #f5f5f4;
+      --s200: #e7e5e4;
+      --s300: #d6d3d1;
+      --s400: #a8a29e;
+      --s500: #78716c;
+      --s600: #57534e;
+      --s700: #44403c;
+      --s800: #292524;
+      --s900: #1c1917;
+      --amber: #92400e;
+      --gold:  #a16207;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--s50);
+      color: var(--s900);
+      min-height: 100vh;
+    }
+
+    .display { font-family: 'Fraunces', Georgia, serif; }
+    .mono    { font-family: 'JetBrains Mono', 'Courier New', monospace; font-variant-numeric: tabular-nums; }
+
+    /* ── Password gate ─────────────────────────────────────────── */
+    #gate {
+      position: fixed;
+      inset: 0;
+      background: var(--s50);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 1.5rem;
+    }
+
+    .gate-box {
+      max-width: 340px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .gate-eyebrow {
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1rem;
+    }
+
+    .gate-title {
+      font-size: 2.5rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      margin-bottom: 1rem;
+    }
+
+    .gate-rule {
+      width: 40px;
+      height: 2px;
+      background: var(--gold);
+      margin: 0 auto 1.25rem;
+      opacity: 0.5;
+    }
+
+    .gate-sub {
+      font-size: 0.82rem;
+      color: var(--s500);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    .gate-input {
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      border: 1px solid var(--s300);
+      background: white;
+      font-size: 0.9rem;
+      font-family: inherit;
+      color: var(--s900);
+      outline: none;
+      text-align: center;
+      letter-spacing: 0.05em;
+      transition: border-color 0.15s;
+    }
+    .gate-input:focus { border-color: var(--s900); }
+    .gate-input.shake {
+      animation: shake 0.35s ease;
+      border-color: #dc2626;
+    }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-6px); }
+      40%      { transform: translateX(6px); }
+      60%      { transform: translateX(-4px); }
+      80%      { transform: translateX(4px); }
+    }
+
+    .gate-error {
+      font-size: 0.72rem;
+      color: #dc2626;
+      min-height: 1.1rem;
+      margin-top: 0.4rem;
+    }
+
+    .gate-btn {
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0.6rem 1rem;
+      background: var(--s900);
+      color: var(--s50);
+      border: none;
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .gate-btn:hover { background: var(--s800); }
+
+    /* ── Loading overlay ───────────────────────────────────────── */
+    #loading {
+      position: fixed;
+      inset: 0;
+      background: var(--s50);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .loading-text {
+      font-family: 'Fraunces', Georgia, serif;
+      font-style: italic;
+      color: var(--s500);
+      font-size: 1rem;
+    }
+
+    /* ── App layout ────────────────────────────────────────────── */
+    .wrap {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 5rem;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      color: var(--s500);
+      text-decoration: none;
+      margin-bottom: 2rem;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--s900); }
+
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--s300);
+    }
+
+    .eyebrow {
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--s500);
+      margin-bottom: 0.5rem;
+    }
+
+    .loan-title {
+      font-size: clamp(1.75rem, 5vw, 2.5rem);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .origin-line {
+      margin-top: 0.5rem;
+      font-size: 0.82rem;
+      color: var(--s600);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Buttons ───────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.8rem;
+      font-family: inherit;
+      border: 1px solid var(--s300);
+      background: white;
+      color: var(--s700);
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover { background: var(--s100); }
+
+    .btn-dark {
+      background: var(--s900);
+      color: var(--s50);
+      border-color: var(--s900);
+    }
+    .btn-dark:hover { background: var(--s800); }
+    .btn-dark:disabled {
+      background: var(--s300);
+      color: var(--s500);
+      cursor: not-allowed;
+      border-color: var(--s300);
+    }
+
+    /* ── Stats ─────────────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--s300);
+      border: 1px solid var(--s300);
+      margin-bottom: 2.5rem;
+    }
+
+    .stat { padding: 1.25rem; background: var(--s50); }
+    .stat.accent { background: var(--s900); color: var(--s50); }
+
+    .stat-label {
+      font-size: 0.63rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--s500);
+      margin-bottom: 0.5rem;
+    }
+    .stat.accent .stat-label { color: var(--s400); }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+
+    .stat-sub {
+      font-size: 0.68rem;
+      margin-top: 0.3rem;
+      color: var(--s500);
+      font-variant-numeric: tabular-nums;
+    }
+    .stat.accent .stat-sub { color: var(--s400); }
+
+    /* ── Sections ──────────────────────────────────────────────── */
+    section { margin-bottom: 2.5rem; }
+
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .section-title { font-size: 1.5rem; font-weight: 500; }
+
+    .section-meta {
+      font-size: 0.63rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--s500);
+    }
+
+    /* ── Chart ─────────────────────────────────────────────────── */
+    .chart-box {
+      background: white;
+      border: 1px solid var(--s300);
+      padding: 1.5rem;
+    }
+
+    .chart-canvas-wrap { position: relative; height: 280px; }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      margin-top: 1rem;
+      font-size: 0.7rem;
+      color: var(--s600);
+    }
+
+    .legend-item { display: flex; align-items: center; gap: 0.5rem; }
+    .legend-line { width: 1.5rem; height: 2px; background: var(--s900); flex-shrink: 0; }
+    .legend-dashed { width: 1.5rem; height: 0; border-top: 2px dashed var(--gold); flex-shrink: 0; }
+
+    /* ── Form ──────────────────────────────────────────────────── */
+    .form-box {
+      background: white;
+      border: 1px solid var(--s300);
+      padding: 1.5rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.3fr 1.6fr auto;
+      gap: 1rem;
+      align-items: end;
+    }
+
+    label {
+      display: block;
+      font-size: 0.63rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--s500);
+      margin-bottom: 0.3rem;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--s300);
+      background: var(--s50);
+      font-size: 0.85rem;
+      font-family: inherit;
+      color: var(--s900);
+      outline: none;
+      border-radius: 0;
+      transition: border-color 0.15s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    input:focus, select:focus { border-color: var(--s900); }
+
+    .input-wrap { position: relative; }
+
+    .prefix {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--s500);
+      font-size: 0.85rem;
+      pointer-events: none;
+    }
+    .prefix ~ input { padding-left: 1.5rem; }
+
+    .suffix {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--s500);
+      font-size: 0.85rem;
+      pointer-events: none;
+    }
+    .suffix ~ input { padding-right: 1.5rem; }
+
+    .select-wrap { position: relative; }
+    .select-wrap::after {
+      content: '▾';
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--s500);
+      font-size: 0.7rem;
+      pointer-events: none;
+    }
+    .select-wrap select { padding-right: 1.75rem; }
+
+    .form-hint {
+      margin-top: 1rem;
+      font-size: 0.72rem;
+      color: var(--s500);
+      line-height: 1.6;
+    }
+
+    /* ── Table ─────────────────────────────────────────────────── */
+    .table-box {
+      background: white;
+      border: 1px solid var(--s300);
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      min-width: 700px;
+    }
+
+    thead tr {
+      border-bottom: 1px solid var(--s300);
+      background: var(--s100);
+    }
+
+    th {
+      padding: 0.7rem 1rem;
+      text-align: left;
+      font-size: 0.63rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--s600);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    th.r { text-align: right; }
+
+    td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--s200);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    td.r { text-align: right; }
+    tr:last-child td { border-bottom: none; }
+
+    .row-today { background: #fefce8; }
+    .row-start { background: var(--s50); }
+
+    .lbl-principal { color: var(--amber); font-weight: 600; }
+    .lbl-today     { font-style: italic; }
+    .lbl-start     { color: var(--s500); font-style: italic; }
+    .col-amber     { color: var(--amber); }
+    .col-bold      { font-weight: 600; }
+
+    .del-btn {
+      background: none;
+      border: none;
+      color: var(--s400);
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.9rem;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+    .del-btn:hover { color: #dc2626; }
+
+    .empty-msg {
+      padding: 2rem;
+      text-align: center;
+      color: var(--s500);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    /* ── Footer ────────────────────────────────────────────────── */
+    .page-footer {
+      font-size: 0.72rem;
+      color: var(--s500);
+      text-align: center;
+      padding: 1.5rem 0;
+      border-top: 1px solid var(--s300);
+    }
+
+    /* ── Settings modal ────────────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(28,25,23,0.45);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--s50);
+      max-width: 430px;
+      width: 100%;
+      padding: 2rem;
+      border: 1px solid var(--s300);
+    }
+
+    .modal-title { font-size: 1.5rem; font-weight: 500; margin-bottom: 1.5rem; }
+
+    .field + .field { margin-top: 1rem; }
+
+    .modal-actions { display: flex; gap: 0.75rem; margin-top: 2rem; }
+    .modal-actions .btn { flex: 1; }
+
+    .modal-note {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--s200);
+      font-size: 0.7rem;
+      color: var(--s500);
+      line-height: 1.6;
+    }
+
+    /* ── Responsive ────────────────────────────────────────────── */
+    @media (max-width: 760px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid  { grid-template-columns: 1fr 1fr; }
+      .form-grid > *:nth-child(3),
+      .form-grid > *:nth-child(4),
+      .form-grid > *:last-child { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 500px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .form-grid  { grid-template-columns: 1fr; }
+      .form-grid > * { grid-column: unset; }
+      header { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Password gate ──────────────────────────────────────────────── -->
+<div id="gate">
+  <div class="gate-box">
+    <p class="gate-eyebrow">Razor's Edge</p>
+    <h1 class="gate-title display">Family Loan</h1>
+    <div class="gate-rule"></div>
+    <p class="gate-sub">This page is private.<br>Enter the password to continue.</p>
+    <form id="gate-form">
+      <input type="password" id="pw-input" class="gate-input" placeholder="Password" autocomplete="current-password">
+      <p class="gate-error" id="gate-error"></p>
+      <button type="submit" class="gate-btn">Continue →</button>
+    </form>
+  </div>
+</div>
+
+<!-- ── Loading ────────────────────────────────────────────────────── -->
+<div id="loading" style="display:none">
+  <p class="loading-text display">Loading…</p>
+</div>
+
+<!-- ── App ───────────────────────────────────────────────────────── -->
+<div class="wrap" id="app" style="display:none">
+
+  <a href="index.html" class="back-link">← Razor's Edge</a>
+
+  <header>
+    <div>
+      <p class="eyebrow">Family Loan Tracker</p>
+      <h1 class="loan-title display" id="loan-title">Personal Loan</h1>
+      <p class="origin-line mono" id="origin-line"></p>
+    </div>
+    <button class="btn" id="settings-btn">⚙ Settings</button>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat accent">
+      <div class="stat-label">Current Balance</div>
+      <div class="stat-value display" id="stat-balance">—</div>
+      <div class="stat-sub" id="stat-principal-sub">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">↘ Accrued Interest</div>
+      <div class="stat-value display" id="stat-accrued">—</div>
+      <div class="stat-sub">unpaid</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">% Interest Paid</div>
+      <div class="stat-value display" id="stat-int-paid">—</div>
+      <div class="stat-sub" id="stat-months-sub">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">📅 Est. Monthly Interest</div>
+      <div class="stat-value display" id="stat-monthly">—</div>
+      <div class="stat-sub">at current balance</div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <section id="chart-section" style="display:none">
+    <div class="section-header">
+      <h2 class="section-title display">Balance Over Time</h2>
+      <span class="section-meta">Principal vs. total owed</span>
+    </div>
+    <div class="chart-box">
+      <div class="chart-canvas-wrap">
+        <canvas id="loan-chart"></canvas>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item">
+          <div class="legend-line"></div>
+          Total owed (principal + accrued interest)
+        </div>
+        <div class="legend-item">
+          <div class="legend-dashed"></div>
+          Principal balance
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Add Payment -->
+  <section>
+    <div class="section-header">
+      <h2 class="section-title display">Log a Payment</h2>
+    </div>
+    <div class="form-box">
+      <div class="form-grid">
+        <div>
+          <label for="np-date">Date</label>
+          <input type="date" id="np-date" class="mono">
+        </div>
+        <div>
+          <label for="np-amount">Amount</label>
+          <div class="input-wrap">
+            <span class="prefix">$</span>
+            <input type="number" id="np-amount" class="mono" placeholder="0.00" step="0.01" min="0">
+          </div>
+        </div>
+        <div>
+          <label for="np-type">Type</label>
+          <div class="select-wrap">
+            <select id="np-type">
+              <option value="interest">Regular (interest first)</option>
+              <option value="principal">Principal only</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="np-note">Note (optional)</label>
+          <input type="text" id="np-note" placeholder="e.g. April payment">
+        </div>
+        <div>
+          <button class="btn btn-dark" id="add-btn" style="width:100%;padding:.5rem 1rem" disabled>
+            + Add
+          </button>
+        </div>
+      </div>
+      <p class="form-hint">
+        <strong>Regular payments</strong> apply to accrued interest first, then to principal if any remains.
+        <strong> Principal-only payments</strong> reduce the loan balance directly without touching accrued interest.
+      </p>
+    </div>
+  </section>
+
+  <!-- Transaction History -->
+  <section>
+    <div class="section-header">
+      <h2 class="section-title display">Transaction History</h2>
+      <span class="section-meta" id="payment-count">0 payments logged</span>
+    </div>
+    <div class="table-box">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th class="r">Amount</th>
+            <th class="r">→ Interest</th>
+            <th class="r">→ Principal</th>
+            <th class="r">Principal Bal.</th>
+            <th class="r">Total Owed</th>
+            <th style="width:48px"></th>
+          </tr>
+        </thead>
+        <tbody id="schedule-tbody"></tbody>
+      </table>
+      <div class="empty-msg" id="empty-msg">No payments logged yet. Add your first payment above.</div>
+    </div>
+  </section>
+
+  <footer class="page-footer" id="page-footer"></footer>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <h2 class="modal-title display">Loan Settings</h2>
+    <div class="field">
+      <label for="s-lender">Lender Name (optional)</label>
+      <input type="text" id="s-lender" placeholder="e.g. Mom &amp; Dad">
+    </div>
+    <div class="field">
+      <label for="s-principal">Original Principal</label>
+      <div class="input-wrap">
+        <span class="prefix">$</span>
+        <input type="number" id="s-principal" class="mono" step="1" min="0">
+      </div>
+    </div>
+    <div class="field">
+      <label for="s-rate">Annual Interest Rate</label>
+      <div class="input-wrap">
+        <input type="number" id="s-rate" class="mono" step="0.01" min="0" style="padding-right:1.75rem">
+        <span class="suffix">%</span>
+      </div>
+    </div>
+    <div class="field">
+      <label for="s-start">Loan Start Date</label>
+      <input type="date" id="s-start" class="mono">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="cancel-settings-btn">Cancel</button>
+      <button class="btn btn-dark" id="save-settings-btn">Save</button>
+    </div>
+    <p class="modal-note" id="modal-note" style="display:none">
+      Note: changing principal, rate, or start date will recalculate the entire history using your existing payments.
+    </p>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp }                         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, remove, onValue } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+// ── Firebase ────────────────────────────────────────────────────────
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCp2PBbqdj_g6NPR9iYQb7Z6tgXbqLtHIA",
+  authDomain:        "lunch-f7021.firebaseapp.com",
+  databaseURL:       "https://lunch-f7021-default-rtdb.firebaseio.com",
+  projectId:         "lunch-f7021",
+  storageBucket:     "lunch-f7021.firebasestorage.app",
+  messagingSenderId: "1053755216064",
+  appId:             "1:1053755216064:web:14b749200f825a4e9bdd25",
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+const configRef   = ref(db, 'family-loan/config');
+const paymentsRef = ref(db, 'family-loan/payments');
+
+// ── State ───────────────────────────────────────────────────────────
+
+let config = {
+  principal:  260000,
+  rate:       4.08,
+  startDate:  todayISO(),
+  lenderName: '',
+};
+let payments  = [];
+let chartInst = null;
+let ready     = 0;   // increments to 2 once both listeners have fired
+
+// ── Helpers ─────────────────────────────────────────────────────────
+
+function todayISO() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function fmt$(n) {
+  if (n == null || isNaN(n)) return '$0';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n);
+}
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  return new Date(iso + 'T12:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function daysBetween(a, b) {
+  const s = new Date(a + 'T12:00:00'), e = new Date(b + 'T12:00:00');
+  return Math.max(0, Math.round((e - s) / 86400000));
+}
+
+function monthsBetween(a, b) {
+  const s = new Date(a + 'T12:00:00'), e = new Date(b + 'T12:00:00');
+  return (e.getFullYear() - s.getFullYear()) * 12
+       + (e.getMonth() - s.getMonth())
+       + (e.getDate() >= s.getDate() ? 0 : -1);
+}
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── Firebase persistence ────────────────────────────────────────────
+
+function fbSaveConfig(c) {
+  config = c;
+  set(configRef, c);
+}
+
+function fbSavePayments(arr) {
+  payments = arr;
+  if (arr.length === 0) {
+    set(paymentsRef, null);
+  } else {
+    const obj = {};
+    arr.forEach(p => { obj[p.id] = p; });
+    set(paymentsRef, obj);
+  }
+}
+
+// ── Core math ────────────────────────────────────────────────────────
+
+function computeSchedule() {
+  if (!config.startDate || !config.principal) return [];
+
+  const dailyRate = (config.rate / 100) / 365;
+  const sorted    = [...payments].sort((a, b) => a.date.localeCompare(b.date));
+  const today     = todayISO();
+
+  const events = [
+    { date: config.startDate, type: 'start' },
+    ...sorted.map(p => ({ ...p, type: p.type === 'principal' ? 'principal' : 'interest' })),
+  ];
+  if (today > config.startDate) events.push({ date: today, type: 'today' });
+  events.sort((a, b) => a.date.localeCompare(b.date));
+
+  let principal       = config.principal;
+  let accruedInterest = 0;
+  let totalIntPaid    = 0;
+  let totalPrincPaid  = 0;
+  let lastDate        = config.startDate;
+
+  const rows = [{
+    date: config.startDate, type: 'start', label: 'Loan originated',
+    amount: 0, principal, accruedInterest: 0, totalBalance: principal,
+    totalInterestPaid: 0, totalPrincipalPaid: 0,
+  }];
+
+  for (const ev of events) {
+    if (ev.date === config.startDate && ev.type === 'start') continue;
+
+    const days = daysBetween(lastDate, ev.date);
+    accruedInterest += principal * dailyRate * days;
+    lastDate = ev.date;
+
+    if (ev.type === 'today') {
+      rows.push({
+        date: ev.date, type: 'today', label: 'Today', amount: 0,
+        principal, accruedInterest, totalBalance: principal + accruedInterest,
+        totalInterestPaid: totalIntPaid, totalPrincipalPaid: totalPrincPaid,
+      });
+      continue;
+    }
+
+    const amt   = Number(ev.amount) || 0;
+    let toInt   = 0;
+    let toPrinc = 0;
+
+    if (ev.type === 'principal') {
+      toPrinc = Math.min(amt, principal);
+      principal -= toPrinc;
+      totalPrincPaid += toPrinc;
+    } else {
+      toInt = Math.min(amt, accruedInterest);
+      accruedInterest -= toInt;
+      totalIntPaid += toInt;
+      const over = amt - toInt;
+      if (over > 0) {
+        toPrinc = Math.min(over, principal);
+        principal -= toPrinc;
+        totalPrincPaid += toPrinc;
+      }
+    }
+
+    rows.push({
+      date: ev.date, type: ev.type,
+      label: ev.note || (ev.type === 'principal' ? 'Principal payment' : 'Interest payment'),
+      amount: amt, appliedToInterest: toInt, appliedToPrincipal: toPrinc,
+      principal, accruedInterest, totalBalance: principal + accruedInterest,
+      totalInterestPaid: totalIntPaid, totalPrincipalPaid: totalPrincPaid,
+      id: ev.id,
+    });
+  }
+
+  return rows;
+}
+
+function computeChartData() {
+  if (!config.startDate) return [];
+  const dailyRate = (config.rate / 100) / 365;
+  const today     = todayISO();
+  const sorted    = [...payments].sort((a, b) => a.date.localeCompare(b.date));
+
+  const start = new Date(config.startDate + 'T12:00:00');
+  const end   = new Date(today + 'T12:00:00');
+  if (end < start) return [];
+
+  const checkpoints = [];
+  let cursor = new Date(start);
+  checkpoints.push(new Date(cursor));
+  while (cursor < end) {
+    cursor.setMonth(cursor.getMonth() + 1);
+    checkpoints.push(cursor > end ? new Date(end) : new Date(cursor));
+  }
+  const last = checkpoints[checkpoints.length - 1].toISOString().split('T')[0];
+  if (last !== today) checkpoints.push(new Date(end));
+
+  const result  = [];
+  let principal = config.principal;
+  let accrued   = 0;
+  let lastDate  = config.startDate;
+  let pi        = 0;
+
+  for (const cp of checkpoints) {
+    const cpStr = cp.toISOString().split('T')[0];
+
+    while (pi < sorted.length && sorted[pi].date <= cpStr) {
+      const p  = sorted[pi];
+      accrued += principal * dailyRate * daysBetween(lastDate, p.date);
+      lastDate = p.date;
+      const amt = Number(p.amount) || 0;
+      if (p.type === 'principal') {
+        principal = Math.max(0, principal - amt);
+      } else {
+        const toInt = Math.min(amt, accrued);
+        accrued -= toInt;
+        const over = amt - toInt;
+        if (over > 0) principal = Math.max(0, principal - over);
+      }
+      pi++;
+    }
+
+    accrued  = accrued + principal * dailyRate * daysBetween(lastDate, cpStr);
+    lastDate = cpStr;
+
+    result.push({
+      label:     cp.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+      principal: Math.round(principal * 100) / 100,
+      balance:   Math.round((principal + accrued) * 100) / 100,
+    });
+  }
+
+  return result;
+}
+
+// ── Render ───────────────────────────────────────────────────────────
+
+function render() {
+  const schedule   = computeSchedule();
+  const chartData  = computeChartData();
+  const current    = schedule[schedule.length - 1] || {
+    principal: config.principal, accruedInterest: 0, totalBalance: config.principal,
+    totalInterestPaid: 0, totalPrincipalPaid: 0,
+  };
+  const months     = monthsBetween(config.startDate, todayISO());
+  const monthlyEst = (current.principal * (config.rate / 100)) / 12;
+
+  document.getElementById('loan-title').textContent =
+    config.lenderName ? `Loan from ${config.lenderName}` : 'Personal Loan';
+  document.getElementById('origin-line').textContent =
+    `${fmt$(config.principal)} · ${config.rate}% · originated ${fmtDate(config.startDate)}`;
+
+  document.getElementById('stat-balance').textContent      = fmt$(current.totalBalance);
+  document.getElementById('stat-principal-sub').textContent = `${fmt$(current.principal)} principal`;
+  document.getElementById('stat-accrued').textContent      = fmt$(current.accruedInterest);
+  document.getElementById('stat-int-paid').textContent     = fmt$(current.totalInterestPaid);
+  document.getElementById('stat-months-sub').textContent   = `${months} month${months !== 1 ? 's' : ''} elapsed`;
+  document.getElementById('stat-monthly').textContent      = fmt$(monthlyEst);
+
+  document.getElementById('page-footer').innerHTML =
+    `Interest accrues daily at <span class="mono">${config.rate}% / 365</span>. Synced live across all devices.`;
+
+  // Chart
+  const chartSec = document.getElementById('chart-section');
+  if (chartData.length > 1) {
+    chartSec.style.display = '';
+    renderChart(chartData);
+  } else {
+    chartSec.style.display = 'none';
+    if (chartInst) { chartInst.destroy(); chartInst = null; }
+  }
+
+  // Payment count + empty state
+  const n = payments.length;
+  document.getElementById('payment-count').textContent =
+    `${n} ${n === 1 ? 'payment' : 'payments'} logged`;
+  document.getElementById('empty-msg').style.display = n === 0 ? '' : 'none';
+
+  // Table
+  const tbody = document.getElementById('schedule-tbody');
+  let html = '';
+  for (const row of schedule) {
+    const rowClass = row.type === 'today' ? 'row-today' : row.type === 'start' ? 'row-start' : '';
+    const lblClass = row.type === 'principal' ? 'lbl-principal'
+                   : row.type === 'today'     ? 'lbl-today'
+                   : row.type === 'start'     ? 'lbl-start' : '';
+    const del = row.id
+      ? `<button class="del-btn" data-id="${esc(row.id)}" title="Delete">✕</button>`
+      : '';
+
+    html += `
+      <tr class="${rowClass}">
+        <td class="mono">${fmtDate(row.date)}</td>
+        <td><span class="${lblClass}">${esc(row.label)}</span></td>
+        <td class="r mono">${row.amount > 0 ? `−${fmt$(row.amount)}` : '—'}</td>
+        <td class="r mono">${row.appliedToInterest > 0 ? fmt$(row.appliedToInterest) : '—'}</td>
+        <td class="r mono col-amber">${row.appliedToPrincipal > 0 ? fmt$(row.appliedToPrincipal) : '—'}</td>
+        <td class="r mono">${fmt$(row.principal)}</td>
+        <td class="r mono col-bold">${fmt$(row.totalBalance)}</td>
+        <td style="text-align:center">${del}</td>
+      </tr>`;
+  }
+  tbody.innerHTML = html;
+
+  // Attach delete listeners (avoids inline onclick in module scope)
+  tbody.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', () => deletePayment(btn.dataset.id));
+  });
+}
+
+function renderChart(data) {
+  const ctx = document.getElementById('loan-chart').getContext('2d');
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+
+  chartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.map(d => d.label),
+      datasets: [
+        {
+          label: 'Total Owed',
+          data: data.map(d => d.balance),
+          borderColor: '#1c1917',
+          borderWidth: 2,
+          backgroundColor: 'rgba(28,25,23,0.07)',
+          fill: true,
+          tension: 0.2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+        },
+        {
+          label: 'Principal',
+          data: data.map(d => d.principal),
+          borderColor: '#a16207',
+          borderWidth: 2,
+          borderDash: [4, 4],
+          backgroundColor: 'rgba(161,98,7,0.05)',
+          fill: true,
+          tension: 0.2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#fafaf9',
+          borderColor: '#d6d3d1',
+          borderWidth: 1,
+          titleColor: '#44403c',
+          bodyColor: '#57534e',
+          titleFont: { size: 11 },
+          bodyFont: { size: 11 },
+          callbacks: { label: ctx => `${ctx.dataset.label}: ${fmt$(ctx.raw)}` },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { color: '#d6d3d1' },
+          ticks: { color: '#78716c', font: { size: 11 }, maxTicksLimit: 12 },
+        },
+        y: {
+          grid: { color: '#e7e5e4' },
+          border: { display: false },
+          ticks: {
+            color: '#78716c', font: { size: 11 },
+            callback: v => `$${(v / 1000).toFixed(0)}k`,
+          },
+        },
+      },
+    },
+  });
+}
+
+// ── Actions ──────────────────────────────────────────────────────────
+
+function addPayment() {
+  const date   = document.getElementById('np-date').value;
+  const amount = parseFloat(document.getElementById('np-amount').value);
+  const type   = document.getElementById('np-type').value;
+  const note   = document.getElementById('np-note').value.trim();
+  if (!amount || amount <= 0 || !date) return;
+
+  fbSavePayments([...payments, { id: Date.now().toString(), date, amount, type, note }]);
+
+  document.getElementById('np-date').value   = todayISO();
+  document.getElementById('np-amount').value = '';
+  document.getElementById('np-type').value   = 'interest';
+  document.getElementById('np-note').value   = '';
+  document.getElementById('add-btn').disabled = true;
+}
+
+function deletePayment(id) {
+  if (!confirm('Delete this payment? This cannot be undone.')) return;
+  fbSavePayments(payments.filter(p => p.id !== id));
+}
+
+// ── Settings ─────────────────────────────────────────────────────────
+
+function openSettings() {
+  document.getElementById('s-lender').value    = config.lenderName || '';
+  document.getElementById('s-principal').value = config.principal;
+  document.getElementById('s-rate').value      = config.rate;
+  document.getElementById('s-start').value     = config.startDate;
+  document.getElementById('modal-note').style.display = payments.length > 0 ? '' : 'none';
+  document.getElementById('settings-modal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').classList.remove('open');
+}
+
+function saveSettings() {
+  const startDate = document.getElementById('s-start').value;
+  if (!startDate) { alert('Please enter a start date.'); return; }
+  fbSaveConfig({
+    lenderName: document.getElementById('s-lender').value.trim(),
+    principal:  Number(document.getElementById('s-principal').value) || 0,
+    rate:       Number(document.getElementById('s-rate').value) || 0,
+    startDate,
+  });
+  closeSettings();
+}
+
+// ── Firebase init (called after auth) ───────────────────────────────
+
+function startFirebase() {
+  document.getElementById('loading').style.display = '';
+
+  onValue(configRef, snap => {
+    if (snap.exists()) config = snap.val();
+    ready++;
+    if (ready >= 2) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('app').style.display = '';
+      render();
+    }
+  });
+
+  onValue(paymentsRef, snap => {
+    const val = snap.val();
+    payments  = val ? Object.values(val) : [];
+    ready++;
+    if (ready >= 2) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('app').style.display = '';
+      render();
+    }
+  });
+}
+
+// ── Password gate ────────────────────────────────────────────────────
+
+const PASSWORD = '57cottage';
+
+function checkAuth() {
+  if (sessionStorage.getItem('loan-auth') === '1') {
+    document.getElementById('gate').style.display = 'none';
+    startFirebase();
+  } else {
+    document.getElementById('pw-input').focus();
+  }
+}
+
+document.getElementById('gate-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const val = document.getElementById('pw-input').value;
+  if (val === PASSWORD) {
+    sessionStorage.setItem('loan-auth', '1');
+    document.getElementById('gate').style.display = 'none';
+    startFirebase();
+  } else {
+    const input = document.getElementById('pw-input');
+    const err   = document.getElementById('gate-error');
+    err.textContent = 'Incorrect password — try again.';
+    input.value = '';
+    input.classList.add('shake');
+    input.addEventListener('animationend', () => input.classList.remove('shake'), { once: true });
+    input.focus();
+  }
+});
+
+// ── Wire up DOM events ───────────────────────────────────────────────
+
+document.getElementById('add-btn').addEventListener('click', addPayment);
+
+document.getElementById('np-amount').addEventListener('input', () => {
+  const v = parseFloat(document.getElementById('np-amount').value);
+  document.getElementById('add-btn').disabled = !(v > 0);
+});
+
+document.getElementById('settings-btn').addEventListener('click', openSettings);
+document.getElementById('cancel-settings-btn').addEventListener('click', closeSettings);
+document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
+
+document.getElementById('settings-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('settings-modal')) closeSettings();
+});
+
+// ── Boot ─────────────────────────────────────────────────────────────
+
+document.getElementById('np-date').value = todayISO();
+checkAuth();
+</script>
+</body>
+</html>
