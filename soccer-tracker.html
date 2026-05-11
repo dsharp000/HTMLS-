@@ -647,24 +647,9 @@
   .sub-row-num { color: #2a5a2a; font-size: 9px; margin-right: 4px; min-width: 12px; }
   .sub-row-name { color: #e8f5e0; }
   .sub-row-time { color: #4a6a4a; font-size: 10px; }
-  .stint-clock { color: #e8f5e0; font-weight: bold; font-size: 11px; letter-spacing: 1px; }
   .sub-row:first-child .sub-row-name { color: #7fff7f; }
   .sub-row:first-child .sub-col-off .sub-row-name { color: #ff9a9a; }
   .sub-empty-msg { font-size: 10px; color: #2a4a2a; font-style: italic; }
-
-  /* ── PITCH WARNING ── */
-  #pitch-warning {
-    display: none;
-    background: #2a1800;
-    border: 1px solid #ffca28;
-    border-radius: 6px;
-    color: #ffca28;
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-align: center;
-    padding: 6px 12px;
-    margin-bottom: 8px;
-  }
 
   /* ── UNAVAILABLE ── */
   .is-unavailable { opacity: 0.3; filter: grayscale(80%); }
@@ -725,8 +710,7 @@
     <button class="btn-ghost" id="btn-reset" onclick="resetMatch()">↺ Reset</button>
     <button class="btn-primary" id="btn-end" onclick="endMatch()">✓ Save Match</button>
   </div>
-  <div id="pitch-warning"></div>
-  <div id="pitch-count">ON PITCH: <span id="pitch-count-num">0</span> / 6</div>
+  <div id="pitch-count">ON PITCH: <span id="pitch-count-num">0</span> / 11</div>
 
   <div id="sub-panel" style="display:none"></div>
 
@@ -767,7 +751,7 @@
     </div>
     <div class="setting-group">
       <label>Match Duration (minutes)</label>
-      <input type="number" id="match-duration-input" value="60" min="10" max="120" step="5"
+      <input type="number" id="match-duration-input" value="50" min="10" max="120" step="5"
         onblur="saveMatchDuration()" onkeydown="if(event.key==='Enter')saveMatchDuration()">
     </div>
     <div class="setting-group" style="margin-top:20px;">
@@ -869,15 +853,14 @@ function makePlayers() {
     startedAt: null,
     goals: 0,
     subLog: [],
-    unavailable: false,
-    stintStart: null
+    unavailable: false
   }));
 }
 
 // ── STATE ──────────────────────────────────────────────────────────────────
 let state = {
   teamName: 'My Team',
-  matchDuration: 60,   // minutes
+  matchDuration: 50,   // minutes
   live: {
     matchId: null,
     opponent: '',
@@ -923,8 +906,7 @@ onValue(ref(db, 'soccer/live'), snap => {
         startedAt: p.startedAt || null,
         goals: p.goals || 0,
         subLog: p.subLog || [],
-        unavailable: !!p.unavailable,
-        stintStart: p.stintStart || null
+        unavailable: !!p.unavailable
       };
     });
   }
@@ -1028,8 +1010,8 @@ function renderClockAndBars() {
   const totalSecs = (state.matchDuration || 50) * 60;
   const halfSecs  = totalSecs / 2;
 
-  // Clock runs freely past match duration
-  const display = elapsed;
+  // Cap display at match duration
+  const display = Math.min(elapsed, totalSecs);
   document.getElementById('clock-display').textContent = fmtTime(display);
 
   // Half label
@@ -1058,19 +1040,9 @@ function renderClockAndBars() {
     }
   });
 
-  // Pitch count + warning
+  // Pitch count
   const onCount = state.live.players.filter(p => p.onPitch).length;
   document.getElementById('pitch-count-num').textContent = onCount;
-  const warnEl = document.getElementById('pitch-warning');
-  if (onCount === 5) {
-    warnEl.textContent = '⚠ ONE PLAYER SHORT — NEED 6 ON PITCH';
-    warnEl.style.display = '';
-  } else if (onCount >= 7) {
-    warnEl.textContent = '⚠ TOO MANY ON PITCH — NEED 6 ON PITCH';
-    warnEl.style.display = '';
-  } else {
-    warnEl.style.display = 'none';
-  }
 }
 
 function playerElapsed(p) {
@@ -1174,55 +1146,51 @@ function renderSubPanel() {
   }
   panel.style.display = '';
 
-  const now = Date.now() / 1000;
+  const elapsed = currentElapsed();
   const players = state.live.players;
 
-  function stintSecs(p) {
-    return p.stintStart ? Math.max(0, now - p.stintStart) : 0;
-  }
-
-  // ON PITCH: available, sorted by longest current stint, top 4
-  const onPitch = players
+  // Sub OFF: on pitch, available, sorted by most time on pitch (longest first)
+  const subOff = players
     .filter(p => p.onPitch && !p.unavailable)
-    .map(p => ({ p, secs: stintSecs(p) }))
+    .map(p => ({ p, secs: playerElapsed(p) }))
     .sort((a, b) => b.secs - a.secs)
     .slice(0, 4);
 
-  // ON BENCH: available, sorted by longest current bench sit, top 4
-  const onBench = players
+  // Sub ON: off pitch, available, sorted by most time off (longest sit first)
+  const subOn = players
     .filter(p => !p.onPitch && !p.unavailable)
-    .map(p => ({ p, secs: stintSecs(p) }))
-    .sort((a, b) => b.secs - a.secs)
+    .map(p => ({ p, timeOff: elapsed - playerElapsed(p) }))
+    .sort((a, b) => b.timeOff - a.timeOff)
     .slice(0, 4);
 
-  const pitchRows = onPitch.length
-    ? onPitch.map((r, idx) => `
+  const offRows = subOff.length
+    ? subOff.map((r, idx) => `
         <div class="sub-row">
           <span class="sub-row-num">${idx + 1}.</span>
           <span class="sub-row-name">${r.p.name}</span>
-          <span class="sub-row-time stint-clock">${fmtTime(r.secs)}</span>
+          <span class="sub-row-time">${fmtTime(r.secs)}</span>
         </div>`).join('')
     : `<div class="sub-empty-msg">None on pitch</div>`;
 
-  const benchRows = onBench.length
-    ? onBench.map((r, idx) => `
+  const onRows = subOn.length
+    ? subOn.map((r, idx) => `
         <div class="sub-row">
           <span class="sub-row-num">${idx + 1}.</span>
           <span class="sub-row-name">${r.p.name}</span>
-          <span class="sub-row-time stint-clock">${fmtTime(r.secs)}</span>
+          <span class="sub-row-time">${fmtTime(Math.max(0, r.timeOff))} off</span>
         </div>`).join('')
     : `<div class="sub-empty-msg">None on bench</div>`;
 
   panel.innerHTML = `
-    <div class="sub-panel-title">⇄ SUB RECOMMENDATIONS</div>
+    <div class="sub-panel-title">⇄ Sub Recommendations</div>
     <div class="sub-panel-cols">
       <div class="sub-col">
-        <div class="sub-col-label label-off">Sub Out</div>
-        ${pitchRows}
+        <div class="sub-col-label label-off">Take Off</div>
+        ${offRows}
       </div>
       <div class="sub-col">
-        <div class="sub-col-label label-on">Sub In</div>
-        ${benchRows}
+        <div class="sub-col-label label-on">Bring On</div>
+        ${onRows}
       </div>
     </div>`;
 }
@@ -1237,10 +1205,9 @@ window.toggleUnavailable = function(e, i) {
     if (p.startedAt && state.live.phase === 'running') {
       p.totalTime = (p.totalTime || 0) + (nowSec - p.startedAt);
     }
-    p.startedAt  = null;
-    p.onPitch    = false;
-    p.stintStart = nowSec;
-    p.subLog     = [...(p.subLog || []), { type: 'off', matchMinute: matchMinute() }];
+    p.startedAt = null;
+    p.onPitch   = false;
+    p.subLog    = [...(p.subLog || []), { type: 'off', matchMinute: matchMinute() }];
   }
   writeLive();
   renderSubPanel();
@@ -1317,11 +1284,10 @@ window.kickOff = function() {
   state.live.resumedAt = Date.now() / 1000;
   state.live.phase = 'running';
 
-  // Start all on-pitch players; initialise stint clocks for everyone
+  // Start all on-pitch players
   const now = Date.now() / 1000;
   state.live.players.forEach(p => {
     if (p.onPitch && !p.startedAt) p.startedAt = now;
-    if (!p.stintStart) p.stintStart = now;
   });
 
   writeLive();
@@ -1462,16 +1428,14 @@ window.togglePlayer = function(i) {
     if (p.startedAt && state.live.phase === 'running') {
       p.totalTime = (p.totalTime || 0) + (nowSec - p.startedAt);
     }
-    p.startedAt  = null;
-    p.onPitch    = false;
-    p.stintStart = nowSec;
-    p.subLog     = [...(p.subLog || []), { type: 'off', matchMinute: minute }];
+    p.startedAt = null;
+    p.onPitch   = false;
+    p.subLog    = [...(p.subLog || []), { type: 'off', matchMinute: minute }];
   } else {
     // Put on
-    p.onPitch    = true;
-    p.startedAt  = state.live.phase === 'running' ? nowSec : null;
-    p.stintStart = nowSec;
-    p.subLog     = [...(p.subLog || []), { type: 'on', matchMinute: minute }];
+    p.onPitch   = true;
+    p.startedAt = state.live.phase === 'running' ? nowSec : null;
+    p.subLog    = [...(p.subLog || []), { type: 'on', matchMinute: minute }];
   }
 
   writeLive();
