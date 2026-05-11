@@ -77,6 +77,49 @@
     }
     .back-link:hover { color: var(--text); }
 
+    /* ── Countdown ────────────────────────────────────────────── */
+    .countdown {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      margin-top: 1.5rem;
+    }
+    .cd-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 60px;
+    }
+    .cd-num {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: clamp(2rem, 6vw, 3.25rem);
+      font-weight: 600;
+      line-height: 1;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .cd-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+    .cd-sep {
+      font-size: 2rem;
+      color: var(--border);
+      line-height: 1;
+      padding-bottom: 0.6rem;
+      align-self: center;
+    }
+    .cd-until {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+      letter-spacing: 0.05em;
+    }
+
     /* ── Weight meter ─────────────────────────────────────────── */
     .meter-wrap {
       max-width: 900px;
@@ -378,6 +421,16 @@
   <p class="hero-eyebrow">Bush Plane · 850 lb limit</p>
   <h1>Alaska Fly-In</h1>
   <p class="hero-sub">4 guys · backcountry · everything counts</p>
+  <div class="countdown" id="countdown">
+    <div class="cd-block"><span class="cd-num" id="cd-days">--</span><span class="cd-label">days</span></div>
+    <div class="cd-sep">:</div>
+    <div class="cd-block"><span class="cd-num" id="cd-hours">--</span><span class="cd-label">hrs</span></div>
+    <div class="cd-sep">:</div>
+    <div class="cd-block"><span class="cd-num" id="cd-mins">--</span><span class="cd-label">min</span></div>
+    <div class="cd-sep">:</div>
+    <div class="cd-block"><span class="cd-num" id="cd-secs">--</span><span class="cd-label">sec</span></div>
+  </div>
+  <p class="cd-until">until August 14, 2026 · wheels up 🛩️</p>
 </div>
 
 <!-- Weight meter -->
@@ -785,6 +838,34 @@ function esc(str) {
 // ── Firebase listener ────────────────────────────────────────────
 
 const membersRef = ref(db, 'alaska-trip/members');
+
+// ── Countdown ────────────────────────────────────────────────────
+
+const TARGET = new Date('2026-08-14T00:00:00');
+
+function pad(n) { return String(Math.floor(n)).padStart(2, '0'); }
+
+function tickCountdown() {
+  const diff = TARGET - Date.now();
+  if (diff <= 0) {
+    document.getElementById('countdown').innerHTML =
+      '<span style="font-family:Fraunces,serif;font-size:2rem;color:var(--accent)">Let\'s go! 🛩️</span>';
+    return;
+  }
+  const days  = Math.floor(diff / 86400000);
+  const hrs   = Math.floor((diff % 86400000) / 3600000);
+  const mins  = Math.floor((diff % 3600000)  / 60000);
+  const secs  = Math.floor((diff % 60000)    / 1000);
+  document.getElementById('cd-days').textContent  = days;
+  document.getElementById('cd-hours').textContent = pad(hrs);
+  document.getElementById('cd-mins').textContent  = pad(mins);
+  document.getElementById('cd-secs').textContent  = pad(secs);
+}
+
+tickCountdown();
+setInterval(tickCountdown, 1000);
+
+// ── Firebase listener ────────────────────────────────────────────
 
 onValue(membersRef, async snap => {
   const data = snap.val() || {};
