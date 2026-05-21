@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Family Loan Tracker · Razor's Edge</title>
+  <title>Lake Loan</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
@@ -352,8 +352,54 @@
     }
     .rate-ref-line strong { color: var(--s700); font-weight: 600; }
 
+    .rate-current-block {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .rate-current-value {
+      font-size: 1.6rem;
+      font-weight: 500;
+      color: var(--gold);
+      line-height: 1.1;
+      min-width: 90px;
+    }
+
+    .rate-divider {
+      width: 1px;
+      background: var(--s200);
+      align-self: stretch;
+      margin: 0 0.25rem;
+    }
+
+    .vanguard-v {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #fff;
+      background: #8b1a1a;
+      border-radius: 2px;
+      padding: 0 3px;
+      margin-right: 4px;
+      letter-spacing: 0;
+      vertical-align: middle;
+      line-height: 1.5;
+    }
+
+    .rate-label-link {
+      color: var(--s500);
+      text-decoration: none;
+      font-size: 0.63rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: color 0.15s;
+    }
+    .rate-label-link:hover { color: var(--gold); }
+
     @media (max-width: 600px) {
       .rate-helper { gap: 1rem; }
+      .rate-current-block { width: 100%; flex-direction: row; align-items: center; gap: 1rem; }
+      .rate-divider { width: 100%; height: 1px; margin: 0; }
       .rate-helper-right { margin-left: 0; padding-top: 0; width: 100%; }
       .rate-helper-right .btn { width: 100%; }
     }
@@ -620,7 +666,7 @@
 <div id="gate">
   <div class="gate-box">
     <p class="gate-eyebrow">Razor's Edge</p>
-    <h1 class="gate-title display">Family Loan</h1>
+    <h1 class="gate-title display">Lake Loan</h1>
     <div class="gate-rule"></div>
     <p class="gate-sub">This page is private.<br>Enter the password to continue.</p>
     <form id="gate-form">
@@ -639,17 +685,11 @@
 <!-- ── App ───────────────────────────────────────────────────────── -->
 <div class="wrap" id="app" style="display:none">
 
-  <a href="index.html" class="back-link">← Razor's Edge</a>
-
   <header>
     <div>
-      <p class="eyebrow">Family Loan Tracker</p>
-      <h1 class="loan-title display" id="loan-title">Personal Loan</h1>
+      <p class="eyebrow">Lake Loan</p>
+      <h1 class="loan-title display" id="loan-title">Lake Loan</h1>
       <p class="origin-line mono" id="origin-line"></p>
-      <a href="https://investor.vanguard.com/investment-products/mutual-funds/profile/vmfxx"
-         target="_blank" rel="noopener" class="yield-link">
-        VMFXX 7-day yield ↗
-      </a>
     </div>
     <button class="btn" id="settings-btn">⚙ Settings</button>
   </header>
@@ -680,20 +720,32 @@
 
   <!-- Rate helper -->
   <div class="rate-helper">
+
+    <div class="rate-current-block">
+      <span class="rate-helper-label">Current Rate</span>
+      <div class="rate-current-value mono" id="rate-current-display">—</div>
+    </div>
+
+    <div class="rate-divider"></div>
+
     <div class="rate-helper-left">
-      <span class="rate-helper-label">VMFXX 7-Day Yield</span>
+      <span class="rate-helper-label">
+        <span class="vanguard-v">V</span>
+        <a href="https://investor.vanguard.com/investment-products/mutual-funds/profile/vmfxx"
+           target="_blank" rel="noopener" class="rate-label-link">VMFXX 7-Day Yield</a>
+      </span>
       <div class="rate-input-wrap">
         <input type="number" id="vmfxx-yield" class="mono rate-input" placeholder="0.00" step="0.01" min="0">
         <span class="rate-suffix">%</span>
       </div>
     </div>
-    <div class="rate-helper-arrow">+25 bps</div>
+    <div class="rate-helper-arrow">+ 0.25%</div>
     <div class="rate-helper-mid">
-      <span class="rate-helper-label">Loan Rate</span>
+      <span class="rate-helper-label">New Rate</span>
       <div class="rate-computed mono" id="rate-computed">—</div>
     </div>
     <div class="rate-helper-right">
-      <button class="btn btn-dark" id="use-rate-btn" disabled>Use as Interest Rate</button>
+      <button class="btn btn-dark" id="use-rate-btn" disabled>Use New Rate</button>
     </div>
     <div class="rate-ref-line" id="rate-ref-line" style="display:none">
       <span id="rate-ref-text"></span>
@@ -720,6 +772,33 @@
           Principal balance
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- Rate History -->
+  <section id="rate-history-section">
+    <div class="section-header">
+      <h2 class="section-title display">Rate History</h2>
+      <span class="section-meta" id="rate-history-meta"></span>
+    </div>
+    <div class="chart-box" style="margin-bottom:1rem">
+      <div style="position:relative;height:160px">
+        <canvas id="rate-chart"></canvas>
+      </div>
+    </div>
+    <div class="table-box">
+      <table>
+        <thead>
+          <tr>
+            <th>Effective Date</th>
+            <th class="r">Annual Rate</th>
+            <th class="r">Change</th>
+            <th class="r">Duration</th>
+            <th style="width:48px"></th>
+          </tr>
+        </thead>
+        <tbody id="rate-history-tbody"></tbody>
+      </table>
     </div>
   </section>
 
@@ -797,6 +876,21 @@
   <footer class="page-footer" id="page-footer"></footer>
 </div>
 
+<!-- Rate delete confirmation modal -->
+<div class="modal-overlay" id="rate-delete-modal">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div style="font-size:2rem;margin-bottom:0.75rem">⚠️</div>
+    <h2 class="modal-title display" style="margin-bottom:0.75rem">Delete Rate Entry?</h2>
+    <p id="rate-delete-desc" style="font-size:0.85rem;color:var(--s600);line-height:1.6;margin-bottom:0.5rem"></p>
+    <p style="font-size:0.75rem;color:#dc2626;margin-bottom:2rem">This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn" id="rate-delete-cancel-btn" style="flex:1">Keep It</button>
+      <button class="btn" id="rate-delete-confirm-btn"
+              style="flex:1;background:#dc2626;border-color:#dc2626;color:white">Delete</button>
+    </div>
+  </div>
+</div>
+
 <!-- Delete confirmation modal -->
 <div class="modal-overlay" id="delete-modal">
   <div class="modal" style="max-width:380px;text-align:center">
@@ -827,11 +921,12 @@
       </div>
     </div>
     <div class="field">
-      <label for="s-rate">Annual Interest Rate</label>
+      <label for="s-original-rate">Original Loan Rate</label>
       <div class="input-wrap">
-        <input type="number" id="s-rate" class="mono" step="0.01" min="0" style="padding-right:1.75rem">
+        <input type="number" id="s-original-rate" class="mono" step="0.01" min="0" style="padding-right:1.75rem">
         <span class="suffix">%</span>
       </div>
+      <p id="s-current-rate-info" style="display:none;margin-top:0.5rem;font-size:0.75rem;color:var(--s500)"></p>
     </div>
     <div class="field">
       <label for="s-start">Loan Start Date</label>
@@ -877,9 +972,10 @@ let config = {
   startDate:  todayISO(),
   lenderName: '',
 };
-let payments  = [];
-let chartInst = null;
-let ready     = 0;   // increments to 2 once both listeners have fired
+let payments      = [];
+let chartInst     = null;
+let rateChartInst = null;
+let ready         = 0;   // increments to 2 once both listeners have fired
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -915,6 +1011,43 @@ function esc(str) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// Returns rate history sorted ascending by date.
+// Falls back to a single entry if none stored (existing data).
+function buildRateHistory() {
+  if (config.rateHistory && config.rateHistory.length > 0) {
+    return [...config.rateHistory].sort((a, b) => a.date.localeCompare(b.date));
+  }
+  return [{ date: config.startDate || todayISO(), rate: config.rate || 0 }];
+}
+
+// Accrue interest on a fixed `principal` from `fromDate` to `toDate`,
+// applying the correct rate for each period in rateHistory.
+function accrueInterest(principal, fromDate, toDate) {
+  if (fromDate >= toDate || principal <= 0) return 0;
+  const history = buildRateHistory();
+
+  // Find the segment active at fromDate (last entry whose date <= fromDate)
+  let segIdx = 0;
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].date <= fromDate) { segIdx = i; break; }
+  }
+
+  let total  = 0;
+  let cursor = fromDate;
+
+  while (cursor < toDate && segIdx < history.length) {
+    const dailyRate = (history[segIdx].rate / 100) / 365;
+    const nextDate  = segIdx + 1 < history.length ? history[segIdx + 1].date : null;
+    const periodEnd = (nextDate && nextDate < toDate) ? nextDate : toDate;
+
+    total += principal * dailyRate * daysBetween(cursor, periodEnd);
+    cursor = periodEnd;
+    segIdx++;
+  }
+
+  return total;
+}
+
 // ── Firebase persistence ────────────────────────────────────────────
 
 function fbSaveConfig(c) {
@@ -938,9 +1071,8 @@ function fbSavePayments(arr) {
 function computeSchedule() {
   if (!config.startDate || !config.principal) return [];
 
-  const dailyRate = (config.rate / 100) / 365;
-  const sorted    = [...payments].sort((a, b) => a.date.localeCompare(b.date));
-  const today     = todayISO();
+  const sorted = [...payments].sort((a, b) => a.date.localeCompare(b.date));
+  const today  = todayISO();
 
   const events = [
     { date: config.startDate, type: 'start' },
@@ -964,8 +1096,7 @@ function computeSchedule() {
   for (const ev of events) {
     if (ev.date === config.startDate && ev.type === 'start') continue;
 
-    const days = daysBetween(lastDate, ev.date);
-    accruedInterest += principal * dailyRate * days;
+    accruedInterest += accrueInterest(principal, lastDate, ev.date);
     lastDate = ev.date;
 
     if (ev.type === 'today') {
@@ -1012,9 +1143,8 @@ function computeSchedule() {
 
 function computeChartData() {
   if (!config.startDate) return [];
-  const dailyRate = (config.rate / 100) / 365;
-  const today     = todayISO();
-  const sorted    = [...payments].sort((a, b) => a.date.localeCompare(b.date));
+  const today  = todayISO();
+  const sorted = [...payments].sort((a, b) => a.date.localeCompare(b.date));
 
   const start = new Date(config.startDate + 'T12:00:00');
   const end   = new Date(today + 'T12:00:00');
@@ -1041,7 +1171,7 @@ function computeChartData() {
 
     while (pi < sorted.length && sorted[pi].date <= cpStr) {
       const p  = sorted[pi];
-      accrued += principal * dailyRate * daysBetween(lastDate, p.date);
+      accrued += accrueInterest(principal, lastDate, p.date);
       lastDate = p.date;
       const amt = Number(p.amount) || 0;
       if (p.type === 'principal') {
@@ -1055,7 +1185,7 @@ function computeChartData() {
       pi++;
     }
 
-    accrued  = accrued + principal * dailyRate * daysBetween(lastDate, cpStr);
+    accrued  = accrued + accrueInterest(principal, lastDate, cpStr);
     lastDate = cpStr;
 
     result.push({
@@ -1066,6 +1196,170 @@ function computeChartData() {
   }
 
   return result;
+}
+
+// ── Rate history rendering ───────────────────────────────────────────
+
+function renderRateHistory() {
+  const history = buildRateHistory();
+  const today   = todayISO();
+
+  document.getElementById('rate-history-meta').textContent =
+    `${history.length} ${history.length === 1 ? 'rate' : 'rates'} recorded`;
+
+  const tbody = document.getElementById('rate-history-tbody');
+  let html = '';
+
+  for (let i = 0; i < history.length; i++) {
+    const entry    = history[i];
+    const nextDate = i + 1 < history.length ? history[i + 1].date : null;
+    const isCurrent = i === history.length - 1;
+    const prevRate  = i > 0 ? history[i - 1].rate : null;
+
+    // Change column
+    let changeHtml;
+    if (prevRate === null) {
+      changeHtml = '<span style="font-size:0.7rem;color:var(--s400);letter-spacing:0.06em">INITIAL</span>';
+    } else {
+      const delta = entry.rate - prevRate;
+      const color = delta > 0 ? '#16a34a' : delta < 0 ? '#dc2626' : 'var(--s400)';
+      const arrow = delta > 0 ? '▲' : delta < 0 ? '▼' : '—';
+      changeHtml = `<span class="mono" style="font-size:0.8rem;color:${color}">${arrow} ${Math.abs(delta).toFixed(3)}%</span>`;
+    }
+
+    // Duration column
+    let durHtml;
+    if (isCurrent) {
+      const days = daysBetween(entry.date, today);
+      durHtml = `<span style="color:var(--gold);font-weight:600">Active</span>
+                 <span style="color:var(--s400);font-size:0.75rem"> · ${days}d</span>`;
+    } else {
+      const days   = daysBetween(entry.date, nextDate);
+      const months = Math.floor(days / 30.44);
+      const remD   = days - Math.round(months * 30.44);
+      durHtml = `<span style="color:var(--s600)">${months > 0 ? months + 'mo ' : ''}${remD > 0 || months === 0 ? remD + 'd' : ''}</span>`;
+    }
+
+    const delBtn = i === 0
+      ? ''
+      : `<button class="del-btn" data-rate-idx="${i}" title="Delete rate entry">✕</button>`;
+
+    html += `
+      <tr${isCurrent ? ' class="row-today"' : ''}>
+        <td class="mono">${fmtDate(entry.date)}</td>
+        <td class="r"><span class="mono" style="font-size:1rem;font-weight:500;color:var(--gold)">${entry.rate.toFixed(3)}%</span></td>
+        <td class="r">${changeHtml}</td>
+        <td class="r" style="font-size:0.82rem">${durHtml}</td>
+        <td style="text-align:center">${delBtn}</td>
+      </tr>`;
+  }
+
+  tbody.innerHTML = html;
+
+  tbody.querySelectorAll('.del-btn[data-rate-idx]').forEach(btn => {
+    btn.addEventListener('click', () => confirmDeleteRate(Number(btn.dataset.rateIdx)));
+  });
+
+  renderRateChart(history, today);
+}
+
+let pendingDeleteRateIdx = null;
+
+function confirmDeleteRate(idx) {
+  const history = buildRateHistory();
+  const entry   = history[idx];
+  if (!entry) return;
+
+  const next = history[idx + 1];
+  const desc = next
+    ? `Remove the ${entry.rate.toFixed(3)}% rate (effective ${fmtDate(entry.date)})? The previous rate of ${history[idx - 1]?.rate.toFixed(3) ?? '—'}% will apply until ${fmtDate(next.date)}.`
+    : `Remove the ${entry.rate.toFixed(3)}% rate (effective ${fmtDate(entry.date)})? The loan will revert to the previous rate of ${history[idx - 1]?.rate.toFixed(3) ?? '—'}%.`;
+
+  document.getElementById('rate-delete-desc').textContent = desc;
+  pendingDeleteRateIdx = idx;
+  document.getElementById('rate-delete-modal').classList.add('open');
+}
+
+function deleteRateEntry(idx) {
+  const history     = buildRateHistory();
+  const newHistory  = history.filter((_, i) => i !== idx);
+  const newCurrent  = newHistory[newHistory.length - 1].rate;
+  fbSaveConfig({ ...config, rate: newCurrent, rateHistory: newHistory });
+}
+
+function renderRateChart(history, today) {
+  const ctx = document.getElementById('rate-chart').getContext('2d');
+  if (rateChartInst) { rateChartInst.destroy(); rateChartInst = null; }
+
+  // Extend the line to today with the current rate
+  const points = [...history];
+  if (points[points.length - 1].date < today) {
+    points.push({ date: today, rate: points[points.length - 1].rate });
+  }
+
+  const labels    = points.map(p => fmtDate(p.date));
+  const data      = points.map(p => p.rate);
+  const radii     = points.map((_, i) => i === points.length - 1 ? 0 : 5);
+
+  const rates  = history.map(h => h.rate);
+  const minR   = Math.min(...rates);
+  const maxR   = Math.max(...rates);
+  const yPad   = Math.max((maxR - minR) * 0.6, 0.2);
+
+  rateChartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        borderColor:          '#a16207',
+        borderWidth:          2.5,
+        backgroundColor:      'rgba(161,98,7,0.08)',
+        fill:                 true,
+        stepped:              'after',
+        pointRadius:          radii,
+        pointBackgroundColor: '#a16207',
+        pointBorderColor:     '#fff',
+        pointBorderWidth:     2,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#fafaf9',
+          borderColor:     '#d6d3d1',
+          borderWidth:     1,
+          titleColor:      '#44403c',
+          bodyColor:       '#57534e',
+          titleFont:       { size: 11 },
+          bodyFont:        { size: 11 },
+          callbacks: {
+            label: ctx => `Rate: ${Number(ctx.raw).toFixed(3)}%`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid:   { display: false },
+          border: { color: '#d6d3d1' },
+          ticks:  { color: '#78716c', font: { size: 11 }, maxTicksLimit: 8 },
+        },
+        y: {
+          grid:   { color: '#e7e5e4' },
+          border: { display: false },
+          min:    minR - yPad,
+          max:    maxR + yPad,
+          ticks:  {
+            color: '#78716c', font: { size: 11 },
+            callback: v => v.toFixed(2) + '%',
+          },
+        },
+      },
+    },
+  });
 }
 
 // ── Render ───────────────────────────────────────────────────────────
@@ -1081,10 +1375,12 @@ function render() {
   const monthlyEst = (current.principal * (config.rate / 100)) / 12;
 
   document.getElementById('loan-title').textContent =
-    config.lenderName ? `Loan from ${config.lenderName}` : 'Personal Loan';
+    config.lenderName ? `Loan from ${config.lenderName}` : 'Lake Loan';
   document.getElementById('origin-line').textContent =
     `${fmt$(config.principal)} · ${config.rate}% · originated ${fmtDate(config.startDate)}`;
 
+  document.getElementById('rate-current-display').textContent = config.rate.toFixed(3) + '%';
+  renderRateHistory();
   document.getElementById('stat-balance').textContent      = fmt$(current.totalBalance);
   document.getElementById('stat-principal-sub').textContent = `${fmt$(current.principal)} principal`;
   document.getElementById('stat-accrued').textContent      = fmt$(current.accruedInterest);
@@ -1270,10 +1566,23 @@ function deletePayment(id) {
 // ── Settings ─────────────────────────────────────────────────────────
 
 function openSettings() {
-  document.getElementById('s-lender').value    = config.lenderName || '';
-  document.getElementById('s-principal').value = config.principal;
-  document.getElementById('s-rate').value      = config.rate;
-  document.getElementById('s-start').value     = config.startDate;
+  const history      = buildRateHistory();
+  const originalRate = history[0]?.rate ?? config.rate;
+
+  document.getElementById('s-lender').value        = config.lenderName || '';
+  document.getElementById('s-principal').value     = config.principal;
+  document.getElementById('s-original-rate').value = originalRate;
+  document.getElementById('s-start').value         = config.startDate;
+
+  const info = document.getElementById('s-current-rate-info');
+  if (history.length > 1) {
+    const lastDate = config.rateSetDate || history[history.length - 1].date;
+    info.textContent = `Current rate: ${config.rate.toFixed(3)}% — last updated ${fmtDate(lastDate)} via rate helper`;
+    info.style.display = '';
+  } else {
+    info.style.display = 'none';
+  }
+
   document.getElementById('modal-note').style.display = payments.length > 0 ? '' : 'none';
   document.getElementById('settings-modal').classList.add('open');
 }
@@ -1283,13 +1592,27 @@ function closeSettings() {
 }
 
 function saveSettings() {
-  const startDate = document.getElementById('s-start').value;
+  const startDate    = document.getElementById('s-start').value;
+  const originalRate = Number(document.getElementById('s-original-rate').value) || 0;
   if (!startDate) { alert('Please enter a start date.'); return; }
+
+  // Update the first history entry (loan origination rate); leave all later entries untouched
+  const history = buildRateHistory();
+  const rateHistory = [
+    { date: startDate, rate: originalRate },
+    ...history.slice(1),
+  ];
+
+  // If no rate changes have been made yet, keep config.rate in sync with the original
+  const currentRate = rateHistory.length === 1 ? originalRate : config.rate;
+
   fbSaveConfig({
-    lenderName: document.getElementById('s-lender').value.trim(),
-    principal:  Number(document.getElementById('s-principal').value) || 0,
-    rate:       Number(document.getElementById('s-rate').value) || 0,
+    ...config,
+    lenderName:  document.getElementById('s-lender').value.trim(),
+    principal:   Number(document.getElementById('s-principal').value) || 0,
+    rate:        currentRate,
     startDate,
+    rateHistory,
   });
   closeSettings();
 }
@@ -1375,7 +1698,9 @@ document.getElementById('use-rate-btn').addEventListener('click', () => {
   const rate       = parseFloat(document.getElementById('use-rate-btn').dataset.rate);
   const vmfxxYield = parseFloat(document.getElementById('vmfxx-yield').value);
   if (isNaN(rate)) return;
-  fbSaveConfig({ ...config, rate, vmfxxYield, rateSetDate: todayISO() });
+  const rateSetDate  = todayISO();
+  const rateHistory  = [...buildRateHistory(), { date: rateSetDate, rate }];
+  fbSaveConfig({ ...config, rate, vmfxxYield, rateSetDate, rateHistory });
   document.getElementById('vmfxx-yield').value = '';
   document.getElementById('rate-computed').textContent = '—';
   document.getElementById('use-rate-btn').disabled = true;
@@ -1388,6 +1713,22 @@ document.getElementById('add-btn').addEventListener('click', addPayment);
 document.getElementById('np-amount').addEventListener('input', () => {
   const v = parseFloat(document.getElementById('np-amount').value);
   document.getElementById('add-btn').disabled = !(v > 0);
+});
+
+document.getElementById('rate-delete-cancel-btn').addEventListener('click', () => {
+  pendingDeleteRateIdx = null;
+  document.getElementById('rate-delete-modal').classList.remove('open');
+});
+document.getElementById('rate-delete-confirm-btn').addEventListener('click', () => {
+  if (pendingDeleteRateIdx !== null) deleteRateEntry(pendingDeleteRateIdx);
+  pendingDeleteRateIdx = null;
+  document.getElementById('rate-delete-modal').classList.remove('open');
+});
+document.getElementById('rate-delete-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('rate-delete-modal')) {
+    pendingDeleteRateIdx = null;
+    document.getElementById('rate-delete-modal').classList.remove('open');
+  }
 });
 
 document.getElementById('delete-cancel-btn').addEventListener('click', () => {
