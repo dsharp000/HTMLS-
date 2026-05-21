@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Call Recorder</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #f0f4f8;
+    color: #1a202c;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 16px 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  header h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 12px;
+  }
+
+  .tab-bar {
+    display: flex;
+    gap: 0;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    padding: 8px 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #718096;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .tab-btn.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+  }
+
+  .tab-btn:hover:not(.active) { color: #4a5568; }
+
+  /* ── Content area ── */
+  .tab-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px 40px;
+  }
+
+  .tab-content.hidden { display: none; }
+
+  /* ── Cards ── */
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+    padding: 18px 20px;
+    width: 100%;
+    max-width: 640px;
+    margin-bottom: 14px;
+  }
+
+  .card h2 {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: #a0aec0;
+    margin-bottom: 10px;
+  }
+
+  /* ── Inputs ── */
+  input[type="text"],
+  input[type="password"],
+  textarea {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 0.9rem;
+    color: #2d3748;
+    outline: none;
+    transition: border-color 0.15s;
+    font-family: inherit;
+  }
+
+  input[type="text"]:focus,
+  input[type="password"]:focus,
+  textarea:focus { border-color: #667eea; }
+
+  textarea {
+    resize: vertical;
+    min-height: 100px;
+    font-family: monospace;
+    font-size: 0.8rem;
+  }
+
+  /* ── Field row ── */
+  .field-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .field-row input { flex: 1; }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    background: #667eea;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+
+  .btn-primary:hover { background: #5a67d8; }
+
+  .btn-secondary {
+    background: #ebf4ff;
+    color: #2b6cb0;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1;
+    transition: background 0.15s;
+  }
+
+  .btn-secondary:hover { background: #bee3f8; }
+
+  .btn-danger {
+    background: #fff5f5;
+    color: #c53030;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1;
+    transition: background 0.15s;
+  }
+
+  .btn-danger:hover { background: #fed7d7; }
+
+  .action-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+
+  /* ── Record controls ── */
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .dot {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: #cbd5e0;
+    flex-shrink: 0;
+  }
+
+  .dot.recording {
+    background: #e53e3e;
+    animation: pulse 1.4s infinite;
+  }
+
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(229,62,62,0.4); }
+    70%  { box-shadow: 0 0 0 8px rgba(229,62,62,0); }
+    100% { box-shadow: 0 0 0 0 rgba(229,62,62,0); }
+  }
+
+  #status-text { font-size: 0.95rem; color: #4a5568; font-weight: 500; }
+
+  #timer {
+    margin-left: auto;
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #2d3748;
+    letter-spacing: 0.05em;
+  }
+
+  .btn-record {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .btn-record:active { transform: scale(0.98); }
+  .btn-record:disabled { opacity: 0.6; cursor: default; }
+
+  .btn-record.idle  { background: #e53e3e; color: #fff; }
+  .btn-record.idle:hover:not(:disabled) { background: #c53030; }
+  .btn-record.active { background: #2d3748; color: #fff; }
+  .btn-record.active:hover:not(:disabled) { background: #1a202c; }
+
+  /* ── Transcript ── */
+  #transcript-box {
+    min-height: 110px;
+    max-height: 240px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: #2d3748;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .interim { color: #a0aec0; }
+  .placeholder { color: #cbd5e0; font-style: italic; }
+
+  /* ── Summary ── */
+  .summary-content { font-size: 0.9rem; line-height: 1.75; color: #2d3748; }
+  .summary-content h3 { font-size: 0.85rem; font-weight: 700; color: #4a5568; margin: 12px 0 4px; }
+  .summary-content h3:first-child { margin-top: 0; }
+  .summary-content ul { padding-left: 18px; }
+  .summary-content li { margin-bottom: 3px; }
+  .summary-content p { margin-bottom: 6px; }
+
+  .db-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #f0fff4;
+    color: #276749;
+    border: 1px solid #9ae6b4;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  /* ── Loading ── */
+  .loading-dots::after {
+    content: '';
+    animation: dots 1.2s infinite;
+  }
+
+  @keyframes dots {
+    0%   { content: '.'; }
+    33%  { content: '..'; }
+    66%  { content: '...'; }
+    100% { content: ''; }
+  }
+
+  /* ── Hints ── */
+  .hint {
+    font-size: 0.78rem;
+    color: #a0aec0;
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+
+  .hint code {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 0.75rem;
+    font-family: monospace;
+  }
+
+  /* ── Warning banner ── */
+  .warn-banner {
+    background: #fffbeb;
+    border: 1px solid #f6e05e;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    color: #744210;
+    width: 100%;
+    max-width: 640px;
+    margin: 12px auto 0;
+  }
+
+  /* ── History ── */
+  .history-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+    width: 100%;
+    max-width: 640px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  .history-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .history-header:hover { background: #f7fafc; }
+
+  .history-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #2d3748;
+    flex: 1;
+  }
+
+  .history-meta {
+    font-size: 0.75rem;
+    color: #a0aec0;
+    white-space: nowrap;
+  }
+
+  .history-chevron {
+    font-size: 0.7rem;
+    color: #a0aec0;
+    transition: transform 0.2s;
+  }
+
+  .history-chevron.open { transform: rotate(180deg); }
+
+  .history-body {
+    display: none;
+    padding: 0 18px 16px;
+    border-top: 1px solid #f0f4f8;
+  }
+
+  .history-body.open { display: block; }
+
+  .history-body .summary-content { margin-top: 12px; }
+
+  .history-transcript {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: #f7fafc;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    color: #718096;
+    line-height: 1.6;
+    max-height: 160px;
+    overflow-y: auto;
+    display: none;
+  }
+
+  .history-transcript.open { display: block; }
+
+  .history-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .btn-text {
+    background: none;
+    border: none;
+    font-size: 0.8rem;
+    color: #667eea;
+    cursor: pointer;
+    padding: 4px 0;
+    font-weight: 500;
+  }
+
+  .btn-text:hover { color: #5a67d8; }
+
+  .btn-text.danger { color: #e53e3e; }
+  .btn-text.danger:hover { color: #c53030; }
+
+  .history-empty {
+    text-align: center;
+    color: #a0aec0;
+    font-size: 0.9rem;
+    padding: 40px 0;
+  }
+
+  .history-loading {
+    text-align: center;
+    color: #a0aec0;
+    font-size: 0.9rem;
+    padding: 30px 0;
+  }
+
+  /* ── Save indicator ── */
+  #save-indicator {
+    font-size: 0.75rem;
+    color: #48bb78;
+    margin-top: 6px;
+    min-height: 16px;
+  }
+
+  /* ── Firebase status ── */
+  #firebase-status {
+    display: flex;
+    align-items: center;
+    font-size: 0.8rem;
+  }
+
+  #firebase-status.ok { color: #276749; }
+  #firebase-status.err { color: #c53030; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Call Recorder</h1>
+  <nav class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('record', this)">Record</button>
+    <button class="tab-btn" onclick="switchTab('history', this)">History</button>
+    <button class="tab-btn" onclick="switchTab('settings', this)">Settings</button>
+  </nav>
+</header>
+
+<!-- ── RECORD TAB ───────────────────────────────── -->
+<div id="tab-record" class="tab-content">
+
+  <div id="browser-warn" class="warn-banner" style="display:none">
+    ⚠️ Speech recognition requires Chrome or Edge. Firefox and Safari are not supported.
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Call Title</h2>
+    <input type="text" id="call-title" placeholder="e.g. Sales call with Acme Corp" maxlength="120" />
+  </div>
+
+  <div class="card">
+    <h2>Recording</h2>
+    <div class="status-row">
+      <div class="dot" id="status-dot"></div>
+      <span id="status-text">Ready</span>
+      <span id="timer">0:00</span>
+    </div>
+    <button class="btn-record idle" id="record-btn" onclick="toggleRecording()">
+      Start Recording
+    </button>
+  </div>
+
+  <div class="card">
+    <h2>Live Transcript</h2>
+    <div id="transcript-box">
+      <span class="placeholder">Transcript will appear here as you speak...</span>
+    </div>
+  </div>
+
+  <div class="card" id="summary-card" style="display:none">
+    <h2>Call Summary</h2>
+    <div id="db-badge" class="db-badge" style="display:none">&#10003; Saved to database</div>
+    <div id="summary-box" class="summary-content"></div>
+    <div class="action-row">
+      <button class="btn-secondary" onclick="copySummary(this)">Copy Summary</button>
+      <button class="btn-secondary" onclick="copyTranscript(this)">Copy Transcript</button>
+      <button class="btn-danger" onclick="clearAll()">New Call</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── HISTORY TAB ──────────────────────────────── -->
+<div id="tab-history" class="tab-content hidden">
+  <div id="history-list" style="width:100%; max-width:640px; padding-top:16px">
+    <div class="history-loading">Loading...</div>
+  </div>
+</div>
+
+<!-- ── SETTINGS TAB ─────────────────────────────── -->
+<div id="tab-settings" class="tab-content hidden">
+
+  <div class="card" style="margin-top:16px">
+    <h2>Anthropic API Key</h2>
+    <div class="field-row">
+      <input type="password" id="api-key" placeholder="sk-ant-..." autocomplete="off" />
+      <button class="btn-primary" onclick="saveAnthropicKey()">Save</button>
+    </div>
+    <div id="save-indicator"></div>
+    <p class="hint">Get yours at console.anthropic.com</p>
+  </div>
+
+  <div class="card">
+    <h2>Database</h2>
+    <p class="hint">Connected to <strong>lunch-f7021</strong> Realtime Database.</p>
+    <p class="hint" style="margin-top:8px; color:#c05621">
+      ⚠️ Make sure your Realtime Database rules include:<br>
+      <code>"calls": { ".read": true, ".write": true }</code>
+    </p>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────
+let db = null;
+let recognition = null;
+let isRecording = false;
+let shouldRestart = false;
+let finalTranscript = '';
+let timerInterval = null;
+let secondsElapsed = 0;
+let currentDuration = 0;
+
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyCp2PBbqdj_g6NPR9iYQb7Z6tgXbqLtHIA",
+  authDomain:        "lunch-f7021.firebaseapp.com",
+  databaseURL:       "https://lunch-f7021-default-rtdb.firebaseio.com",
+  projectId:         "lunch-f7021",
+  storageBucket:     "lunch-f7021.firebasestorage.app",
+  messagingSenderId: "1053755216064",
+  appId:             "1:1053755216064:web:14b749200f825a4e9bdd25",
+};
+
+// ── Init ───────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  // Restore API key
+  const key = localStorage.getItem('anthropic_api_key');
+  if (key) document.getElementById('api-key').value = key;
+
+  // Connect Firebase
+  initFirebase(FIREBASE_CONFIG, true);
+
+  // Speech recognition support check
+  if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) {
+    document.getElementById('browser-warn').style.display = 'block';
+    const btn = document.getElementById('record-btn');
+    btn.disabled = true;
+    btn.textContent = 'Speech recognition not supported';
+  }
+
+  // Default call title
+  document.getElementById('call-title').value = defaultTitle();
+});
+
+function defaultTitle() {
+  const now = new Date();
+  return `Call – ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+}
+
+// ── Tab switching ──────────────────────────────────────────────────
+function switchTab(name, btnEl) {
+  ['record', 'history', 'settings'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('hidden', t !== name);
+  });
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btnEl.classList.add('active');
+
+  if (name === 'history') loadHistory();
+}
+
+// ── Settings ───────────────────────────────────────────────────────
+function saveAnthropicKey() {
+  const key = document.getElementById('api-key').value.trim();
+  if (!key) return;
+  localStorage.setItem('anthropic_api_key', key);
+  const ind = document.getElementById('save-indicator');
+  ind.textContent = 'Saved!';
+  setTimeout(() => ind.textContent = '', 2000);
+}
+
+function initFirebase(cfg, silent) {
+  try {
+    if (!firebase.apps.length) {
+      firebase.initializeApp(cfg);
+    }
+    db = firebase.database();
+    if (!silent) setFirebaseStatus('Connected!', true);
+  } catch (e) {
+    db = null;
+    if (!silent) setFirebaseStatus('Failed: ' + e.message, false);
+  }
+}
+
+function setFirebaseStatus(msg, ok) {
+  const el = document.getElementById('firebase-status');
+  el.textContent = msg;
+  el.className = ok ? 'ok' : 'err';
+  if (ok) setTimeout(() => el.textContent = '', 3000);
+}
+
+// ── Timer ──────────────────────────────────────────────────────────
+function startTimer() {
+  secondsElapsed = 0;
+  timerInterval = setInterval(() => {
+    secondsElapsed++;
+    const m = Math.floor(secondsElapsed / 60);
+    const s = secondsElapsed % 60;
+    document.getElementById('timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  currentDuration = secondsElapsed;
+}
+
+// ── Speech Recognition ─────────────────────────────────────────────
+function buildRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const r = new SR();
+  r.continuous = true;
+  r.interimResults = true;
+  r.lang = 'en-US';
+
+  r.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) {
+        finalTranscript += t + ' ';
+      } else {
+        interim += t;
+      }
+    }
+    renderTranscript(interim);
+  };
+
+  r.onerror = (e) => {
+    if (e.error === 'no-speech') return;
+    console.warn('Speech recognition error:', e.error);
+  };
+
+  r.onend = () => {
+    if (shouldRestart) {
+      try { r.start(); } catch (_) {}
+    }
+  };
+
+  return r;
+}
+
+function renderTranscript(interim) {
+  const box = document.getElementById('transcript-box');
+  box.innerHTML = '';
+  if (finalTranscript) box.appendChild(document.createTextNode(finalTranscript));
+  if (interim) {
+    const span = document.createElement('span');
+    span.className = 'interim';
+    span.textContent = interim;
+    box.appendChild(span);
+  }
+  if (!finalTranscript && !interim) {
+    box.innerHTML = '<span class="placeholder">Transcript will appear here as you speak...</span>';
+  }
+  box.scrollTop = box.scrollHeight;
+}
+
+// ── Recording flow ─────────────────────────────────────────────────
+function toggleRecording() {
+  isRecording ? stopRecording() : startRecording();
+}
+
+function startRecording() {
+  finalTranscript = '';
+  document.getElementById('summary-card').style.display = 'none';
+  renderTranscript('');
+
+  recognition = buildRecognition();
+  shouldRestart = true;
+  isRecording = true;
+
+  try {
+    recognition.start();
+  } catch {
+    alert('Could not start speech recognition. Please allow microphone access.');
+    isRecording = false;
+    return;
+  }
+
+  startTimer();
+  document.getElementById('status-dot').classList.add('recording');
+  document.getElementById('status-text').textContent = 'Recording...';
+  const btn = document.getElementById('record-btn');
+  btn.textContent = 'Stop & Summarize';
+  btn.className = 'btn-record active';
+}
+
+function stopRecording() {
+  shouldRestart = false;
+  isRecording = false;
+  if (recognition) { recognition.stop(); recognition = null; }
+  stopTimer();
+
+  document.getElementById('status-dot').classList.remove('recording');
+  document.getElementById('status-text').textContent = 'Summarizing...';
+  const btn = document.getElementById('record-btn');
+  btn.disabled = true;
+  btn.textContent = 'Summarizing...';
+  btn.className = 'btn-record active';
+
+  renderTranscript('');
+  summarize();
+}
+
+// ── Summarize with Claude ──────────────────────────────────────────
+async function summarize() {
+  const apiKey = localStorage.getItem('anthropic_api_key') || document.getElementById('api-key').value.trim();
+  if (!apiKey) {
+    alert('Please enter your Anthropic API key in Settings.');
+    resetUI();
+    return;
+  }
+
+  const transcript = finalTranscript.trim();
+  if (!transcript) {
+    alert('No transcript captured. Make sure your microphone is working and try again.');
+    resetUI();
+    return;
+  }
+
+  const summaryCard = document.getElementById('summary-card');
+  const summaryBox = document.getElementById('summary-box');
+  summaryCard.style.display = 'block';
+  document.getElementById('db-badge').style.display = 'none';
+  summaryBox.innerHTML = '<span class="loading-dots">Summarizing</span>';
+
+  const prompt = `You are summarizing a phone call transcript. The transcript was captured via speech recognition and may contain minor errors.
+
+Transcript:
+"""
+${transcript}
+"""
+
+Provide a structured summary with these sections (only include a section if relevant content exists):
+
+### Overview
+A 2–3 sentence summary of the call's purpose and outcome.
+
+### Key Points
+- Bullet points of the main topics discussed.
+
+### Action Items
+- Any tasks, follow-ups, or next steps mentioned (note who is responsible if mentioned).
+
+### Decisions Made
+- Any conclusions or agreements reached.
+
+### Important Details
+- Names, dates, numbers, or other specifics worth noting.
+
+Be concise and clear. Do not invent information not present in the transcript.`;
+
+  let summaryText = '';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API error ${res.status}`);
+    }
+
+    const data = await res.json();
+    summaryText = data.content?.[0]?.text || '';
+    summaryBox.innerHTML = renderMarkdown(summaryText);
+  } catch (e) {
+    summaryBox.innerHTML = `<span style="color:#e53e3e">Error: ${e.message}</span>`;
+    document.getElementById('status-text').textContent = 'Error';
+    resetBtn();
+    return;
+  }
+
+  document.getElementById('status-text').textContent = 'Done';
+  resetBtn();
+
+  // Save to Realtime Database
+  if (db && summaryText) {
+    const title = document.getElementById('call-title').value.trim() || defaultTitle();
+    try {
+      await db.ref('calls').push({
+        title,
+        transcript: finalTranscript.trim(),
+        summary: summaryText,
+        duration: currentDuration,
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+      });
+      document.getElementById('db-badge').style.display = 'inline-flex';
+    } catch (e) {
+      console.warn('Database save failed:', e.message);
+    }
+  }
+}
+
+// ── History ────────────────────────────────────────────────────────
+async function loadHistory() {
+  const list = document.getElementById('history-list');
+  if (!db) {
+    list.innerHTML = '<div class="history-empty">Connect Firebase in Settings to view history.</div>';
+    return;
+  }
+
+  list.innerHTML = '<div class="history-loading">Loading<span class="loading-dots"></span></div>';
+
+  try {
+    const snap = await db.ref('calls').orderByChild('createdAt').once('value');
+    if (!snap.exists()) {
+      list.innerHTML = '<div class="history-empty">No calls recorded yet.</div>';
+      return;
+    }
+
+    const items = [];
+    snap.forEach(child => items.push({ id: child.key, ...child.val() }));
+    items.reverse(); // newest first
+
+    list.innerHTML = '';
+    items.forEach(item => list.appendChild(buildHistoryCard(item.id, item)));
+  } catch (e) {
+    list.innerHTML = `<div class="history-empty" style="color:#e53e3e">Error loading history: ${e.message}</div>`;
+  }
+}
+
+function buildHistoryCard(id, data) {
+  const card = document.createElement('div');
+  card.className = 'history-card';
+  card.dataset.id = id;
+
+  const date = data.createdAt ? new Date(data.createdAt) : new Date();
+  const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const dur = data.duration ? formatDuration(data.duration) : '';
+
+  card.innerHTML = `
+    <div class="history-header" onclick="toggleHistoryCard('${id}')">
+      <div class="history-title">${escHtml(data.title || 'Untitled Call')}</div>
+      <div class="history-meta">${dateStr} &middot; ${timeStr}${dur ? ' &middot; ' + dur : ''}</div>
+      <span class="history-chevron" id="chev-${id}">&#9660;</span>
+    </div>
+    <div class="history-body" id="body-${id}">
+      <div class="summary-content">${renderMarkdown(data.summary || '')}</div>
+      <div class="history-transcript" id="trans-${id}">${escHtml(data.transcript || '')}</div>
+      <div class="history-actions">
+        <button class="btn-text" onclick="toggleTranscript('${id}')">Show transcript</button>
+        <button class="btn-text" onclick="copyText(this, ${JSON.stringify(data.summary || '')})">Copy summary</button>
+        <button class="btn-text danger" onclick="deleteCall('${id}', this)">Delete</button>
+      </div>
+    </div>`;
+
+  return card;
+}
+
+function toggleHistoryCard(id) {
+  document.getElementById('body-' + id).classList.toggle('open');
+  document.getElementById('chev-' + id).classList.toggle('open');
+}
+
+function toggleTranscript(id) {
+  const el = document.getElementById('trans-' + id);
+  const btn = el.nextElementSibling.querySelector('.btn-text');
+  el.classList.toggle('open');
+  btn.textContent = el.classList.contains('open') ? 'Hide transcript' : 'Show transcript';
+}
+
+async function deleteCall(id, btn) {
+  if (!confirm('Delete this call record?')) return;
+  try {
+    await db.ref('calls/' + id).remove();
+    btn.closest('.history-card').remove();
+    if (!document.querySelector('.history-card')) {
+      document.getElementById('history-list').innerHTML = '<div class="history-empty">No calls recorded yet.</div>';
+    }
+  } catch (e) {
+    alert('Delete failed: ' + e.message);
+  }
+}
+
+function copyText(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+
+// ── Utilities ──────────────────────────────────────────────────────
+function formatDuration(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderMarkdown(text) {
+  return escHtml(text)
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,  '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^- (.+)$/gm,   '<li>$1</li>')
+    .replace(/(<li>[\s\S]*?<\/li>(?:\n|$))+/g, m => `<ul>${m}</ul>`)
+    .replace(/\n{2,}/g, '</p><p>')
+    .replace(/^(?!<[hup])(.+)$/gm, '<p>$1</p>');
+}
+
+function resetBtn() {
+  const btn = document.getElementById('record-btn');
+  btn.disabled = false;
+  btn.textContent = 'Start New Recording';
+  btn.className = 'btn-record idle';
+}
+
+function resetUI() {
+  isRecording = false;
+  shouldRestart = false;
+  stopTimer();
+  document.getElementById('status-dot').classList.remove('recording');
+  document.getElementById('status-text').textContent = 'Ready';
+  document.getElementById('timer').textContent = '0:00';
+  resetBtn();
+}
+
+function clearAll() {
+  finalTranscript = '';
+  renderTranscript('');
+  document.getElementById('summary-card').style.display = 'none';
+  document.getElementById('status-text').textContent = 'Ready';
+  document.getElementById('timer').textContent = '0:00';
+  document.getElementById('call-title').value = defaultTitle();
+  resetBtn();
+}
+
+function copySummary(btn) {
+  const text = document.getElementById('summary-box').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy Summary', 1500);
+  });
+}
+
+function copyTranscript(btn) {
+  navigator.clipboard.writeText(finalTranscript.trim()).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy Transcript', 1500);
+  });
+}
+</script>
+</body>
+</html>
