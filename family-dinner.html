@@ -351,7 +351,6 @@
     "Asad's",
     "Mango Tree",
     "China Wok",
-    "Something Else",
   ];
 
   const medals = ['🥇', '🥈', '🥉'];
@@ -439,8 +438,9 @@
       return Object.entries(voters).filter(([, v]) => v === key);
     }
 
-    const totalVotes = picks.reduce((sum, p) => sum + votersFor(sanitize(p)).length, 0);
-    const maxVotes   = Math.max(...picks.map(p => votersFor(sanitize(p)).length));
+    const allKeys    = [...picks.map(sanitize), 'something_else'];
+    const totalVotes = allKeys.reduce((sum, k) => sum + votersFor(k).length, 0);
+    const maxVotes   = Math.max(...allKeys.map(k => votersFor(k).length));
 
     voterNameEl.classList.toggle('voted', hasVoted);
 
@@ -478,6 +478,36 @@
       if (!btnDisabled) card.querySelector('.vote-btn').addEventListener('click', () => castVote(key));
       resultsEl.appendChild(card);
     });
+
+    // ── Permanent "Something Else" card ──
+    const seKey      = 'something_else';
+    const seVoters   = votersFor(seKey);
+    const seCount    = seVoters.length;
+    const sePct      = totalVotes === 0 ? 0 : (seCount / totalVotes) * 100;
+    const isMySE     = myPick === seKey;
+    const seChips    = seVoters.map(([vKey]) =>
+      `<span class="voter-chip${vKey === myNameKey ? ' is-me' : ''}">${vKey}</span>`
+    ).join('');
+
+    let seBtnLabel = 'Vote';
+    let seDisabled = '';
+    if (isMySE)        { seBtnLabel = '✓ My vote'; seDisabled = 'disabled'; }
+    else if (hasVoted) { seDisabled = 'disabled'; }
+
+    const seCard = document.createElement('div');
+    seCard.className = 'result-card' + (totalVotes > 0 && seCount === maxVotes ? ' winner' : '');
+    seCard.innerHTML = `
+      <div class="card-top">
+        <span class="medal">🤷</span>
+        <span class="result-name">Something Else</span>
+        <button class="vote-btn${isMySE ? ' my-vote' : ''}" ${seDisabled}>${seBtnLabel}</button>
+        <span class="vote-count">${seCount} ${seCount === 1 ? 'vote' : 'votes'}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${sePct}%"></div></div>
+      ${seChips ? `<div class="voter-chips">${seChips}</div>` : ''}
+    `;
+    if (!seDisabled) seCard.querySelector('.vote-btn').addEventListener('click', () => castVote(seKey));
+    resultsEl.appendChild(seCard);
   }
 
   pickBtn.addEventListener('click', async () => {
