@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Dinner Picker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+
+    h1 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 3rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+
+    #subtitle {
+      color: #64748b;
+      margin-bottom: 32px;
+      font-size: 0.95rem;
+    }
+
+    /* ── Status banner ── */
+    #status-bar {
+      width: 100%;
+      max-width: 760px;
+      margin-bottom: 20px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      text-align: center;
+      display: none;
+    }
+    #status-bar.connecting { background: #1e293b; color: #64748b; display: block; }
+    #status-bar.live       { background: #14532d; color: #86efac; display: block; }
+    #status-bar.error      { background: #450a0a; color: #fca5a5; display: block; }
+
+    /* ── Layout ── */
+    #main {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 760px;
+    }
+
+    /* ── Right: restaurant list ── */
+    #list-panel {
+      order: 2;
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 24px;
+      width: 280px;
+      border: 1px solid #334155;
+      flex-shrink: 0;
+    }
+
+    #list-panel h2 {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+    }
+
+    #restaurant-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    #restaurant-list li {
+      padding: 8px 12px;
+      background: #0f172a;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      border: 1px solid #1e293b;
+      color: #cbd5e1;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    #restaurant-list li.in-pick {
+      border-color: #818cf8;
+      color: #818cf8;
+      font-weight: 600;
+    }
+
+    /* ── Left: picks + voting ── */
+    #results-panel {
+      order: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      width: 320px;
+    }
+
+    #pick-btn {
+      width: 100%;
+      padding: 16px;
+      background: #818cf8;
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 1.15rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      letter-spacing: 0.5px;
+    }
+    #pick-btn:hover  { background: #6366f1; }
+    #pick-btn:active { transform: scale(0.97); }
+    #pick-btn:disabled { background: #334155; color: #64748b; cursor: default; }
+
+    #picks-label {
+      font-size: 0.75rem;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      align-self: flex-start;
+    }
+
+    #picked-at {
+      font-size: 0.75rem;
+      color: #475569;
+      align-self: flex-end;
+      margin-top: -10px;
+    }
+
+    /* ── Result cards ── */
+    #results {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .result-card {
+      background: #1e293b;
+      border-radius: 14px;
+      padding: 16px 18px;
+      border: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .result-card.winner {
+      border-color: #818cf8;
+      box-shadow: 0 0 14px rgba(129,140,248,0.25);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .medal      { font-size: 1.4rem; flex-shrink: 0; }
+    .result-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ── Name input ── */
+    #name-row {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+    #name-row label { font-size: 0.78rem; color: #64748b; white-space: nowrap; }
+    #voter-name {
+      flex: 1;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 7px;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      padding: 5px 10px;
+      outline: none;
+    }
+    #voter-name:focus { border-color: #818cf8; }
+    #voter-name.voted { border-color: #16a34a; color: #86efac; }
+
+    .vote-btn {
+      padding: 6px 14px;
+      background: #818cf8;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .vote-btn:hover  { background: #6366f1; }
+    .vote-btn:active { transform: scale(0.95); }
+    .vote-btn:disabled { background: #334155; color: #64748b; cursor: default; }
+    .vote-btn.my-vote { background: #16a34a; cursor: default; }
+    .vote-btn.my-vote:hover { background: #16a34a; }
+
+    /* ── Voter name chips ── */
+    .voter-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+    .voter-chip {
+      font-size: 0.7rem; padding: 2px 8px; border-radius: 10px;
+      background: #0f172a; color: #64748b; border: 1px solid #334155;
+    }
+    .voter-chip.is-me { border-color: #818cf8; color: #818cf8; }
+
+    .vote-count {
+      font-size: 0.82rem;
+      color: #94a3b8;
+      min-width: 48px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .bar-track {
+      background: #0f172a;
+      border-radius: 99px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: #818cf8;
+      border-radius: 99px;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    /* ── Empty state ── */
+    #empty-msg {
+      color: #475569;
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 24px 12px;
+      background: #1e293b;
+      border-radius: 14px;
+      border: 1px dashed #334155;
+      width: 100%;
+    }
+
+    #reset-btn {
+      width: 100%;
+      padding: 10px;
+      background: none;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      color: #64748b;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    #reset-btn:hover { border-color: #f87171; color: #f87171; }
+
+    @media (max-width: 640px) {
+      #list-panel, #results-panel { width: 100%; order: unset; }
+      #results-panel { order: 1; }
+      #list-panel    { order: 2; }
+    }
+  </style>
+</head>
+<body>
+
+<h1>Family Dinner</h1>
+<p id="subtitle">Spin to pick 3, then vote for tonight's takeout</p>
+
+<div id="status-bar" class="connecting">Connecting...</div>
+
+<div id="main">
+  <div id="list-panel">
+    <h2>On the Menu</h2>
+    <ul id="restaurant-list"></ul>
+  </div>
+
+  <div id="results-panel">
+    <div id="name-row">
+      <label for="voter-name">Your name:</label>
+      <input id="voter-name" type="text" placeholder="Enter your name to vote…" maxlength="30" autocomplete="off">
+    </div>
+    <button id="pick-btn">🎲 Pick 3 for Tonight</button>
+    <p id="picks-label" style="display:none">Tonight's picks</p>
+    <p id="picked-at"></p>
+    <div id="results">
+      <p id="empty-msg">Hit the button to randomly pick 3 options, then vote!</p>
+    </div>
+    <button id="reset-btn" style="display:none">Reset votes</button>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp }                        from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getDatabase, ref, set, onValue,
+           runTransaction }                       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCp2PBbqdj_g6NPR9iYQb7Z6tgXbqLtHIA",
+    authDomain:        "lunch-f7021.firebaseapp.com",
+    databaseURL:       "https://lunch-f7021-default-rtdb.firebaseio.com",
+    projectId:         "lunch-f7021",
+    storageBucket:     "lunch-f7021.firebasestorage.app",
+    messagingSenderId: "1053755216064",
+    appId:             "1:1053755216064:web:14b749200f825a4e9bdd25"
+  };
+
+  const RESTAURANTS = [
+    "Aroma",
+    "Mizu",
+    "Mexican",
+    "Mission BBQ",
+    "Asad's",
+    "Mango Tree",
+    "China Wok",
+    "Something Else",
+  ];
+
+  const medals = ['🥇', '🥈', '🥉'];
+
+  const statusBar   = document.getElementById('status-bar');
+  const pickBtn     = document.getElementById('pick-btn');
+  const resultsEl   = document.getElementById('results');
+  const emptyMsg    = document.getElementById('empty-msg');
+  const picksLabel  = document.getElementById('picks-label');
+  const pickedAtEl  = document.getElementById('picked-at');
+  const resetBtn    = document.getElementById('reset-btn');
+  const listEl      = document.getElementById('restaurant-list');
+  const voterNameEl = document.getElementById('voter-name');
+
+  voterNameEl.value = localStorage.getItem('dinner-voter-name') || '';
+  voterNameEl.addEventListener('input', () => {
+    localStorage.setItem('dinner-voter-name', voterNameEl.value.trim());
+  });
+
+  RESTAURANTS.forEach(name => {
+    const li = document.createElement('li');
+    li.textContent = name;
+    li.dataset.name = name;
+    listEl.appendChild(li);
+  });
+
+  function highlightPicks(picks) {
+    listEl.querySelectorAll('li').forEach(li => {
+      li.classList.toggle('in-pick', picks.includes(li.dataset.name));
+    });
+  }
+
+  const app        = initializeApp(firebaseConfig);
+  const db         = getDatabase(app);
+  const sessionRef = ref(db, 'family-dinner/current');
+
+  statusBar.className = 'connecting';
+  statusBar.textContent = 'Connecting to Firebase…';
+
+  onValue(sessionRef, (snapshot) => {
+    statusBar.className = 'live';
+    statusBar.textContent = '🟢 Live — votes update in real time for everyone';
+
+    const data = snapshot.val();
+
+    if (!data || !data.picks || data.picks.length === 0) {
+      emptyMsg.style.display   = 'block';
+      picksLabel.style.display = 'none';
+      pickedAtEl.textContent   = '';
+      resetBtn.style.display   = 'none';
+      resultsEl.innerHTML      = '';
+      resultsEl.appendChild(emptyMsg);
+      highlightPicks([]);
+      return;
+    }
+
+    const picks  = data.picks;
+    const voters = data.voters || {};
+
+    emptyMsg.style.display   = 'none';
+    picksLabel.style.display = 'block';
+    resetBtn.style.display   = 'block';
+    highlightPicks(picks);
+
+    if (data.pickedAt) {
+      const d = new Date(data.pickedAt);
+      pickedAtEl.textContent = `Picked ${d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' })} at ${d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' })}`;
+    }
+
+    renderPicks(picks, voters);
+  }, (err) => {
+    statusBar.className = 'error';
+    statusBar.textContent = '⚠ Firebase connection error — check your config and database rules.';
+    console.error(err);
+  });
+
+  function renderPicks(picks, voters) {
+    resultsEl.innerHTML = '';
+
+    const myNameKey = sanitize(voterNameEl.value.trim());
+    const myPick    = myNameKey ? (voters[myNameKey] || null) : null;
+    const hasVoted  = myPick !== null;
+
+    function votersFor(key) {
+      return Object.entries(voters).filter(([, v]) => v === key);
+    }
+
+    const totalVotes = picks.reduce((sum, p) => sum + votersFor(sanitize(p)).length, 0);
+    const maxVotes   = Math.max(...picks.map(p => votersFor(sanitize(p)).length));
+
+    voterNameEl.classList.toggle('voted', hasVoted);
+
+    picks.forEach((name, i) => {
+      const key      = sanitize(name);
+      const whoVoted = votersFor(key);
+      const count    = whoVoted.length;
+      const pct      = totalVotes === 0 ? 0 : (count / totalVotes) * 100;
+      const isWinner = totalVotes > 0 && count === maxVotes;
+      const isMyPick = myPick === key;
+
+      const chipHTML = whoVoted.map(([vKey]) => {
+        const isMe = vKey === myNameKey;
+        return `<span class="voter-chip${isMe ? ' is-me' : ''}">${vKey}</span>`;
+      }).join('');
+
+      let btnLabel    = 'Vote';
+      let btnClass    = 'vote-btn';
+      let btnDisabled = '';
+      if (isMyPick)      { btnLabel = '✓ My vote'; btnClass += ' my-vote'; btnDisabled = 'disabled'; }
+      else if (hasVoted) { btnDisabled = 'disabled'; }
+
+      const card = document.createElement('div');
+      card.className = 'result-card' + (isWinner ? ' winner' : '');
+      card.innerHTML = `
+        <div class="card-top">
+          <span class="medal">${medals[i]}</span>
+          <span class="result-name">${name}</span>
+          <button class="${btnClass}" data-key="${key}" ${btnDisabled}>${btnLabel}</button>
+          <span class="vote-count">${count} ${count === 1 ? 'vote' : 'votes'}</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+        ${chipHTML ? `<div class="voter-chips">${chipHTML}</div>` : ''}
+      `;
+      if (!btnDisabled) card.querySelector('.vote-btn').addEventListener('click', () => castVote(key));
+      resultsEl.appendChild(card);
+    });
+  }
+
+  pickBtn.addEventListener('click', async () => {
+    pickBtn.disabled = true;
+    pickBtn.textContent = 'Picking…';
+
+    const shuffled = [...RESTAURANTS].sort(() => Math.random() - 0.5);
+    const picks    = shuffled.slice(0, 3);
+
+    try {
+      await set(sessionRef, { picks, voters: {}, pickedAt: Date.now() });
+    } catch (err) {
+      statusBar.className = 'error';
+      statusBar.textContent = '⚠ Could not save picks — check Firebase rules. Error: ' + err.message;
+      console.error(err);
+    }
+
+    pickBtn.disabled = false;
+    pickBtn.textContent = '🎲 Pick 3 for Tonight';
+  });
+
+  async function castVote(key) {
+    const name = voterNameEl.value.trim();
+    if (!name) {
+      voterNameEl.focus();
+      voterNameEl.style.borderColor = '#f87171';
+      setTimeout(() => voterNameEl.style.borderColor = '', 1500);
+      return;
+    }
+    const nameKey  = sanitize(name);
+    const voterRef = ref(db, `family-dinner/current/voters/${nameKey}`);
+    await runTransaction(voterRef, current => {
+      if (current !== null) return;
+      return key;
+    });
+  }
+
+  resetBtn.addEventListener('click', async () => {
+    if (!confirm('Reset all votes? Everyone will be able to vote again.')) return;
+    await set(ref(db, 'family-dinner/current/voters'), {});
+  });
+
+  function sanitize(name) {
+    return name.replace(/[.#$[\]]/g, '_');
+  }
+</script>
+</body>
+</html>
