@@ -210,6 +210,123 @@
     .empty-state .icon { font-size:2.8rem; margin-bottom:10px; }
     .empty-state p { font-size:0.88rem; line-height:1.6; }
     .divider { height:1px; background:var(--border); margin:18px 0; }
+
+    /* SPLIT BRACKET */
+    .bk-col { width:128px; flex-shrink:0; }
+    .bk-col-final { width:164px; flex-shrink:0; }
+    .bk-col-hdr { font-family:'Bebas Neue',sans-serif; font-size:0.72rem; letter-spacing:1px; color:var(--muted); text-align:center; padding-bottom:6px; }
+    .bk-card { position:absolute; left:0; right:0; background:var(--card); border:1px solid var(--border); border-radius:7px; overflow:hidden; }
+    .bk-slot { display:flex; align-items:center; gap:4px; width:100%; padding:0 7px; height:30px; background:transparent; border:none; color:var(--text); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.72rem; font-weight:500; transition:background .15s; text-align:left; }
+    .bk-slot:hover:not(.bk-empty) { background:rgba(0,230,118,.07); }
+    .bk-empty { color:var(--muted); cursor:default; }
+    .bk-label { font-style:italic; color:var(--muted); font-size:0.68rem; }
+    .bk-chosen { background:rgba(0,230,118,.1); }
+    .bk-correct { background:rgba(0,200,83,.18); color:var(--correct); font-weight:700; }
+    .bk-wrong { background:rgba(239,83,80,.1); color:var(--wrong); }
+    .bk-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:82px; }
+    .bk-vs { background:var(--dark2); text-align:center; font-size:0.6rem; color:var(--muted); height:16px; display:flex; align-items:center; justify-content:center; }
+    .bk-winner { height:24px; padding:0 7px; font-size:0.63rem; color:var(--accent); background:rgba(0,230,118,.05); border-top:1px solid var(--border); display:flex; align-items:center; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .bk-win-ok { color:var(--correct); }
+    .bk-win-err { color:var(--wrong); }
+
+    /* LIVE SCORES */
+    .ls-section { background:var(--card2); border:1px solid var(--border); border-radius:10px; margin-bottom:18px; overflow:hidden; }
+    .ls-header { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border); font-weight:700; font-size:0.88rem; }
+    .ls-meta { font-size:0.72rem; color:var(--muted); font-weight:400; }
+    .ls-empty { padding:20px; text-align:center; color:var(--muted); font-size:0.84rem; }
+    .ls-date-label { padding:5px 14px; font-size:0.68rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); background:var(--dark2); border-top:1px solid var(--border); }
+    .ls-row { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:9px 14px; border-top:1px solid var(--border); gap:8px; }
+    .ls-row:first-of-type { border-top:none; }
+    .ls-row.ls-live { background:rgba(0,230,118,.04); }
+    .ls-team { display:flex; align-items:center; gap:6px; }
+    .ls-team-away { justify-content:flex-end; }
+    .ls-flag { font-size:1.1rem; line-height:1; }
+    .ls-name { font-size:0.8rem; color:var(--text); }
+    .ls-winner { color:var(--green); font-weight:700; }
+    .ls-scores { display:flex; align-items:center; gap:6px; justify-content:center; }
+    .ls-num { font-size:1rem; font-weight:800; min-width:16px; text-align:center; }
+    .ls-badge { font-size:0.66rem; font-weight:700; padding:2px 7px; border-radius:4px; white-space:nowrap; }
+    .ls-badge-live { background:rgba(0,230,118,.2); color:var(--green); }
+    .ls-badge-ft { background:rgba(255,255,255,.06); color:var(--muted); }
+    .ls-badge-sched { color:var(--muted); font-size:0.64rem; }
+    .ls-dot { font-size:0.55rem; margin-right:2px; animation:ls-blink 1s infinite; }
+    @keyframes ls-blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    /* THIRD PLACE RANKING */
+    .third-rank-section { margin-top:24px; background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:16px; }
+    .third-rank-header { font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:1px; color:var(--gold); margin-bottom:4px; }
+    .third-rank-sub { font-size:0.78rem; color:var(--muted); margin-bottom:14px; line-height:1.5; }
+    .third-rank-slots { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px; }
+    .third-slot { display:flex; align-items:center; gap:5px; background:var(--card); border:1px solid var(--border); border-radius:7px; padding:6px 8px; min-height:36px; }
+    .third-slot.filled { border-color:rgba(255,214,0,.4); background:rgba(255,214,0,.05); }
+    .third-slot-num { font-size:0.68rem; font-weight:800; color:var(--gold); min-width:14px; }
+    .third-slot-flag { font-size:1rem; line-height:1; }
+    .third-slot-name { font-size:0.72rem; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .third-slot-remove { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1rem; padding:0 2px; line-height:1; }
+    .third-slot-remove:hover { color:var(--wrong); }
+    .third-slot-empty { font-size:0.72rem; color:var(--border); margin-left:4px; }
+    .third-available { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:8px; }
+    .third-avail-label { font-size:0.72rem; color:var(--muted); }
+    .third-chip { background:var(--card); border:1px solid var(--border); color:var(--text); border-radius:20px; padding:4px 10px; font-size:0.75rem; cursor:pointer; font-family:'DM Sans',sans-serif; transition:border-color .15s,background .15s; }
+    .third-chip:hover:not(:disabled) { border-color:var(--gold); background:rgba(255,214,0,.08); }
+    .third-chip:disabled { opacity:0.4; cursor:default; }
+    .third-chip-out { opacity:0.45; cursor:default; text-decoration:line-through; }
+    .third-avail-out { color:var(--wrong) !important; }
+
+    /* ADMIN */
+    .admin-bar { display:flex; align-items:center; gap:10px; padding:10px 14px; background:rgba(255,214,0,.07); border:1px solid rgba(255,214,0,.3); border-radius:8px; margin-bottom:14px; flex-wrap:wrap; }
+    .admin-badge { font-size:0.82rem; font-weight:700; color:var(--gold); }
+
+    /* QUALIFIER COUNTER */
+    .qualifier-counter { display:flex; align-items:center; gap:8px; padding:10px 14px; background:var(--card2); border:1px solid var(--border); border-radius:8px; margin-bottom:12px; }
+    .qc-label { font-size:0.8rem; color:var(--muted); }
+    .qc-count { font-size:1rem; font-weight:800; color:var(--gold); min-width:30px; }
+    .qc-count.qc-done { color:var(--green); }
+    .qc-note { font-size:0.72rem; color:var(--muted); opacity:0.7; margin-left:auto; }
+
+    /* SYNC ROW */
+    .sync-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; padding:10px 14px; background:var(--card2); border-radius:8px; border:1px solid var(--border); flex-wrap:wrap; }
+    .sync-time { font-size:0.75rem; color:var(--muted); }
+    .btn-sync { background:transparent; border:1px solid var(--accent); color:var(--accent); border-radius:6px; padding:5px 14px; font-size:0.78rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background .15s; white-space:nowrap; }
+    .btn-sync:hover:not(:disabled) { background:rgba(0,230,118,.1); }
+    .btn-sync:disabled { opacity:0.5; cursor:default; }
+    .bk-final-card { position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); background:linear-gradient(135deg,var(--card),var(--dark3)); border:1px solid rgba(255,214,0,.4); border-radius:9px; overflow:hidden; }
+    .bk-final-slot { height:34px; font-size:0.78rem; }
+    .bk-score-box { padding:8px 7px 10px; background:var(--dark3); border-top:1px solid var(--border); }
+    .bk-score-lbl { font-size:0.62rem; color:var(--muted); text-align:center; margin-bottom:5px; letter-spacing:.05em; text-transform:uppercase; }
+    .bk-score-row { display:flex; align-items:center; justify-content:center; gap:6px; }
+    .bk-score-in { width:34px; background:var(--card); border:1px solid var(--border); color:var(--text); border-radius:5px; text-align:center; font-size:0.88rem; font-weight:700; padding:4px 2px; outline:none; font-family:'DM Sans',sans-serif; }
+    .bk-score-in:focus { border-color:var(--gold); }
+    .bk-score-sep { color:var(--muted); font-size:0.88rem; }
+
+    /* KEY BUTTON */
+    .key-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 1rem; padding: 4px 6px; border-radius: 6px;
+      opacity: 0.35; transition: opacity .2s;
+      line-height: 1;
+    }
+    .key-btn:hover { opacity: 0.7; }
+
+    /* GROUP STANDINGS (public Results panel) */
+    .stnd-empty { font-size: 0.83rem; color: var(--muted); padding: 12px 0 4px; }
+    .stnd-section { margin-bottom: 20px; }
+    .stnd-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 1px; color: var(--accent); margin-bottom: 12px; }
+    .stnd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+    .stnd-group { background: var(--card); border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+    .stnd-group-lbl { background: var(--card2); padding: 6px 10px; font-family: 'Bebas Neue', sans-serif; font-size: 0.88rem; letter-spacing: 1px; color: var(--gold); border-bottom: 1px solid var(--border); }
+    .stnd-row { display: flex; align-items: center; gap: 6px; padding: 5px 9px; }
+    .stnd-row:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .stnd-pos { width: 20px; height: 20px; font-size: 0.65rem; flex-shrink: 0; }
+    .stnd-flag { font-size: 1rem; line-height: 1; flex-shrink: 0; }
+    .stnd-name { font-size: 0.78rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* 3RD PLACE QUALIFIERS (public) */
+    .stnd-thirds { margin-top: 14px; }
+    .stnd-thirds-lbl { font-size: 0.72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .stnd-thirds-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .stnd-third-chip { display: flex; align-items: center; gap: 5px; background: var(--card); border: 1px solid rgba(255,214,0,.3); border-radius: 20px; padding: 4px 10px; font-size: 0.76rem; }
+    .stnd-third-n { font-size: 0.65rem; font-weight: 800; color: var(--gold); min-width: 12px; }
   </style>
 </head>
 <body>
@@ -249,10 +366,12 @@ const FLAGS = {
   England: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", Croatia: "🇭🇷", Ghana: "🇬🇭", Panama: "🇵🇦",
 };
 
-const SCORING = { group: 1, r32: 2, r16: 3, qf: 5, sf: 8, final: 13, champion: 20 };
+const SCORING = { group: 1, third: 1, r32: 2, r16: 3, qf: 5, sf: 8, final: 13, champion: 20 };
 const ROUND_KEYS = ["r32", "r16", "qf", "sf", "final"];
 const ROUND_LABELS = { r32: "Round of 32", r16: "Round of 16", qf: "Quarterfinals", sf: "Semifinals", final: "Final" };
 const TABS = ["👥 Players", "🌍 Groups", "🏆 Bracket", "🎯 Results", "📊 Scores"];
+const LOCK_DATE = '2026-06-10';
+const picksLocked = new Date().toISOString().slice(0, 10) >= LOCK_DATE;
 
 // ─── FIREBASE ────────────────────────────────────────────────────────────────
 const FIREBASE_CONFIG = {
@@ -269,19 +388,115 @@ const db = firebase.database();
 const wcRef = db.ref('worldcup');
 function sanitizeKey(n) { return n.replace(/[.#$[\]/\s]/g, '_'); }
 
+// ─── BRACKET CONSTANTS ───────────────────────────────────────────────────────
+const B_UNIT = 112, B_SH = 100, B_COLS = 8;
+const bTop = (r, i) => (Math.pow(2, r) * i + Math.pow(2, r) / 2) * B_UNIT - B_SH / 2;
+
+// Actual 2026 WC R32 pairings in bracket order (left side → SF M101, right side → SF M102)
+const BRACKET = [
+  ['2A','2B'], ['1F','2C'],   // M73, M75 → R16 M89
+  ['1E','3rd'],['1I','3rd'],  // M74, M77 → R16 M90
+  ['2K','2L'], ['1H','2J'],   // M83, M84 → R16 M93
+  ['1D','3rd'],['1G','3rd'],  // M81, M82 → R16 M94
+  ['1C','2F'], ['2E','2I'],   // M76, M78 → R16 M91
+  ['1A','3rd'],['1L','3rd'],  // M79, M80 → R16 M92
+  ['1J','2H'], ['2D','2G'],   // M86, M88 → R16 M95
+  ['1B','3rd'],['1K','3rd'],  // M85, M87 → R16 M96
+];
+const BRACKET_LABELS = BRACKET.flatMap(([a,b]) => [a,b]);
+
+function getAdvancers(groupsData, thirdRanked) {
+  const adv = new Array(32).fill(null);
+  let ti = 0;
+  const resolve = pos => {
+    if (pos === '3rd') return (thirdRanked || [])[ti++] || null;
+    const g = groupsData[pos[1]] || [];
+    return g[pos[0] === '1' ? 0 : 1] || null;
+  };
+  BRACKET.forEach(([posA, posB], mi) => {
+    adv[mi * 2]     = resolve(posA);
+    adv[mi * 2 + 1] = resolve(posB);
+  });
+  return adv;
+}
+
+function getKnockoutMatchups(roundKey, koData, groupsData, thirdRanked) {
+  const idx = ROUND_KEYS.indexOf(roundKey);
+  if (idx === 0) {
+    const adv = getAdvancers(groupsData, thirdRanked);
+    const matchups = [];
+    for (let i = 0; i < 32; i += 2) matchups.push([adv[i] || null, adv[i + 1] || null]);
+    return matchups;
+  }
+  const prevKey = ROUND_KEYS[idx - 1];
+  const prev    = koData[prevKey] || [];
+  const matchups = [];
+  for (let i = 0; i < prev.length; i += 2) matchups.push([prev[i] || null, prev[i + 1] || null]);
+  return matchups;
+}
+
+function BracketCol({ title, roundKey, halfOffset, count, level, allMatchups, ko, resultKo, onPick }) {
+  const NH = B_COLS * B_UNIT;
+  const isR32 = roundKey === 'r32';
+  return (
+    <div className="bk-col">
+      <div className="bk-col-hdr">{title}</div>
+      <div style={{ position:'relative', height:NH }}>
+        {Array.from({ length: count }, (_, li) => {
+          const gi = halfOffset + li;
+          const m = allMatchups[gi] || [null, null];
+          const picked = ko[roundKey]?.[gi];
+          const actual = resultKo?.[roundKey]?.[gi];
+          const cls = t => picked !== t ? '' : !actual ? 'bk-chosen' : actual === t ? 'bk-correct' : 'bk-wrong';
+          const winCls = !actual || !picked ? '' : picked === actual ? 'bk-win-ok' : 'bk-win-err';
+          const labelA = isR32 ? BRACKET_LABELS[(gi) * 2] : null;
+          const labelB = isR32 ? BRACKET_LABELS[(gi) * 2 + 1] : null;
+          const slotA = m[0] ? <>{FLAGS[m[0]] || '🏳️'} <span className="bk-name">{m[0]}</span></> : <span className="bk-label">{labelA || 'TBD'}</span>;
+          const slotB = m[1] ? <>{FLAGS[m[1]] || '🏳️'} <span className="bk-name">{m[1]}</span></> : <span className="bk-label">{labelB || 'TBD'}</span>;
+          return (
+            <div key={li} className="bk-card" style={{ top: bTop(level, li) }}>
+              <button className={`bk-slot ${!m[0] ? 'bk-empty' : cls(m[0])}`}
+                onClick={() => m[0] && onPick(roundKey, gi * 2, m[0])}>
+                {slotA}
+              </button>
+              <div className="bk-vs">vs</div>
+              <button className={`bk-slot ${!m[1] ? 'bk-empty' : cls(m[1])}`}
+                onClick={() => m[1] && onPick(roundKey, gi * 2 + 1, m[1])}>
+                {slotB}
+              </button>
+              <div className={`bk-winner ${winCls}`}>
+                {picked ? `${FLAGS[picked] || ''} ${picked}${actual ? (picked === actual ? ' ✓' : ' ✗') : ''}` : ''}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── SCORING ENGINE ──────────────────────────────────────────────────────────
 function calcScore(playerPicks, results) {
   let pts = 0;
-  const breakdown = { group: 0, r32: 0, r16: 0, qf: 0, sf: 0, final: 0, champion: 0 };
+  const breakdown = { group: 0, third: 0, r32: 0, r16: 0, qf: 0, sf: 0, final: 0, champion: 0 };
 
   for (const letter of Object.keys(GROUPS)) {
     const rg = results.groups[letter] || [];
     const pg = playerPicks.groups[letter] || [];
-    for (let rank = 0; rank < 2; rank++) {
+    for (let rank = 0; rank < 3; rank++) {
       if (pg[rank] && rg[rank] && pg[rank] === rg[rank]) {
         pts += SCORING.group;
         breakdown.group += SCORING.group;
       }
+    }
+  }
+
+  const rTR = results.thirdRanked || [];
+  const pTR = (playerPicks.thirdRanked || []);
+  for (let i = 0; i < Math.min(8, rTR.length); i++) {
+    if (pTR[i] && rTR[i] && pTR[i] === rTR[i]) {
+      pts += SCORING.third;
+      breakdown.third += SCORING.third;
     }
   }
 
@@ -305,6 +520,96 @@ function calcScore(playerPicks, results) {
   return { total: pts, breakdown };
 }
 
+// ─── ESPN LIVE SYNC ──────────────────────────────────────────────────────────
+const ESPN_NAMES = {
+  'Curacao': 'Curaçao',
+  'Korea Republic': 'South Korea',
+  'IR Iran': 'Iran',
+  'DR Congo': 'DR Congo',
+};
+const espnName = n => ESPN_NAMES[n] || n;
+
+function getESPNRoundByDate(d) {
+  if (!d) return null;
+  if (d >= '2026-06-28' && d <= '2026-07-03') return 'r32';
+  if (d >= '2026-07-04' && d <= '2026-07-07') return 'r16';
+  if (d >= '2026-07-09' && d <= '2026-07-11') return 'qf';
+  if (d >= '2026-07-14' && d <= '2026-07-15') return 'sf';
+  if (d === '2026-07-19') return 'final';
+  return null;
+}
+
+function findKnockoutSlot(roundKey, teamA, teamB, resultGroups, resultKo, thirdRanked) {
+  const matchups = getKnockoutMatchups(roundKey, resultKo, resultGroups, thirdRanked);
+  for (let i = 0; i < matchups.length; i++) {
+    const [a, b] = matchups[i] || [];
+    if (a && b && ((a === teamA && b === teamB) || (a === teamB && b === teamA))) return i;
+  }
+  return -1;
+}
+
+async function syncESPN(currentResults) {
+  const out = {
+    groups:      { ...currentResults.groups },
+    knockout:    JSON.parse(JSON.stringify(currentResults.knockout || {})),
+    champion:    currentResults.champion    || null,
+    finalScore:  currentResults.finalScore  || [null, null],
+    thirdRanked: currentResults.thirdRanked || [],
+  };
+
+  // 1. Group standings → auto-populate group results when teams have played
+  try {
+    const r = await fetch('https://site.api.espn.com/apis/v2/sports/soccer/fifa.world/standings?season=2026');
+    const d = await r.json();
+    for (const grp of (d.children || [])) {
+      const raw    = (grp.abbreviation || grp.name || '').trim();
+      const letter = raw.length === 1 ? raw : raw.replace(/^Group\s*/i, '').trim();
+      if (!letter || letter.length !== 1) continue;
+      const entries = (grp.standings?.entries || []).slice().sort((a, b) => {
+        const rank = e => +(e.stats?.find(s => s.name === 'rank')?.value ?? 99);
+        return rank(a) - rank(b);
+      });
+      const gp = +(entries[0]?.stats?.find(s => s.name === 'gamesPlayed')?.value ?? 0);
+      if (gp === 0) continue;
+      const top2 = entries.slice(0, 3).map(e => espnName(e.team.displayName));
+      if (top2[0] && top2[1]) out.groups[letter] = top2;
+    }
+  } catch(e) { console.warn('ESPN standings sync failed:', e); }
+
+  // 2. Knockout results — fetch all completed matches from R32 start through today
+  try {
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    if (today >= '20260628') {
+      const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260628-${today}&limit=200`;
+      const r = await fetch(url);
+      const d = await r.json();
+      // Sort events by date so earlier rounds are processed first (needed for slot matching)
+      const events = (d.events || []).slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      for (const ev of events) {
+        const comp = ev.competitions?.[0];
+        if (!comp || comp.status?.type?.name !== 'STATUS_FINAL') continue;
+        const dateStr = (ev.date || '').slice(0, 10);
+        const rk = getESPNRoundByDate(dateStr);
+        if (!rk) continue;
+        const comps  = comp.competitors || [];
+        const tA     = espnName(comps[0]?.team?.displayName);
+        const tB     = espnName(comps[1]?.team?.displayName);
+        const winner = espnName(comps.find(c => c.winner)?.team?.displayName);
+        if (!tA || !tB || !winner) continue;
+        const slot = findKnockoutSlot(rk, tA, tB, out.groups, out.knockout, out.thirdRanked);
+        if (slot >= 0) {
+          if (!out.knockout[rk]) out.knockout[rk] = [];
+          out.knockout[rk][slot] = winner;
+        }
+      }
+      // Auto-set champion from final result
+      if (out.knockout.final?.[0]) out.champion = out.knockout.final[0];
+    }
+  } catch(e) { console.warn('ESPN knockout sync failed:', e); }
+
+  return out;
+}
+
 // ─── COMPONENTS ──────────────────────────────────────────────────────────────
 function GroupCard({ letter, picks, onPick, results, resultsMode }) {
   const teams  = GROUPS[letter];
@@ -315,14 +620,14 @@ function GroupCard({ letter, picks, onPick, results, resultsMode }) {
     <div className="group-card">
       <div className="group-header">
         <span className="group-letter">Group {letter}</span>
-        {resultsMode && actual.length >= 2 && <span className="results-badge">✓ Set</span>}
+        {resultsMode && actual.length >= 3 && <span className="results-badge">✓ Set</span>}
       </div>
       <div className="group-teams">
         {teams.map(team => {
           const rank = picked.indexOf(team);
           const actualRank = actual.indexOf(team);
           let correctness = null;
-          if (!resultsMode && actual.length >= 2 && rank >= 0 && rank < 2) {
+          if (!resultsMode && actual.length >= 3 && rank >= 0 && rank < 3) {
             correctness = actual[rank] === team ? "correct" : "wrong";
           }
           return (
@@ -334,12 +639,12 @@ function GroupCard({ letter, picks, onPick, results, resultsMode }) {
                 {correctness === "wrong" && <span className="cross">✗</span>}
               </div>
               <div className="rank-buttons">
-                {[1, 2].map(r => (
+                {[1, 2, 3].map(r => (
                   <button
                     key={r}
                     className={`rank-btn ${rank === r - 1 ? "active" : ""} pos-${r}`}
                     onClick={() => onPick(letter, team, r - 1)}
-                    title={r === 1 ? "1st" : "2nd"}
+                    title={r === 1 ? "1st" : r === 2 ? "2nd" : "3rd"}
                   >{r}</button>
                 ))}
               </div>
@@ -348,10 +653,10 @@ function GroupCard({ letter, picks, onPick, results, resultsMode }) {
         })}
       </div>
       <div className="group-footer">
-        <span className={`advance-label ${picked.length >= 2 ? "done" : ""}`}>
-          {picked.length >= 2
-            ? `${FLAGS[picked[0]]} ${picked[0]} & ${FLAGS[picked[1]]} ${picked[1]}`
-            : resultsMode ? "Set actual top 2" : "Pick 1st & 2nd"}
+        <span className={`advance-label ${picked.length >= 3 ? "done" : ""}`}>
+          {picked.length >= 3
+            ? `${FLAGS[picked[0]]}${picked[0]} · ${FLAGS[picked[1]]}${picked[1]} · ${FLAGS[picked[2]]}${picked[2]}`
+            : resultsMode ? "Set actual top 3" : `Pick 1st, 2nd & 3rd (${picked.length}/3)`}
         </span>
       </div>
     </div>
@@ -387,18 +692,34 @@ function App() {
   const [groupPicks, setGroupPicks]         = useState({});
   const [knockoutPicks, setKnockoutPicks]   = useState({});
   const [champPick, setChampPick]           = useState(null);
+  const [finalScorePick, setFinalScorePick] = useState([null, null]);
 
   const [resultGroups, setResultGroups]         = useState({});
   const [resultKnockout, setResultKnockout]     = useState({});
   const [resultChampion, setResultChampion]     = useState(null);
+  const [resultFinalScore, setResultFinalScore] = useState([null, null]);
+
+  const [thirdRanked, setThirdRanked]             = useState([]);
+  const [resultThirdRanked, setResultThirdRanked] = useState([]);
+  const [isAdmin, setIsAdmin]                     = useState(() => localStorage.getItem('wc_admin') === '1');
+  const [adminInput, setAdminInput]               = useState('');
+  const [showAdminLogin, setShowAdminLogin]       = useState(false);
+
+  const [syncStatus, setSyncStatus]   = useState('');
+  const [lastSync, setLastSync]       = useState(null);
+  const [showAdminEdit, setShowAdminEdit] = useState(false);
+
+  const [liveScores, setLiveScores]   = useState([]);
+  const [scoresReady, setScoresReady] = useState(false);
 
   useEffect(() => {
     if (activePlayer && allPicks[activePlayer]) {
       setGroupPicks(allPicks[activePlayer].groups || {});
       setKnockoutPicks(allPicks[activePlayer].knockout || {});
       setChampPick(allPicks[activePlayer].champion || null);
+      setThirdRanked(allPicks[activePlayer].thirdRanked || []);
     } else {
-      setGroupPicks({}); setKnockoutPicks({}); setChampPick(null);
+      setGroupPicks({}); setKnockoutPicks({}); setChampPick(null); setThirdRanked([]);
     }
   }, [activePlayer]);
 
@@ -406,6 +727,8 @@ function App() {
     setResultGroups(results.groups || {});
     setResultKnockout(results.knockout || {});
     setResultChampion(results.champion || null);
+    setResultFinalScore(results.finalScore || [null, null]);
+    setResultThirdRanked(results.thirdRanked || []);
   }, [results]);
 
   useEffect(() => {
@@ -420,7 +743,7 @@ function App() {
       const rebuilt = {};
       Object.entries(picksObj).forEach(([k, v]) => {
         const name = playersObj[k];
-        if (name) rebuilt[name] = { groups: v.groups || {}, knockout: v.knockout || {}, champion: v.champion || null };
+        if (name) rebuilt[name] = { groups: v.groups || {}, knockout: v.knockout || {}, champion: v.champion || null, thirdRanked: v.thirdRanked || [] };
       });
       setAllPicks(rebuilt);
       if (!initializedRef.current) {
@@ -430,11 +753,13 @@ function App() {
           setGroupPicks(myPicks.groups || {});
           setKnockoutPicks(myPicks.knockout || {});
           setChampPick(myPicks.champion || null);
+          setFinalScorePick(myPicks.finalScore || [null, null]);
+          setThirdRanked(myPicks.thirdRanked || []);
         }
         initializedRef.current = true;
       }
       const r = data.results || {};
-      setResults({ groups: r.groups || {}, knockout: r.knockout || {}, champion: r.champion || null });
+      setResults({ groups: r.groups || {}, knockout: r.knockout || {}, champion: r.champion || null, thirdRanked: r.thirdRanked || [] });
     };
     wcRef.on('value', onVal);
     return () => wcRef.off('value', onVal);
@@ -459,13 +784,103 @@ function App() {
     const key = sanitizeKey(activePlayer);
     const picks = { groups: groupPicks, knockout: knockoutPicks };
     if (champPick) picks.champion = champPick;
+    if (finalScorePick[0] != null || finalScorePick[1] != null) picks.finalScore = finalScorePick;
+    if (thirdRanked.length > 0) picks.thirdRanked = thirdRanked;
     wcRef.child('picks').child(key).set(picks);
   };
 
   const saveResults = () => {
     const res = { groups: resultGroups, knockout: resultKnockout };
     if (resultChampion) res.champion = resultChampion;
+    if (resultFinalScore[0] != null || resultFinalScore[1] != null) res.finalScore = resultFinalScore;
+    if (resultThirdRanked.length > 0) res.thirdRanked = resultThirdRanked;
     wcRef.child('results').set(res);
+  };
+
+  const runSync = async () => {
+    if (syncStatus === 'syncing') return;
+    setSyncStatus('syncing');
+    try {
+      const updated = await syncESPN(results);
+      // Preserve manually-entered final score — don't overwrite with null from ESPN
+      if (results.finalScore?.[0] != null) updated.finalScore = results.finalScore;
+      wcRef.child('results').set(updated);
+      setLastSync(new Date());
+      setSyncStatus('ok');
+    } catch(e) {
+      console.error('Sync error:', e);
+      setSyncStatus('error');
+    }
+  };
+
+  // Auto-sync every 3 minutes
+  useEffect(() => {
+    const id = setInterval(runSync, 3 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [results]);
+
+  const deletePlayer = name => {
+    if (!isAdmin) return;
+    if (!confirm(`Delete "${name}" from the pool? This cannot be undone.`)) return;
+    const key = sanitizeKey(name);
+    wcRef.child('players').child(key).remove();
+    wcRef.child('picks').child(key).remove();
+    if (name === myPlayer) {
+      localStorage.removeItem('wc_my_name');
+      setMyPlayer(null); setActivePlayer(null);
+    }
+  };
+
+  const adminLogin = () => {
+    if (adminInput === 'WC*2026') {
+      localStorage.setItem('wc_admin', '1');
+      setIsAdmin(true); setShowAdminLogin(false); setAdminInput('');
+    } else {
+      alert('Incorrect password.');
+    }
+  };
+
+  const adminLogout = () => {
+    localStorage.removeItem('wc_admin');
+    setIsAdmin(false);
+  };
+
+  const fetchLiveScores = async () => {
+    try {
+      const today = new Date();
+      const days = [-1, 0, 1].map(d => {
+        const dt = new Date(today);
+        dt.setDate(dt.getDate() + d);
+        return dt.toISOString().slice(0, 10).replace(/-/g, '');
+      });
+      const batches = await Promise.all(
+        days.map(date =>
+          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${date}&limit=20`)
+            .then(r => r.json()).then(d => d.events || []).catch(() => [])
+        )
+      );
+      const seen = new Set();
+      const events = batches.flat().filter(e => { if (seen.has(e.id)) return false; seen.add(e.id); return true; });
+      events.sort((a, b) => new Date(a.date) - new Date(b.date));
+      setLiveScores(events);
+      setScoresReady(true);
+    } catch(e) { console.warn('Live scores fetch failed:', e); }
+  };
+
+  useEffect(() => {
+    if (tab !== 3) return;
+    fetchLiveScores();
+    const id = setInterval(fetchLiveScores, 60 * 1000);
+    return () => clearInterval(id);
+  }, [tab]);
+
+  const adminEditPlayer = p => {
+    setActivePlayer(p);
+    setGroupPicks(allPicks[p]?.groups || {});
+    setKnockoutPicks(allPicks[p]?.knockout || {});
+    setChampPick(allPicks[p]?.champion || null);
+    setThirdRanked(allPicks[p]?.thirdRanked || []);
+    setTab(1);
   };
 
   const handleGroupPick = (letter, team, rank) => {
@@ -475,7 +890,7 @@ function App() {
       if (existing >= 0) curr.splice(existing, 1);
       if (curr[rank]) curr.splice(rank, 1);
       curr.splice(rank, 0, team);
-      return { ...prev, [letter]: curr.slice(0, 2) };
+      return { ...prev, [letter]: curr.slice(0, 3) };
     });
   };
 
@@ -486,33 +901,8 @@ function App() {
       if (existing >= 0) curr.splice(existing, 1);
       if (curr[rank]) curr.splice(rank, 1);
       curr.splice(rank, 0, team);
-      return { ...prev, [letter]: curr.slice(0, 2) };
+      return { ...prev, [letter]: curr.slice(0, 3) };
     });
-  };
-
-  const getAdvancers = (groupsData) => {
-    const adv = [];
-    for (const letter of Object.keys(GROUPS)) {
-      const g = groupsData[letter] || [];
-      adv.push(g[0] || null);
-      adv.push(g[1] || null);
-    }
-    return adv;
-  };
-
-  const getKnockoutMatchups = (roundKey, koData, groupsData) => {
-    const idx = ROUND_KEYS.indexOf(roundKey);
-    if (idx === 0) {
-      const adv = getAdvancers(groupsData);
-      const matchups = [];
-      for (let i = 0; i < 32; i += 2) matchups.push([adv[i] || null, adv[i + 1] || null]);
-      return matchups;
-    }
-    const prevKey = ROUND_KEYS[idx - 1];
-    const prev    = koData[prevKey] || [];
-    const matchups = [];
-    for (let i = 0; i < prev.length; i += 2) matchups.push([prev[i] || null, prev[i + 1] || null]);
-    return matchups;
   };
 
   const handleKnockoutPick = (roundKey, matchIndex, team, setter) => {
@@ -526,14 +916,22 @@ function App() {
     });
   };
 
-  const groupProgress = (gp) => Object.keys(GROUPS).filter(l => (gp[l] || []).length >= 2).length;
+  const pickKO = (rk, mi, t) => handleKnockoutPick(rk, mi, t, setKnockoutPicks);
+
+  const groupProgress = (gp) => Object.keys(GROUPS).filter(l => (gp[l] || []).length >= 3).length;
 
   const getSortedScores = () =>
     players.map(p => {
       const picks = allPicks[p] || { groups: {}, knockout: {}, champion: null };
       const { total, breakdown } = calcScore(picks, results);
-      return { name: p, total, breakdown, champion: picks.champion };
-    }).sort((a, b) => b.total - a.total);
+      return { name: p, total, breakdown, champion: picks.champion, finalScore: picks.finalScore || [null, null] };
+    }).sort((a, b) => {
+      if (b.total !== a.total) return b.total - a.total;
+      const actual = results.finalScore;
+      if (!actual || actual[0] == null) return 0;
+      const diff = s => Math.abs((s.finalScore[0] ?? 0) - actual[0]) + Math.abs((s.finalScore[1] ?? 0) - actual[1]);
+      return diff(a) - diff(b);
+    });
 
   const exportPicks = (playerName) => {
     const picks = allPicks[playerName];
@@ -541,7 +939,7 @@ function App() {
     let out = `🏆 WORLD CUP 2026 — ${playerName}'s Picks\n${"=".repeat(40)}\n\nGROUP STAGE PICKS:\n`;
     for (const l of Object.keys(GROUPS)) {
       const g = picks.groups[l] || [];
-      out += `  Group ${l}: 1st ${g[0] || "?"} · 2nd ${g[1] || "?"}\n`;
+      out += `  Group ${l}: 1st ${g[0] || "?"} · 2nd ${g[1] || "?"} · 3rd ${g[2] || "?"}\n`;
     }
     out += `\nKNOCKOUT PICKS:\n`;
     for (const rk of ROUND_KEYS) {
@@ -633,8 +1031,11 @@ function App() {
                       </div>
                       <div className="player-actions">
                         <button className="btn sm secondary" onClick={e => { e.stopPropagation(); exportPicks(p); }}>📥 Export</button>
-                        {p === myPlayer && (
-                          <button className="btn sm" onClick={e => { e.stopPropagation(); setActivePlayer(p); setTab(1); }}>Edit →</button>
+                        {(p === myPlayer || isAdmin) && !picksLocked && (
+                          <button className="btn sm" onClick={e => { e.stopPropagation(); isAdmin && p !== myPlayer ? adminEditPlayer(p) : (setActivePlayer(p), setTab(1)); }}>Edit →</button>
+                        )}
+                        {isAdmin && (
+                          <button className="btn sm" style={{background:'var(--wrong)',borderColor:'var(--wrong)',color:'#fff'}} onClick={e => { e.stopPropagation(); deletePlayer(p); }}>🗑️</button>
                         )}
                       </div>
                     </div>
@@ -642,10 +1043,24 @@ function App() {
                 })}
               </div>
             )}
+            {isAdmin
+              ? <div className="admin-bar"><span className="admin-badge">🔑 Admin Mode</span><button className="btn sm secondary" onClick={adminLogout}>Log out</button></div>
+              : showAdminLogin
+                ? <div className="admin-bar">
+                    <input className="input" type="password" placeholder="Admin password" value={adminInput}
+                      onChange={e => setAdminInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && adminLogin()}
+                      style={{flex:1,maxWidth:200}} autoFocus />
+                    <button className="btn sm" onClick={adminLogin}>Unlock</button>
+                    <button className="btn sm secondary" onClick={() => { setShowAdminLogin(false); setAdminInput(''); }}>Cancel</button>
+                  </div>
+                : <button className="btn sm secondary" style={{marginBottom:14}} onClick={() => setShowAdminLogin(true)}>🔑 Admin</button>
+            }
+
             <div className="scoring-guide">
               <h3>📋 Scoring Rules</h3>
               {[
-                ["Correct group finish position (1st/2nd)", "1 pt each"],
+                ["Correct group finish position (1st/2nd/3rd)", "1 pt each"],
+                ["Correct 3rd-place qualifier rank (slots 1–8)", "1 pt each"],
                 ["Round of 32 winner correct", "2 pts"],
                 ["Round of 16 winner correct", "3 pts"],
                 ["Quarterfinal winner correct", "5 pts"],
@@ -662,21 +1077,82 @@ function App() {
         {/* ══ GROUPS TAB ══ */}
         {tab === 1 && (
           <div>
-            {!myPlayer
-              ? <div className="banner">⚠️ Go to the Players tab and join the pool first.</div>
-              : <div className="editing-bar">
-                  <span>Your picks — <strong>{myPlayer}</strong></span>
-                  <span style={{ color: "var(--green)", fontSize: "0.8rem" }}>{groupProgress(groupPicks)}/12 groups picked</span>
-                </div>
+            {picksLocked
+              ? <div className="banner" style={{background:'rgba(239,83,80,.07)',border:'1px solid rgba(239,83,80,.3)',color:'#ef9a9a'}}>🔒 Picks are locked — the tournament begins June 11. Good luck!</div>
+              : !myPlayer
+                ? <div className="banner">⚠️ Go to the Players tab and join the pool first.</div>
+                : <div className="editing-bar">
+                    <span>Your picks — <strong>{myPlayer}</strong></span>
+                    <span style={{ color: "var(--green)", fontSize: "0.8rem" }}>{groupProgress(groupPicks)}/12 groups picked</span>
+                  </div>
             }
+            {(() => {
+              const thirdCount = thirdRanked.length;
+              return (
+                <div className="qualifier-counter">
+                  <span className="qc-label">3rd place qualifier order</span>
+                  <span className={`qc-count ${thirdCount === 8 ? 'qc-done' : ''}`}>{thirdCount}/8</span>
+                  <span className="qc-note">(rank 8 of 12 to advance)</span>
+                </div>
+              );
+            })()}
             <div className="prog-bar">
               <div className="prog-fill" style={{ width: `${(groupProgress(groupPicks) / 12) * 100}%` }} />
             </div>
+            <div style={picksLocked ? {pointerEvents:'none',opacity:0.75} : {}}>
             <div className="groups-grid">
               {Object.keys(GROUPS).map(letter => (
                 <GroupCard key={letter} letter={letter} picks={groupPicks} onPick={handleGroupPick}
                   results={results.groups} resultsMode={false} />
               ))}
+            </div>
+
+            {myPlayer && (() => {
+              const allThirds = Object.keys(GROUPS).map(l => groupPicks[l]?.[2]).filter(Boolean);
+              const unranked = allThirds.filter(t => !thirdRanked.includes(t));
+              const canAdd = thirdRanked.length < 8;
+              const addRanked = t => { if (canAdd && !thirdRanked.includes(t)) setThirdRanked([...thirdRanked, t]); };
+              const removeRanked = i => setThirdRanked(thirdRanked.filter((_, j) => j !== i));
+              return (
+                <div className="third-rank-section">
+                  <div className="third-rank-header">3rd Place Qualifier Bracket Order</div>
+                  <div className="third-rank-sub">Rank the 8 you think advance. Order matters — 1 pt per correct slot. Pick 3rd in all 12 groups, then choose your 8 below.</div>
+                  <div className="third-rank-slots">
+                    {Array.from({length: 8}, (_, i) => (
+                      <div key={i} className={`third-slot ${thirdRanked[i] ? 'filled' : ''}`}>
+                        <span className="third-slot-num">{i + 1}</span>
+                        {thirdRanked[i] ? (
+                          <><span className="third-slot-flag">{FLAGS[thirdRanked[i]] || '🏳️'}</span>
+                          <span className="third-slot-name">{thirdRanked[i]}</span>
+                          <button className="third-slot-remove" onClick={() => removeRanked(i)}>×</button></>
+                        ) : <span className="third-slot-empty">—</span>}
+                      </div>
+                    ))}
+                  </div>
+                  {canAdd && unranked.length > 0 && (
+                    <div className="third-available">
+                      <span className="third-avail-label">Add to ranking:</span>
+                      {unranked.map(t => (
+                        <button key={t} className="third-chip" onClick={() => addRanked(t)}>
+                          {FLAGS[t] || '🏳️'} {t}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {!canAdd && unranked.length > 0 && (
+                    <div className="third-available" style={{marginTop:10}}>
+                      <span className="third-avail-label third-avail-out">Didn't make the cut:</span>
+                      {unranked.map(t => (
+                        <span key={t} className="third-chip third-chip-out">
+                          {FLAGS[t] || '🏳️'} {t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {allThirds.length === 0 && <p className="third-rank-sub" style={{opacity:0.5}}>Pick 3rd place in your groups above to unlock this section.</p>}
+                </div>
+              );
+            })()}
             </div>
           </div>
         )}
@@ -684,158 +1160,372 @@ function App() {
         {/* ══ BRACKET TAB ══ */}
         {tab === 2 && (
           <div>
-            {!myPlayer
-              ? <div className="banner">⚠️ Go to the Players tab and join the pool first.</div>
-              : <div className="editing-bar">
-                  <span>Your bracket — <strong>{myPlayer}</strong></span>
-                  <span style={{ fontSize: "0.78rem", color: "var(--muted)" }}>Click a team to pick them as the winner</span>
-                </div>
+            {picksLocked
+              ? <div className="banner" style={{background:'rgba(239,83,80,.07)',border:'1px solid rgba(239,83,80,.3)',color:'#ef9a9a'}}>🔒 Picks are locked — the tournament begins June 11. Good luck!</div>
+              : !myPlayer
+                ? <div className="banner">⚠️ Go to the Players tab and join the pool first.</div>
+                : <div className="editing-bar">
+                    <span>Your bracket — <strong>{myPlayer}</strong></span>
+                    <span style={{ fontSize:"0.78rem", color:"var(--muted)" }}>Click a team to advance them</span>
+                  </div>
             }
-            <div className="bracket-scroll">
-              <div className="bracket-rounds">
-                {ROUND_KEYS.slice(0, 4).map(rk => {
-                  const matchups = getKnockoutMatchups(rk, knockoutPicks, groupPicks);
-                  return (
-                    <div key={rk} className="bracket-round">
-                      <h3 className="round-title">{ROUND_LABELS[rk]}</h3>
-                      <div className="matchups">
-                        {matchups.map((match, i) => {
-                          const picked = knockoutPicks[rk]?.[i];
-                          const actual = results.knockout[rk]?.[i];
-                          const getState = (team) => {
-                            if (!picked || !actual) return null;
-                            if (picked === team && actual === team) return "correct";
-                            if (picked === team && actual !== team) return "wrong";
-                            return null;
-                          };
-                          return (
-                            <div key={i} className="matchup">
-                              <KnockoutSlot team={match[0]} state={picked === match[0] ? getState(match[0]) : null}
-                                onClick={() => match[0] && handleKnockoutPick(rk, i * 2, match[0], setKnockoutPicks)} />
-                              <span className="vs-line">vs</span>
-                              <KnockoutSlot team={match[1]} state={picked === match[1] ? getState(match[1]) : null}
-                                onClick={() => match[1] && handleKnockoutPick(rk, i * 2 + 1, match[1], setKnockoutPicks)} />
-                              {picked && (
-                                <div className="winner-badge">
-                                  → {FLAGS[picked] || "🏳️"} {picked}
-                                  {actual && picked === actual && " ✓"}
-                                  {actual && picked !== actual && " ✗"}
-                                </div>
-                              )}
+            <div style={picksLocked ? {pointerEvents:'none',opacity:0.75} : {}}>
+            {(() => {
+              const r32m = getKnockoutMatchups('r32', knockoutPicks, groupPicks, thirdRanked);
+              const r16m = getKnockoutMatchups('r16', knockoutPicks, groupPicks, thirdRanked);
+              const qfm  = getKnockoutMatchups('qf',  knockoutPicks, groupPicks, thirdRanked);
+              const sfm  = getKnockoutMatchups('sf',  knockoutPicks, groupPicks, thirdRanked);
+              const finM = getKnockoutMatchups('final', knockoutPicks, groupPicks, thirdRanked);
+              const fin  = finM[0] || [null, null];
+              const finPicked = knockoutPicks['final']?.[0];
+              const finActual = results.knockout?.['final']?.[0];
+              const finCls = t => finPicked !== t ? '' : !finActual ? 'bk-chosen' : finActual === t ? 'bk-correct' : 'bk-wrong';
+              const NH = B_COLS * B_UNIT;
+              const cp = { ko: knockoutPicks, resultKo: results.knockout, onPick: pickKO };
+              return (
+                <div style={{ overflowX:'auto', paddingBottom:12 }}>
+                  <div style={{ display:'flex', gap:4, minWidth:'max-content', padding:'14px 0', alignItems:'flex-start' }}>
+                    <BracketCol title="R32" roundKey="r32" halfOffset={0} count={8} level={0} allMatchups={r32m} {...cp} />
+                    <BracketCol title="R16" roundKey="r16" halfOffset={0} count={4} level={1} allMatchups={r16m} {...cp} />
+                    <BracketCol title="QF"  roundKey="qf"  halfOffset={0} count={2} level={2} allMatchups={qfm}  {...cp} />
+                    <BracketCol title="SF"  roundKey="sf"  halfOffset={0} count={1} level={3} allMatchups={sfm}  {...cp} />
+                    <div className="bk-col-final">
+                      <div className="bk-col-hdr">FINAL</div>
+                      <div style={{ position:'relative', height:NH }}>
+                        {(fin[0] || fin[1]) && (
+                          <div className="bk-final-card">
+                            <button className={`bk-slot bk-final-slot ${!fin[0] ? 'bk-empty' : finCls(fin[0])}`}
+                              onClick={() => fin[0] && handleKnockoutPick('final', 0, fin[0], setKnockoutPicks)}>
+                              {fin[0] ? <>{FLAGS[fin[0]]||'🏳️'} <span className="bk-name">{fin[0]}</span></> : 'TBD'}
+                            </button>
+                            <div className="bk-vs">vs</div>
+                            <button className={`bk-slot bk-final-slot ${!fin[1] ? 'bk-empty' : finCls(fin[1])}`}
+                              onClick={() => fin[1] && handleKnockoutPick('final', 1, fin[1], setKnockoutPicks)}>
+                              {fin[1] ? <>{FLAGS[fin[1]]||'🏳️'} <span className="bk-name">{fin[1]}</span></> : 'TBD'}
+                            </button>
+                            {finPicked && (
+                              <div className={`bk-winner ${finActual && finPicked===finActual ? 'bk-win-ok' : finActual && finPicked!==finActual ? 'bk-win-err' : ''}`}>
+                                {FLAGS[finPicked]||''} {finPicked}{finActual ? (finPicked===finActual?' ✓':' ✗') : ''}
+                              </div>
+                            )}
+                            <div className="bk-score-box">
+                              <div className="bk-score-lbl">Predicted Final Score</div>
+                              <div className="bk-score-row">
+                                <input type="number" min="0" max="20" className="bk-score-in"
+                                  value={finalScorePick[0]??''}
+                                  onChange={e => setFinalScorePick([e.target.value===''?null:+e.target.value, finalScorePick[1]])} />
+                                <span className="bk-score-sep">–</span>
+                                <input type="number" min="0" max="20" className="bk-score-in"
+                                  value={finalScorePick[1]??''}
+                                  onChange={e => setFinalScorePick([finalScorePick[0], e.target.value===''?null:+e.target.value])} />
+                              </div>
                             </div>
-                          );
-                        })}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                    <BracketCol title="SF"  roundKey="sf"  halfOffset={1} count={1} level={3} allMatchups={sfm}  {...cp} />
+                    <BracketCol title="QF"  roundKey="qf"  halfOffset={2} count={2} level={2} allMatchups={qfm}  {...cp} />
+                    <BracketCol title="R16" roundKey="r16" halfOffset={4} count={4} level={1} allMatchups={r16m} {...cp} />
+                    <BracketCol title="R32" roundKey="r32" halfOffset={8} count={8} level={0} allMatchups={r32m} {...cp} />
+                  </div>
+                </div>
+              );
+            })()}
 
-            {/* Champion pick */}
             <div className="champion-section">
-              <div className="champion-title">🏆 Pick Your Champion</div>
+              <div className="champion-title">🏆 Pick Your Champion (Bonus 20 pts)</div>
               <div className="finalist-btns">
                 {(knockoutPicks["sf"] || []).filter(Boolean).length > 0
                   ? (knockoutPicks["sf"] || []).filter(Boolean).map(team => {
-                      const isChosen    = champPick === team;
+                      const isChosen = champPick === team;
                       const actualChamp = results.champion;
                       let cls = isChosen ? "chosen" : "";
                       if (isChosen && actualChamp) cls = actualChamp === team ? "correct-pick" : "wrong-pick";
                       return (
                         <button key={team} className={`finalist-btn ${cls}`} onClick={() => setChampPick(team)}>
-                          <span>{FLAGS[team] || "🏳️"}</span><span>{team}</span>
+                          <span>{FLAGS[team]||"🏳️"}</span><span>{team}</span>
                           {cls === "correct-pick" && <span>🏆</span>}
                           {cls === "wrong-pick"   && <span>✗</span>}
                         </button>
                       );
                     })
-                  : <p style={{ color: "var(--muted)", fontSize: "0.87rem" }}>Complete your Semifinal picks to unlock the champion pick.</p>
+                  : <p style={{ color:"var(--muted)", fontSize:"0.87rem" }}>Complete your Semifinal picks to unlock the champion pick.</p>
                 }
               </div>
-              {champPick && (
-                <div style={{ color: "var(--gold)", fontSize: "0.95rem", fontWeight: 700 }}>
-                  {FLAGS[champPick]} {champPick} — 20 bonus pts if correct!
-                </div>
-              )}
+              {champPick && <div style={{ color:"var(--gold)", fontSize:"0.9rem", fontWeight:700, marginTop:8 }}>{FLAGS[champPick]} {champPick} — 20 bonus pts if correct!</div>}
+            </div>
             </div>
           </div>
         )}
 
-        {/* ══ RESULTS TAB (Commissioner) ══ */}
+        {/* ══ RESULTS TAB ══ */}
         {tab === 3 && (
           <div>
-            <div className="section-title">🎯 Enter Actual Results</div>
-            <div className="banner">This tab is for the commissioner. Enter real tournament results here — scores update automatically for all players.</div>
-
-            <div className="results-section">
-              <div className="results-section-header">Group Stage Results</div>
-              <div className="results-body">
-                <div className="groups-grid">
-                  {Object.keys(GROUPS).map(letter => (
-                    <GroupCard key={letter} letter={letter} picks={resultGroups}
-                      onPick={handleResultGroupPick} results={{}} resultsMode={true} />
-                  ))}
-                </div>
-              </div>
+            {/* Header row with tiny admin key */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+              <div className="section-title" style={{margin:0}}>⚽ Match Results</div>
+              <button className="key-btn" title="Admin" onClick={() => {
+                if (isAdmin) { setShowAdminEdit(v => !v); }
+                else { setShowAdminLogin(v => !v); setAdminInput(''); }
+              }}>🔑</button>
             </div>
 
-            <div className="results-section">
-              <div className="results-section-header">Knockout Stage Results</div>
-              <div className="results-body">
-                {ROUND_KEYS.map(rk => {
-                  const matchups = getKnockoutMatchups(rk, resultKnockout, resultGroups);
-                  if (matchups.length === 0 || matchups.every(m => !m[0] && !m[1])) return null;
-                  return (
-                    <div key={rk} style={{ marginBottom: 20 }}>
-                      <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: "1rem", letterSpacing: "1px", color: "var(--muted)", marginBottom: 8 }}>
-                        {ROUND_LABELS[rk]}
-                      </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        {matchups.map((match, i) => {
-                          const picked = resultKnockout[rk]?.[i];
-                          return (
-                            <div key={i} style={{ background: "var(--card2)", borderRadius: 8, padding: 10 }}>
-                              <div style={{ fontSize: "0.75rem", color: "var(--muted)", marginBottom: 6 }}>Match {i + 1}</div>
-                              <div className="team-picker">
-                                {[match[0], match[1]].filter(Boolean).map(team => (
-                                  <button key={team} className={`team-chip ${picked === team ? "selected" : ""}`}
-                                    onClick={() => handleKnockoutPick(rk, i * 2, team, setResultKnockout)}>
-                                    <span>{FLAGS[team] || "🏳️"}</span><span>{team}</span>
-                                  </button>
-                                ))}
-                                {!match[0] && !match[1] && <span style={{ fontSize: "0.78rem", color: "var(--muted)" }}>TBD</span>}
-                              </div>
+            {/* Admin login input — appears inline when key clicked */}
+            {!isAdmin && showAdminLogin && (
+              <div className="admin-bar" style={{marginBottom:14}}>
+                <input className="input" type="password" placeholder="Password" value={adminInput}
+                  onChange={e => setAdminInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && adminLogin()}
+                  style={{flex:1,maxWidth:200}} autoFocus />
+                <button className="btn sm" onClick={adminLogin}>Unlock</button>
+                <button className="btn sm secondary" onClick={() => { setShowAdminLogin(false); setAdminInput(''); }}>✕</button>
+              </div>
+            )}
+
+            {/* Live scores — everyone */}
+            <div className="ls-section">
+              <div className="ls-header">
+                <span>Recent &amp; Upcoming Matches</span>
+                <span className="ls-meta">{scoresReady ? 'Updates every min' : 'Loading…'}</span>
+              </div>
+              {!scoresReady ? (
+                <div className="ls-empty">Fetching scores…</div>
+              ) : liveScores.length === 0 ? (
+                <div className="ls-empty">No matches in this window — check back on June 11.</div>
+              ) : (() => {
+                const byDate = {};
+                liveScores.forEach(ev => {
+                  const d = new Date(ev.date).toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+                  if (!byDate[d]) byDate[d] = [];
+                  byDate[d].push(ev);
+                });
+                return Object.entries(byDate).map(([dateLabel, evs]) => (
+                  <div key={dateLabel}>
+                    <div className="ls-date-label">{dateLabel}</div>
+                    {evs.map(ev => {
+                      const comp  = ev.competitions?.[0];
+                      if (!comp) return null;
+                      const home  = comp.competitors?.find(c => c.homeAway === 'home') || comp.competitors?.[0];
+                      const away  = comp.competitors?.find(c => c.homeAway === 'away') || comp.competitors?.[1];
+                      const stype = comp.status?.type?.name;
+                      const clock = comp.status?.displayClock;
+                      const isLive  = stype === 'STATUS_IN_PROGRESS';
+                      const isFinal = stype === 'STATUS_FINAL';
+                      const badgeText = isFinal ? 'FT' : isLive ? (clock || 'LIVE') : new Date(ev.date).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', timeZoneName:'short'});
+                      const hFlag = FLAGS[espnName(home?.team?.displayName)] || '🏳️';
+                      const aFlag = FLAGS[espnName(away?.team?.displayName)] || '🏳️';
+                      return (
+                        <div key={ev.id} className={`ls-row ${isLive ? 'ls-live' : ''}`}>
+                          <div className="ls-team">
+                            <span className="ls-flag">{hFlag}</span>
+                            <span className={`ls-name ${home?.winner ? 'ls-winner' : ''}`}>{home?.team?.abbreviation || home?.team?.shortDisplayName}</span>
+                          </div>
+                          <div className="ls-scores">
+                            {(isFinal || isLive) && <span className={`ls-num ${home?.winner ? 'ls-winner' : ''}`}>{home?.score}</span>}
+                            <div className={`ls-badge ${isLive ? 'ls-badge-live' : isFinal ? 'ls-badge-ft' : 'ls-badge-sched'}`}>
+                              {isLive && <span className="ls-dot">●</span>}{badgeText}
                             </div>
-                          );
-                        })}
+                            {(isFinal || isLive) && <span className={`ls-num ${away?.winner ? 'ls-winner' : ''}`}>{away?.score}</span>}
+                          </div>
+                          <div className="ls-team ls-team-away">
+                            <span className={`ls-name ${away?.winner ? 'ls-winner' : ''}`}>{away?.team?.abbreviation || away?.team?.shortDisplayName}</span>
+                            <span className="ls-flag">{aFlag}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ));
+              })()}
+            </div>
+
+            {/* Group standings — everyone */}
+            {(() => {
+              const groupsWithResults = Object.entries(results.groups).filter(([,g]) => g.length >= 1);
+              if (groupsWithResults.length === 0) return (
+                <div className="stnd-empty">Group standings will appear here as results come in.</div>
+              );
+              return (
+                <div className="stnd-section">
+                  <div className="stnd-title">Group Standings</div>
+                  <div className="stnd-grid">
+                    {Object.keys(GROUPS).map(letter => {
+                      const teams = results.groups[letter] || [];
+                      if (!teams.length) return null;
+                      return (
+                        <div key={letter} className="stnd-group">
+                          <div className="stnd-group-lbl">Group {letter}</div>
+                          {teams.map((t, i) => (
+                            <div key={t} className="stnd-row">
+                              <span className={`stnd-pos rank-btn active pos-${i+1}`}>{i+1}</span>
+                              <span className="stnd-flag">{FLAGS[t]||'🏳️'}</span>
+                              <span className="stnd-name">{t}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {results.thirdRanked?.length > 0 && (
+                    <div className="stnd-thirds">
+                      <div className="stnd-thirds-lbl">3rd Place Qualifiers</div>
+                      <div className="stnd-thirds-list">
+                        {results.thirdRanked.map((t,i) => (
+                          <div key={t} className="stnd-third-chip">
+                            <span className="stnd-third-n">{i+1}</span>
+                            <span>{FLAGS[t]||'🏳️'}</span>
+                            <span>{t}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="results-section">
-              <div className="results-section-header">🏆 World Cup Champion</div>
-              <div className="results-body">
-                <div className="team-picker">
-                  {(resultKnockout["sf"] || []).filter(Boolean).length > 0
-                    ? (resultKnockout["sf"] || []).filter(Boolean).map(team => (
-                        <button key={team} className={`team-chip ${resultChampion === team ? "selected" : ""}`}
-                          onClick={() => setResultChampion(resultChampion === team ? null : team)}>
-                          <span>{FLAGS[team] || "🏳️"}</span><span>{team}</span>
-                        </button>
-                      ))
-                    : <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>Complete Semifinal results first.</span>
-                  }
+                  )}
                 </div>
-              </div>
-            </div>
+              );
+            })()}
 
-            <button className="btn gold" style={{ width: "100%", justifyContent: "center" }} onClick={saveResults}>
-              ✓ Save Results &amp; Update Scores
-            </button>
+            {/* Admin edit form — admin only, toggled by 🔑 */}
+            {isAdmin && showAdminEdit && (
+              <div style={{marginTop:20}}>
+                <div className="admin-bar" style={{marginBottom:14}}>
+                  <span className="admin-badge">🔑 Editing Results</span>
+                  <button className="btn sm secondary" onClick={adminLogout}>Log out</button>
+                </div>
+                <div className="sync-row">
+                  <button className="btn-sync" onClick={runSync} disabled={syncStatus === 'syncing'}>
+                    {syncStatus === 'syncing' ? '↻ Syncing…' : '↻ Sync from ESPN'}
+                  </button>
+                  {syncStatus === 'ok' && lastSync && (
+                    <span className="sync-time">✓ Synced {lastSync.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
+                  )}
+                  {syncStatus === 'error' && <span className="sync-time" style={{color:'var(--wrong)'}}>Sync failed</span>}
+                  <span className="sync-time" style={{marginLeft:'auto',opacity:0.6}}>Auto-syncs every 3 min</span>
+                </div>
+
+                <div className="results-section">
+                  <div className="results-section-header">Group Stage Results</div>
+                  <div className="results-body">
+                    <div className="groups-grid">
+                      {Object.keys(GROUPS).map(letter => (
+                        <GroupCard key={letter} letter={letter} picks={resultGroups}
+                          onPick={handleResultGroupPick} results={{}} resultsMode={true} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="results-section">
+                  <div className="results-section-header">3rd Place Qualifier Bracket Order</div>
+                  <div className="results-body">
+                    <p style={{fontSize:'0.8rem',color:'var(--muted)',marginBottom:10}}>Set the 8 3rd-place teams that advanced, in bracket slot order.</p>
+                    {(() => {
+                      const allThirds = Object.keys(GROUPS).map(l => resultGroups[l]?.[2]).filter(Boolean);
+                      const available = allThirds.filter(t => !resultThirdRanked.includes(t));
+                      const addR = t => { if (resultThirdRanked.length < 8 && !resultThirdRanked.includes(t)) setResultThirdRanked([...resultThirdRanked, t]); };
+                      const removeR = i => setResultThirdRanked(resultThirdRanked.filter((_, j) => j !== i));
+                      return (
+                        <>
+                          <div className="third-rank-slots">
+                            {Array.from({length: 8}, (_, i) => (
+                              <div key={i} className={`third-slot ${resultThirdRanked[i] ? 'filled' : ''}`}>
+                                <span className="third-slot-num">{i + 1}</span>
+                                {resultThirdRanked[i] ? (
+                                  <><span className="third-slot-flag">{FLAGS[resultThirdRanked[i]] || '🏳️'}</span>
+                                  <span className="third-slot-name">{resultThirdRanked[i]}</span>
+                                  <button className="third-slot-remove" onClick={() => removeR(i)}>×</button></>
+                                ) : <span className="third-slot-empty">—</span>}
+                              </div>
+                            ))}
+                          </div>
+                          {available.length > 0 && (
+                            <div className="third-available" style={{marginTop:10}}>
+                              <span className="third-avail-label">Add:</span>
+                              {available.map(t => (
+                                <button key={t} className="third-chip" onClick={() => addR(t)} disabled={resultThirdRanked.length >= 8}>
+                                  {FLAGS[t] || '🏳️'} {t}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {allThirds.length === 0 && <p style={{fontSize:'0.8rem',color:'var(--muted)',opacity:0.6}}>Set group results above first.</p>}
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                <div className="results-section">
+                  <div className="results-section-header">Knockout Stage Results</div>
+                  <div className="results-body">
+                    {ROUND_KEYS.map(rk => {
+                      const matchups = getKnockoutMatchups(rk, resultKnockout, resultGroups, resultThirdRanked);
+                      if (matchups.length === 0 || matchups.every(m => !m[0] && !m[1])) return null;
+                      return (
+                        <div key={rk} style={{ marginBottom: 20 }}>
+                          <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: "1rem", letterSpacing: "1px", color: "var(--muted)", marginBottom: 8 }}>{ROUND_LABELS[rk]}</div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                            {matchups.map((match, i) => {
+                              const picked = resultKnockout[rk]?.[i];
+                              return (
+                                <div key={i} style={{ background: "var(--card2)", borderRadius: 8, padding: 10 }}>
+                                  <div style={{ fontSize: "0.75rem", color: "var(--muted)", marginBottom: 6 }}>Match {i + 1}</div>
+                                  <div className="team-picker">
+                                    {[match[0], match[1]].filter(Boolean).map(team => (
+                                      <button key={team} className={`team-chip ${picked === team ? "selected" : ""}`}
+                                        onClick={() => handleKnockoutPick(rk, i * 2, team, setResultKnockout)}>
+                                        <span>{FLAGS[team] || "🏳️"}</span><span>{team}</span>
+                                      </button>
+                                    ))}
+                                    {!match[0] && !match[1] && <span style={{ fontSize: "0.78rem", color: "var(--muted)" }}>TBD</span>}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="results-section">
+                  <div className="results-section-header">🏆 World Cup Champion</div>
+                  <div className="results-body">
+                    <div className="team-picker">
+                      {(resultKnockout["sf"] || []).filter(Boolean).length > 0
+                        ? (resultKnockout["sf"] || []).filter(Boolean).map(team => (
+                            <button key={team} className={`team-chip ${resultChampion === team ? "selected" : ""}`}
+                              onClick={() => setResultChampion(resultChampion === team ? null : team)}>
+                              <span>{FLAGS[team] || "🏳️"}</span><span>{team}</span>
+                            </button>
+                          ))
+                        : <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>Complete Semifinal results first.</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <div className="results-section">
+                  <div className="results-section-header">⚽ Actual Final Score (tiebreaker)</div>
+                  <div className="results-body">
+                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                      <input type="number" min="0" max="20" className="bk-score-in" style={{ width:44, fontSize:"1.1rem" }}
+                        value={resultFinalScore[0]??''}
+                        onChange={e => setResultFinalScore([e.target.value===''?null:+e.target.value, resultFinalScore[1]])} />
+                      <span style={{ color:"var(--muted)", fontSize:"1rem" }}>–</span>
+                      <input type="number" min="0" max="20" className="bk-score-in" style={{ width:44, fontSize:"1.1rem" }}
+                        value={resultFinalScore[1]??''}
+                        onChange={e => setResultFinalScore([resultFinalScore[0], e.target.value===''?null:+e.target.value])} />
+                      <span style={{ fontSize:"0.78rem", color:"var(--muted)" }}>Closest prediction breaks ties</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button className="btn gold" style={{ width: "100%", justifyContent: "center" }} onClick={saveResults}>
+                  ✓ Save Results &amp; Update Scores
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -866,6 +1556,7 @@ function App() {
                       <div className="lb-breakdown">
                         {[
                           ["Grp", s.breakdown.group],
+                          ["3rd", s.breakdown.third],
                           ["R32", s.breakdown.r32],
                           ["R16", s.breakdown.r16],
                           ["QF",  s.breakdown.qf],
@@ -877,6 +1568,7 @@ function App() {
                         ))}
                       </div>
                       {s.champion && <div className="lb-champ">🏆 Picked: {FLAGS[s.champion]} {s.champion}</div>}
+                      {s.finalScore?.[0] != null && <div className="lb-champ" style={{ color:"var(--muted)" }}>⚽ Final: {s.finalScore[0]}–{s.finalScore[1]}{results.finalScore?.[0] != null ? ` (off by ${Math.abs(s.finalScore[0]-results.finalScore[0])+Math.abs(s.finalScore[1]-results.finalScore[1])})` : ''}</div>}
                     </div>
                     <div className={`lb-score ${s.total === 0 ? "zero" : ""}`}>{s.total}</div>
                   </div>
@@ -886,14 +1578,15 @@ function App() {
             <div className="scoring-guide" style={{ marginTop: 20 }}>
               <h3>Max Possible Points</h3>
               {[
-                ["Group stage (all correct)",    `${SCORING.group * 24} pts`],
-                ["Round of 32 (all correct)",    `${SCORING.r32 * 16} pts`],
-                ["Round of 16 (all correct)",    `${SCORING.r16 * 8} pts`],
-                ["Quarterfinals (all correct)",  `${SCORING.qf * 4} pts`],
-                ["Semifinals (all correct)",     `${SCORING.sf * 2} pts`],
-                ["Final (correct)",              `${SCORING.final} pts`],
-                ["Champion (correct)",           `${SCORING.champion} pts`],
-                ["TOTAL",                        `${SCORING.group*24 + SCORING.r32*16 + SCORING.r16*8 + SCORING.qf*4 + SCORING.sf*2 + SCORING.final + SCORING.champion} pts`],
+                ["Group stage (all correct)",              `${SCORING.group * 36} pts`],
+                ["3rd place qualifier order (all 8)",      `${SCORING.third * 8} pts`],
+                ["Round of 32 (all correct)",              `${SCORING.r32 * 16} pts`],
+                ["Round of 16 (all correct)",              `${SCORING.r16 * 8} pts`],
+                ["Quarterfinals (all correct)",            `${SCORING.qf * 4} pts`],
+                ["Semifinals (all correct)",               `${SCORING.sf * 2} pts`],
+                ["Final (correct)",                        `${SCORING.final} pts`],
+                ["Champion (correct)",                     `${SCORING.champion} pts`],
+                ["TOTAL",                                  `${SCORING.group*36 + SCORING.third*8 + SCORING.r32*16 + SCORING.r16*8 + SCORING.qf*4 + SCORING.sf*2 + SCORING.final + SCORING.champion} pts`],
               ].map(([r, p]) => (
                 <div key={r} className="scoring-row"><span>{r}</span><span className="pts">{p}</span></div>
               ))}
@@ -904,7 +1597,7 @@ function App() {
       </div>
 
       {/* ── SAVE BAR ── */}
-      {(tab === 1 || tab === 2) && myPlayer && (
+      {(tab === 1 || tab === 2) && myPlayer && !picksLocked && (
         <div className="save-bar">
           <span className="for-label">Editing: <strong>{activePlayer}</strong></span>
           <button className="btn" onClick={savePicks}>Save Picks ✓</button>
