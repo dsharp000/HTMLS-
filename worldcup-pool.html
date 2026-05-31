@@ -267,7 +267,7 @@ const FIREBASE_CONFIG = {
 if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
 const wcRef = db.ref('worldcup');
-function sanitizeKey(n) { return n.replace(/[.#$[\]/\s]/g, '_'); }
+function sanitizeKey(n) { return n.replace(/[.#$[\]\/\s]/g, '_'); }
 
 // ─── SCORING ENGINE ──────────────────────────────────────────────────────────
 function calcScore(playerPicks, results) {
@@ -374,7 +374,7 @@ function KnockoutSlot({ team, onClick, state }) {
 }
 
 // ─── APP ─────────────────────────────────────────────────────────────────────
-export default function App() {
+function App() {
   const [tab, setTab]               = useState(0);
   const [players, setPlayers]       = useState([]);
   const [newPlayer, setNewPlayer]   = useState("");
