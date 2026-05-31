@@ -1025,12 +1025,17 @@ function App() {
                           {p} {p === myPlayer && <span style={{ fontSize: "0.72rem", color: "var(--accent)", fontWeight: 400 }}>(you)</span>}
                         </div>
                         <div className="player-status">
-                          {done === 12 ? "✅ Groups done" : `${done}/12 groups`}
-                          {hasResults && ` · ${total} pts`}
+                          {(!picksLocked && p !== myPlayer && !isAdmin)
+                            ? 'In the tournament'
+                            : done === 12 ? "✅ Groups done" : `${done}/12 groups`
+                          }
+                          {(picksLocked || p === myPlayer || isAdmin) && hasResults && ` · ${total} pts`}
                         </div>
                       </div>
                       <div className="player-actions">
-                        <button className="btn sm secondary" onClick={e => { e.stopPropagation(); exportPicks(p); }}>📥 Export</button>
+                        {(p === myPlayer || picksLocked || isAdmin) && (
+                          <button className="btn sm secondary" onClick={e => { e.stopPropagation(); exportPicks(p); }}>📥 Export</button>
+                        )}
                         {(p === myPlayer || isAdmin) && !picksLocked && (
                           <button className="btn sm" onClick={e => { e.stopPropagation(); isAdmin && p !== myPlayer ? adminEditPlayer(p) : (setActivePlayer(p), setTab(1)); }}>Edit →</button>
                         )}
@@ -1534,46 +1539,55 @@ function App() {
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <div className="section-title" style={{ margin: 0 }}>Leaderboard</div>
-              {players.length > 0 && (
+              {(picksLocked || isAdmin) && players.length > 0 && (
                 <button className="btn sm secondary" onClick={exportLeaderboard}>📥 Export</button>
               )}
             </div>
-            {!hasResults && players.length > 0 && (
-              <div className="banner">Scores show 0 until the commissioner enters results in the Results tab.</div>
-            )}
-            {players.length === 0 ? (
+            {!picksLocked && !isAdmin ? (
               <div className="empty-state">
-                <div className="icon">📊</div>
-                <p>No players yet. Add some in the Players tab!</p>
+                <div className="icon">🔒</div>
+                <p>Scores are hidden until picks lock on June 10.<br />Check back once the tournament begins!</p>
               </div>
             ) : (
-              <div className="lb-list">
-                {scores.map((s, i) => (
-                  <div key={s.name} className={`lb-row rank-${i + 1}`}>
-                    <div className="lb-medal">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}</div>
-                    <div className="lb-info">
-                      <div className="lb-name">{s.name}</div>
-                      <div className="lb-breakdown">
-                        {[
-                          ["Grp", s.breakdown.group],
-                          ["3rd", s.breakdown.third],
-                          ["R32", s.breakdown.r32],
-                          ["R16", s.breakdown.r16],
-                          ["QF",  s.breakdown.qf],
-                          ["SF",  s.breakdown.sf],
-                          ["F",   s.breakdown.final],
-                          ["🏆",  s.breakdown.champion],
-                        ].map(([label, val]) => (
-                          <span key={label} className={`bd-chip ${val > 0 ? "has-pts" : ""}`}>{label}: {val}</span>
-                        ))}
-                      </div>
-                      {s.champion && <div className="lb-champ">🏆 Picked: {FLAGS[s.champion]} {s.champion}</div>}
-                      {s.finalScore?.[0] != null && <div className="lb-champ" style={{ color:"var(--muted)" }}>⚽ Final: {s.finalScore[0]}–{s.finalScore[1]}{results.finalScore?.[0] != null ? ` (off by ${Math.abs(s.finalScore[0]-results.finalScore[0])+Math.abs(s.finalScore[1]-results.finalScore[1])})` : ''}</div>}
-                    </div>
-                    <div className={`lb-score ${s.total === 0 ? "zero" : ""}`}>{s.total}</div>
+              <>
+                {!hasResults && players.length > 0 && (
+                  <div className="banner">Scores show 0 until the commissioner enters results in the Results tab.</div>
+                )}
+                {players.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="icon">📊</div>
+                    <p>No players yet. Add some in the Players tab!</p>
                   </div>
-                ))}
-              </div>
+                ) : (
+                  <div className="lb-list">
+                    {scores.map((s, i) => (
+                      <div key={s.name} className={`lb-row rank-${i + 1}`}>
+                        <div className="lb-medal">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}</div>
+                        <div className="lb-info">
+                          <div className="lb-name">{s.name}</div>
+                          <div className="lb-breakdown">
+                            {[
+                              ["Grp", s.breakdown.group],
+                              ["3rd", s.breakdown.third],
+                              ["R32", s.breakdown.r32],
+                              ["R16", s.breakdown.r16],
+                              ["QF",  s.breakdown.qf],
+                              ["SF",  s.breakdown.sf],
+                              ["F",   s.breakdown.final],
+                              ["🏆",  s.breakdown.champion],
+                            ].map(([label, val]) => (
+                              <span key={label} className={`bd-chip ${val > 0 ? "has-pts" : ""}`}>{label}: {val}</span>
+                            ))}
+                          </div>
+                          {s.champion && <div className="lb-champ">🏆 Picked: {FLAGS[s.champion]} {s.champion}</div>}
+                          {s.finalScore?.[0] != null && <div className="lb-champ" style={{ color:"var(--muted)" }}>⚽ Final: {s.finalScore[0]}–{s.finalScore[1]}{results.finalScore?.[0] != null ? ` (off by ${Math.abs(s.finalScore[0]-results.finalScore[0])+Math.abs(s.finalScore[1]-results.finalScore[1])})` : ''}</div>}
+                        </div>
+                        <div className={`lb-score ${s.total === 0 ? "zero" : ""}`}>{s.total}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
             <div className="scoring-guide" style={{ marginTop: 20 }}>
               <h3>Max Possible Points</h3>
