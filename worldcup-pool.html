@@ -267,7 +267,7 @@ const FIREBASE_CONFIG = {
 if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
 const wcRef = db.ref('worldcup');
-function sanitizeKey(n) { return n.replace(/[.#$[\]\/\s]/g, '_'); }
+function sanitizeKey(n) { return n.replace(/[.#$[\]/\s]/g, '_'); }
 
 // ─── SCORING ENGINE ──────────────────────────────────────────────────────────
 function calcScore(playerPicks, results) {
@@ -334,12 +334,12 @@ function GroupCard({ letter, picks, onPick, results, resultsMode }) {
                 {correctness === "wrong" && <span className="cross">✗</span>}
               </div>
               <div className="rank-buttons">
-                {(resultsMode ? [1, 2] : [1, 2, 3]).map(r => (
+                {[1, 2].map(r => (
                   <button
                     key={r}
                     className={`rank-btn ${rank === r - 1 ? "active" : ""} pos-${r}`}
                     onClick={() => onPick(letter, team, r - 1)}
-                    title={r === 1 ? "1st" : r === 2 ? "2nd" : "3rd"}
+                    title={r === 1 ? "1st" : "2nd"}
                   >{r}</button>
                 ))}
               </div>
@@ -378,7 +378,9 @@ function App() {
   const [tab, setTab]               = useState(0);
   const [players, setPlayers]       = useState([]);
   const [newPlayer, setNewPlayer]   = useState("");
-  const [activePlayer, setActivePlayer] = useState(null);
+  const [activePlayer, setActivePlayer] = useState(() => localStorage.getItem('wc_my_name') || null);
+  const [myPlayer, setMyPlayer]     = useState(() => localStorage.getItem('wc_my_name') || null);
+  const initializedRef              = useRef(false);
   const [allPicks, setAllPicks]     = useState({});
   const [results, setResults]       = useState({ groups: {}, knockout: {}, champion: null });
 
@@ -421,6 +423,16 @@ function App() {
         if (name) rebuilt[name] = { groups: v.groups || {}, knockout: v.knockout || {}, champion: v.champion || null };
       });
       setAllPicks(rebuilt);
+      if (!initializedRef.current) {
+        const me = localStorage.getItem('wc_my_name');
+        const myPicks = me && rebuilt[me];
+        if (myPicks) {
+          setGroupPicks(myPicks.groups || {});
+          setKnockoutPicks(myPicks.knockout || {});
+          setChampPick(myPicks.champion || null);
+        }
+        initializedRef.current = true;
+      }
       const r = data.results || {};
       setResults({ groups: r.groups || {}, knockout: r.knockout || {}, champion: r.champion || null });
     };
@@ -430,10 +442,14 @@ function App() {
 
   const addPlayer = () => {
     const name = newPlayer.trim();
-    if (!name || players.includes(name)) return;
+    if (!name) return;
+    if (myPlayer) { alert(`You're already in as "${myPlayer}".`); return; }
+    if (players.includes(name)) { alert(`"${name}" is already in the pool. Pick a different name.`); return; }
     const key = sanitizeKey(name);
     wcRef.child('players').child(key).set(name);
     wcRef.child('picks').child(key).set({ groups: {}, knockout: {} });
+    localStorage.setItem('wc_my_name', name);
+    setMyPlayer(name);
     setNewPlayer("");
     setActivePlayer(name);
   };
@@ -459,7 +475,7 @@ function App() {
       if (existing >= 0) curr.splice(existing, 1);
       if (curr[rank]) curr.splice(rank, 1);
       curr.splice(rank, 0, team);
-      return { ...prev, [letter]: curr.slice(0, 3) };
+      return { ...prev, [letter]: curr.slice(0, 2) };
     });
   };
 
@@ -583,12 +599,15 @@ function App() {
         {tab === 0 && (
           <div>
             <div className="section-title">Pool Players</div>
-            <div className="add-row">
-              <input className="input" value={newPlayer} placeholder="Enter player name..."
-                onChange={e => setNewPlayer(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && addPlayer()} />
-              <button className="btn" onClick={addPlayer}>+ Add</button>
-            </div>
+            {myPlayer
+              ? <div className="banner" style={{ marginBottom: 20 }}>✅ You're in as <strong>{myPlayer}</strong>. Click your card below to edit your picks.</div>
+              : <div className="add-row">
+                  <input className="input" value={newPlayer} placeholder="Enter your name to join..."
+                    onChange={e => setNewPlayer(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && addPlayer()} />
+                  <button className="btn" onClick={addPlayer}>+ Join</button>
+                </div>
+            }
             {players.length === 0 ? (
               <div className="empty-state">
                 <div className="icon">👥</div>
@@ -601,10 +620,12 @@ function App() {
                   const done = groupProgress(pg);
                   const { total } = calcScore(allPicks[p] || { groups:{}, knockout:{}, champion:null }, results);
                   return (
-                    <div key={p} className={`player-card ${activePlayer === p ? "active" : ""}`}
-                      onClick={() => { setActivePlayer(p); setTab(1); }}>
+                    <div key={p} className={`player-card ${p === myPlayer ? "active" : ""}`}
+                      onClick={() => { if (p === myPlayer) { setActivePlayer(p); setTab(1); } }}>
                       <div>
-                        <div className="player-name">{p}</div>
+                        <div className="player-name">
+                          {p} {p === myPlayer && <span style={{ fontSize: "0.72rem", color: "var(--accent)", fontWeight: 400 }}>(you)</span>}
+                        </div>
                         <div className="player-status">
                           {done === 12 ? "✅ Groups done" : `${done}/12 groups`}
                           {hasResults && ` · ${total} pts`}
@@ -612,7 +633,9 @@ function App() {
                       </div>
                       <div className="player-actions">
                         <button className="btn sm secondary" onClick={e => { e.stopPropagation(); exportPicks(p); }}>📥 Export</button>
-                        <button className="btn sm" onClick={e => { e.stopPropagation(); setActivePlayer(p); setTab(1); }}>Edit →</button>
+                        {p === myPlayer && (
+                          <button className="btn sm" onClick={e => { e.stopPropagation(); setActivePlayer(p); setTab(1); }}>Edit →</button>
+                        )}
                       </div>
                     </div>
                   );
@@ -639,10 +662,10 @@ function App() {
         {/* ══ GROUPS TAB ══ */}
         {tab === 1 && (
           <div>
-            {!activePlayer
-              ? <div className="banner">⚠️ Select or add a player first in the Players tab.</div>
+            {!myPlayer
+              ? <div className="banner">⚠️ Go to the Players tab and join the pool first.</div>
               : <div className="editing-bar">
-                  <span>Picking for: <strong>{activePlayer}</strong></span>
+                  <span>Your picks — <strong>{myPlayer}</strong></span>
                   <span style={{ color: "var(--green)", fontSize: "0.8rem" }}>{groupProgress(groupPicks)}/12 groups picked</span>
                 </div>
             }
@@ -661,10 +684,10 @@ function App() {
         {/* ══ BRACKET TAB ══ */}
         {tab === 2 && (
           <div>
-            {!activePlayer
-              ? <div className="banner">⚠️ Select a player first to fill in their bracket.</div>
+            {!myPlayer
+              ? <div className="banner">⚠️ Go to the Players tab and join the pool first.</div>
               : <div className="editing-bar">
-                  <span>Bracket for: <strong>{activePlayer}</strong></span>
+                  <span>Your bracket — <strong>{myPlayer}</strong></span>
                   <span style={{ fontSize: "0.78rem", color: "var(--muted)" }}>Click a team to pick them as the winner</span>
                 </div>
             }
@@ -881,7 +904,7 @@ function App() {
       </div>
 
       {/* ── SAVE BAR ── */}
-      {(tab === 1 || tab === 2) && activePlayer && (
+      {(tab === 1 || tab === 2) && myPlayer && (
         <div className="save-bar">
           <span className="for-label">Editing: <strong>{activePlayer}</strong></span>
           <button className="btn" onClick={savePicks}>Save Picks ✓</button>
