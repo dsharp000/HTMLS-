@@ -576,6 +576,8 @@
     .lbl-start     { color: var(--s500); font-style: italic; }
     .col-amber     { color: var(--amber); }
     .col-bold      { font-weight: 600; }
+    .lbl-draw      { color: #16a34a; font-weight: 600; }
+    .col-draw      { color: #16a34a; }
 
     .del-btn {
       background: none;
@@ -687,7 +689,6 @@
 
   <header>
     <div>
-      <p class="eyebrow">Lake Loan</p>
       <h1 class="loan-title display" id="loan-title">Lake Loan</h1>
       <p class="origin-line mono" id="origin-line"></p>
     </div>
@@ -805,7 +806,7 @@
   <!-- Add Payment -->
   <section>
     <div class="section-header">
-      <h2 class="section-title display">Log a Payment</h2>
+      <h2 class="section-title display">Log a Transaction</h2>
     </div>
     <div class="form-box">
       <div class="form-grid">
@@ -826,6 +827,7 @@
             <select id="np-type">
               <option value="interest">Regular (interest first)</option>
               <option value="principal">Principal only</option>
+              <option value="draw">Add to loan (draw)</option>
             </select>
           </div>
         </div>
@@ -842,6 +844,7 @@
       <p class="form-hint">
         <strong>Regular payments</strong> apply to accrued interest first, then to principal if any remains.
         <strong> Principal-only payments</strong> reduce the loan balance directly without touching accrued interest.
+        <strong> Add to loan</strong> increases the principal and begins accruing interest on the new amount immediately.
       </p>
     </div>
   </section>
@@ -967,7 +970,7 @@ const paymentsRef = ref(db, 'family-loan/payments');
 // ── State ───────────────────────────────────────────────────────────
 
 let config = {
-  principal:  260000,
+  principal:  0,
   rate:       4.08,
   startDate:  todayISO(),
   lenderName: '',
@@ -1003,6 +1006,12 @@ function monthsBetween(a, b) {
   return (e.getFullYear() - s.getFullYear()) * 12
        + (e.getMonth() - s.getMonth())
        + (e.getDate() >= s.getDate() ? 0 : -1);
+}
+
+function lastUpdatedDate() {
+  const dates = [config.startDate, config.rateSetDate].filter(Boolean);
+  payments.forEach(p => dates.push(p.date));
+  return dates.sort().reverse()[0] || todayISO();
 }
 
 function esc(str) {
@@ -1076,7 +1085,7 @@ function computeSchedule() {
 
   const events = [
     { date: config.startDate, type: 'start' },
-    ...sorted.map(p => ({ ...p, type: p.type === 'principal' ? 'principal' : 'interest' })),
+    ...sorted.map(p => ({ ...p, type: p.type === 'principal' ? 'principal' : p.type === 'draw' ? 'draw' : 'interest' })),
   ];
   if (today > config.startDate) events.push({ date: today, type: 'today' });
   events.sort((a, b) => a.date.localeCompare(b.date));
@@ -1112,7 +1121,18 @@ function computeSchedule() {
     let toInt   = 0;
     let toPrinc = 0;
 
-    if (ev.type === 'principal') {
+    if (ev.type === 'draw') {
+      principal += amt;
+      rows.push({
+        date: ev.date, type: 'draw',
+        label: ev.note || 'Draw / Advance',
+        amount: amt, appliedToInterest: 0, appliedToPrincipal: 0,
+        principal, accruedInterest, totalBalance: principal + accruedInterest,
+        totalInterestPaid: totalIntPaid, totalPrincipalPaid: totalPrincPaid,
+        id: ev.id,
+      });
+      continue;
+    } else if (ev.type === 'principal') {
       toPrinc = Math.min(amt, principal);
       principal -= toPrinc;
       totalPrincPaid += toPrinc;
@@ -1174,7 +1194,9 @@ function computeChartData() {
       accrued += accrueInterest(principal, lastDate, p.date);
       lastDate = p.date;
       const amt = Number(p.amount) || 0;
-      if (p.type === 'principal') {
+      if (p.type === 'draw') {
+        principal += amt;
+      } else if (p.type === 'principal') {
         principal = Math.max(0, principal - amt);
       } else {
         const toInt = Math.min(amt, accrued);
@@ -1377,7 +1399,7 @@ function render() {
   document.getElementById('loan-title').textContent =
     config.lenderName ? `Loan from ${config.lenderName}` : 'Lake Loan';
   document.getElementById('origin-line').textContent =
-    `${fmt$(config.principal)} · ${config.rate}% · originated ${fmtDate(config.startDate)}`;
+    `Last updated ${fmtDate(lastUpdatedDate())}`;
 
   document.getElementById('rate-current-display').textContent = config.rate.toFixed(3) + '%';
   renderRateHistory();
@@ -1430,7 +1452,8 @@ function render() {
     const rowClass = row.type === 'today' ? 'row-today' : row.type === 'start' ? 'row-start' : '';
     const lblClass = row.type === 'principal' ? 'lbl-principal'
                    : row.type === 'today'     ? 'lbl-today'
-                   : row.type === 'start'     ? 'lbl-start' : '';
+                   : row.type === 'start'     ? 'lbl-start'
+                   : row.type === 'draw'      ? 'lbl-draw' : '';
     const del = row.id
       ? `<button class="del-btn" data-id="${esc(row.id)}" title="Delete">✕</button>`
       : '';
@@ -1439,12 +1462,16 @@ function render() {
       ? `<span class="mono" style="color:var(--s600)">${Number(row.rate).toFixed(3)}%</span>`
       : '—';
 
+    const amtHtml = row.type === 'draw'
+      ? `<span class="col-draw">+${fmt$(row.amount)}</span>`
+      : row.amount > 0 ? `−${fmt$(row.amount)}` : '—';
+
     html += `
       <tr class="${rowClass}">
         <td class="mono">${fmtDate(row.date)}</td>
         <td><span class="${lblClass}">${esc(row.label)}</span></td>
         <td class="r">${rateCell}</td>
-        <td class="r mono">${row.amount > 0 ? `−${fmt$(row.amount)}` : '—'}</td>
+        <td class="r mono">${amtHtml}</td>
         <td class="r mono">${row.appliedToInterest > 0 ? fmt$(row.appliedToInterest) : '—'}</td>
         <td class="r mono col-amber">${row.appliedToPrincipal > 0 ? fmt$(row.appliedToPrincipal) : '—'}</td>
         <td class="r mono">${fmt$(row.principal)}</td>
@@ -1677,7 +1704,8 @@ document.getElementById('gate-form').addEventListener('submit', e => {
 
 // ── Rate helper ──────────────────────────────────────────────────────
 
-const SPREAD = 0.25; // basis points in % terms (25 bps)
+const SPREAD = 0.25;
+
 
 document.getElementById('vmfxx-yield').addEventListener('input', () => {
   const raw = parseFloat(document.getElementById('vmfxx-yield').value);
