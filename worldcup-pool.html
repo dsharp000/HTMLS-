@@ -313,6 +313,27 @@
     .stnd-thirds-list { display: flex; flex-wrap: wrap; gap: 6px; }
     .stnd-third-chip { display: flex; align-items: center; gap: 5px; background: var(--card); border: 1px solid rgba(255,214,0,.3); border-radius: 20px; padding: 4px 10px; font-size: 0.76rem; }
     .stnd-third-n { font-size: 0.65rem; font-weight: 800; color: var(--gold); min-width: 12px; }
+
+    /* PLAYED MATCHES TABLE */
+    .pm-section { margin-top: 24px; }
+    .pm-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 1px; color: var(--accent); margin-bottom: 2px; }
+    .pm-sub { font-size: 0.75rem; color: var(--muted); margin-bottom: 12px; }
+    .pm-table-wrap { background: var(--card2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .pm-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .pm-table th { text-align: left; font-size: 0.64rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); padding: 9px 12px; border-bottom: 1px solid var(--border); background: var(--dark2); }
+    .pm-table th.pm-c, .pm-table td.pm-score { text-align: center; }
+    .pm-table th.pm-r { text-align: right; }
+    .pm-table td { padding: 8px 12px; border-top: 1px solid rgba(255,255,255,.04); vertical-align: middle; }
+    .pm-row:hover { background: rgba(255,255,255,.02); }
+    .pm-stage { font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
+    .pm-date { font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+    .pm-team { display: flex; align-items: center; gap: 6px; }
+    .pm-team-home { justify-content: flex-end; text-align: right; }
+    .pm-flag { font-size: 1.05rem; line-height: 1; flex-shrink: 0; }
+    .pm-tname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pm-score { font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 64px; }
+    .pm-w { color: var(--green); font-weight: 700; }
+    .pm-empty { padding: 18px; text-align: center; color: var(--muted); font-size: 0.84rem; }
   </style>
 </head>
 <body>
@@ -682,7 +703,7 @@ async function syncESPN(currentResults) {
       const events = (d.events || []).slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
       for (const ev of events) {
         const comp = ev.competitions?.[0];
-        if (!comp || comp.status?.type?.name !== 'STATUS_FINAL') continue;
+        if (!comp || comp.status?.type?.state !== 'post' || !comp.status?.type?.completed) continue;
         const dateStr = (ev.date || '').slice(0, 10);
         const rk = getESPNRoundByDate(dateStr);
         if (!rk) continue;
@@ -800,6 +821,8 @@ function App() {
 
   const [liveScores, setLiveScores]   = useState([]);
   const [scoresReady, setScoresReady] = useState(false);
+  const [playedMatches, setPlayedMatches] = useState([]);
+  const [playedReady, setPlayedReady]      = useState(false);
 
   useEffect(() => {
     if (activePlayer && allPicks[activePlayer]) {
@@ -945,10 +968,33 @@ function App() {
     } catch(e) { console.warn('Live scores fetch failed:', e); }
   };
 
+  // All completed matches across the whole tournament (for the bottom results table)
+  const fetchPlayedMatches = async () => {
+    const TOURNEY_START = '20260611';
+    try {
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      if (today < TOURNEY_START) { setPlayedReady(true); return; }
+      const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${TOURNEY_START}-${today}&limit=500`;
+      const r = await fetch(url);
+      const d = await r.json();
+      const seen = new Set();
+      const done = (d.events || []).filter(ev => {
+        if (seen.has(ev.id)) return false;
+        seen.add(ev.id);
+        const t = ev.competitions?.[0]?.status?.type;
+        return t && t.state === 'post' && t.completed;
+      });
+      done.sort((a, b) => new Date(b.date) - new Date(a.date)); // newest first
+      setPlayedMatches(done);
+      setPlayedReady(true);
+    } catch(e) { console.warn('Played matches fetch failed:', e); setPlayedReady(true); }
+  };
+
   useEffect(() => {
     if (tab !== 3) return;
     fetchLiveScores();
-    const id = setInterval(fetchLiveScores, 60 * 1000);
+    fetchPlayedMatches();
+    const id = setInterval(() => { fetchLiveScores(); fetchPlayedMatches(); }, 60 * 1000);
     return () => clearInterval(id);
   }, [tab]);
 
@@ -1400,10 +1446,10 @@ function App() {
                       if (!comp) return null;
                       const home  = comp.competitors?.find(c => c.homeAway === 'home') || comp.competitors?.[0];
                       const away  = comp.competitors?.find(c => c.homeAway === 'away') || comp.competitors?.[1];
-                      const stype = comp.status?.type?.name;
+                      const stinfo = comp.status?.type || {};
                       const clock = comp.status?.displayClock;
-                      const isLive  = stype === 'STATUS_IN_PROGRESS';
-                      const isFinal = stype === 'STATUS_FINAL';
+                      const isLive  = stinfo.state === 'in';
+                      const isFinal = stinfo.state === 'post' && stinfo.completed;
                       const badgeText = isFinal ? 'FT' : isLive ? (clock || 'LIVE') : new Date(ev.date).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', timeZoneName:'short'});
                       const hFlag = FLAGS[espnName(home?.team?.displayName)] || '🏳️';
                       const aFlag = FLAGS[espnName(away?.team?.displayName)] || '🏳️';
@@ -1414,11 +1460,11 @@ function App() {
                             <span className={`ls-name ${home?.winner ? 'ls-winner' : ''}`}>{home?.team?.abbreviation || home?.team?.shortDisplayName}</span>
                           </div>
                           <div className="ls-scores">
-                            {(isFinal || isLive) && <span className={`ls-num ${home?.winner ? 'ls-winner' : ''}`}>{home?.score}</span>}
+                            {(isFinal || isLive) && <span className={`ls-num ${home?.winner ? 'ls-winner' : ''}`}>{home?.score}{home?.shootoutScore != null ? ` (${home.shootoutScore})` : ''}</span>}
                             <div className={`ls-badge ${isLive ? 'ls-badge-live' : isFinal ? 'ls-badge-ft' : 'ls-badge-sched'}`}>
                               {isLive && <span className="ls-dot">●</span>}{badgeText}
                             </div>
-                            {(isFinal || isLive) && <span className={`ls-num ${away?.winner ? 'ls-winner' : ''}`}>{away?.score}</span>}
+                            {(isFinal || isLive) && <span className={`ls-num ${away?.winner ? 'ls-winner' : ''}`}>{away?.score}{away?.shootoutScore != null ? ` (${away.shootoutScore})` : ''}</span>}
                           </div>
                           <div className="ls-team ls-team-away">
                             <span className={`ls-name ${away?.winner ? 'ls-winner' : ''}`}>{away?.team?.abbreviation || away?.team?.shortDisplayName}</span>
@@ -1476,6 +1522,67 @@ function App() {
                 </div>
               );
             })()}
+
+            {/* Completed matches — full tournament record */}
+            <div className="pm-section">
+              <div className="pm-title">Match Log</div>
+              <div className="pm-sub">
+                {!playedReady ? 'Loading…'
+                  : playedMatches.length === 0 ? 'No matches have finished yet.'
+                  : `${playedMatches.length} ${playedMatches.length === 1 ? 'match' : 'matches'} played — most recent first`}
+              </div>
+              {playedReady && playedMatches.length > 0 && (
+                <div className="pm-table-wrap">
+                  <table className="pm-table">
+                    <thead>
+                      <tr>
+                        <th>Stage</th>
+                        <th>Date</th>
+                        <th className="pm-r">Home</th>
+                        <th className="pm-c">Score</th>
+                        <th>Away</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {playedMatches.map(ev => {
+                        const comp = ev.competitions?.[0];
+                        if (!comp) return null;
+                        const home = comp.competitors?.find(c => c.homeAway === 'home') || comp.competitors?.[0];
+                        const away = comp.competitors?.find(c => c.homeAway === 'away') || comp.competitors?.[1];
+                        const hn = espnName(home?.team?.displayName);
+                        const an = espnName(away?.team?.displayName);
+                        const dateStr = (ev.date || '').slice(0, 10);
+                        const stage = dateStr < '2026-06-28'
+                          ? (TEAM_GROUP[hn] ? `Group ${TEAM_GROUP[hn]}` : 'Group Stage')
+                          : (ROUND_LABELS[getESPNRoundByDate(dateStr)] || '—');
+                        const dateLabel = new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        const hPen = home?.shootoutScore != null ? ` (${home.shootoutScore})` : '';
+                        const aPen = away?.shootoutScore != null ? ` (${away.shootoutScore})` : '';
+                        return (
+                          <tr key={ev.id} className="pm-row">
+                            <td className="pm-stage">{stage}</td>
+                            <td className="pm-date">{dateLabel}</td>
+                            <td>
+                              <div className="pm-team pm-team-home">
+                                <span className={`pm-tname ${home?.winner ? 'pm-w' : ''}`}>{hn}</span>
+                                <span className="pm-flag">{FLAGS[hn] || '🏳️'}</span>
+                              </div>
+                            </td>
+                            <td className="pm-score">{home?.score}{hPen} – {away?.score}{aPen}</td>
+                            <td>
+                              <div className="pm-team">
+                                <span className="pm-flag">{FLAGS[an] || '🏳️'}</span>
+                                <span className={`pm-tname ${away?.winner ? 'pm-w' : ''}`}>{an}</span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
 
             {/* Admin edit form — admin only, toggled by 🔑 */}
             {isAdmin && showAdminEdit && (

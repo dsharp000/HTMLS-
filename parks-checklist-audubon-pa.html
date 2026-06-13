@@ -6,171 +6,323 @@
   <title>Parks &amp; Preserves Within ~90 Minutes of Audubon, PA</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg: #f3f5ee;
+      --surface: #ffffff;
+      --ink: #22301c;
+      --muted: #68765c;
+      --faint: #94a187;
+      --accent: #2f6b35;
+      --accent-deep: #1e4a24;
+      --line: #e2e7d8;
+      --tint: #eef3e6;
+      --gold: #f0c64f;
+      --radius: 12px;
+      --shadow: 0 1px 2px rgba(30,50,25,.06), 0 10px 28px -14px rgba(30,50,25,.22);
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html { scroll-behavior: smooth; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f4f6f0;
-      color: #2c3a22;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
       line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Layout ── */
-    .page-header {
-      padding: 1.5rem 1.5rem 1rem;
-      background: #fff;
-      border-bottom: 1px solid #d4e8c2;
+    /* ── Hero header ── */
+    .hero {
+      background: linear-gradient(140deg, var(--accent-deep) 0%, var(--accent) 62%, #3d7d3f 100%);
+      color: #fff;
+      padding: 2.75rem 1.5rem 3rem;
     }
 
-    .page-header h1 {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: #2c3a22;
-      margin-bottom: 0.25rem;
+    .hero-inner { max-width: 980px; margin: 0 auto; }
+
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #b9d8ab;
+      margin-bottom: 0.6rem;
+    }
+
+    .hero h1 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: clamp(1.7rem, 3.6vw, 2.5rem);
+      font-weight: 600;
+      line-height: 1.12;
+      letter-spacing: -0.01em;
+    }
+
+    .hero h1 span {
+      display: block;
+      font-size: 0.6em;
+      font-weight: 500;
+      font-style: italic;
+      color: #d4e6c8;
+      margin-top: 0.3rem;
     }
 
     .subtitle {
-      color: #5a6e47;
-      font-size: 0.9rem;
-      font-style: italic;
+      margin-top: 0.85rem;
+      max-width: 58ch;
+      color: #cde0c1;
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    .progress-row {
+      margin-top: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .progress-track {
+      flex: 1 1 240px;
+      height: 8px;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.22);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 99px;
+      background: var(--gold);
+      transition: width 0.45s ease;
     }
 
     .stats-bar {
       display: flex;
-      gap: 1.5rem;
+      gap: 1.25rem;
       flex-wrap: wrap;
-      margin: 0.75rem 0 0;
-      font-size: 0.9rem;
-      color: #5a6e47;
+      font-size: 0.82rem;
+      color: #cde0c1;
+      white-space: nowrap;
     }
 
     .stats-bar span strong {
-      color: #3a6b2a;
-      font-size: 1.05rem;
+      font-family: 'Fraunces', Georgia, serif;
+      color: #fff;
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-right: 0.15rem;
     }
 
     /* ── Map ── */
+    .map-shell {
+      max-width: 980px;
+      margin: -1.4rem auto 0;
+      padding: 0 1rem;
+    }
+
     #map {
       width: 100%;
-      height: 420px;
-      border-bottom: 3px solid #d4e8c2;
+      height: 440px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      position: relative;
+      z-index: 0;
     }
 
     /* ── Legend ── */
     .legend {
+      max-width: 980px;
+      margin: 0.8rem auto 0;
+      padding: 0 1rem;
       display: flex;
       flex-wrap: wrap;
-      gap: 0.6rem 1.2rem;
-      padding: 0.6rem 1.5rem;
-      background: #fff;
-      border-bottom: 1px solid #d4e8c2;
-      font-size: 0.8rem;
+      gap: 0.4rem 0.5rem;
+      font-size: 0.74rem;
     }
 
     .legend-item {
       display: flex;
       align-items: center;
       gap: 0.4rem;
-      color: #3a4a2a;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      padding: 0.22rem 0.7rem 0.22rem 0.5rem;
     }
 
     .legend-dot {
-      width: 13px;
-      height: 13px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       flex-shrink: 0;
-      border: 2px solid rgba(0,0,0,0.25);
     }
 
     /* ── Controls ── */
     .controls {
+      max-width: 980px;
+      margin: 1.1rem auto 0;
+      padding: 0 1rem;
       display: flex;
-      gap: 0.6rem;
+      gap: 0.5rem;
       flex-wrap: wrap;
-      padding: 0.75rem 1.5rem;
-      background: #f4f6f0;
-      border-bottom: 1px solid #d4e8c2;
+      align-items: center;
+    }
+
+    #search-box {
+      flex: 1 1 220px;
+      padding: 0.55rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      font: inherit;
+      font-size: 0.88rem;
+      background: var(--surface);
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    #search-box::placeholder { color: var(--faint); }
+
+    #search-box:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(47,107,53,0.12);
     }
 
     .controls button {
-      padding: 0.35rem 0.9rem;
-      border: 1.5px solid #7aab5a;
-      border-radius: 20px;
-      background: white;
-      color: #3a6b2a;
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      background: var(--surface);
+      color: var(--muted);
+      font-family: inherit;
       font-size: 0.82rem;
+      font-weight: 500;
       cursor: pointer;
-      transition: background 0.15s, color 0.15s;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
     }
 
     .controls button:hover {
-      background: #3a6b2a;
-      color: white;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .controls button.danger:hover {
+      border-color: #b3432f;
+      color: #b3432f;
+    }
+
+    .btn-active {
+      background: var(--accent) !important;
+      border-color: var(--accent) !important;
+      color: #fff !important;
     }
 
     /* ── List ── */
     .list-area {
-      max-width: 860px;
+      max-width: 980px;
       margin: 0 auto;
-      padding: 1.5rem 1rem 4rem;
+      padding: 1.5rem 1rem 5rem;
     }
 
-    section { margin-bottom: 2.25rem; }
+    section {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 2px rgba(30,50,25,0.04);
+      padding: 1.4rem 1.4rem 1.1rem;
+      margin-bottom: 1.25rem;
+    }
 
     h2 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #2c3a22;
-      background: #d4e8c2;
-      padding: 0.45rem 1rem;
-      border-radius: 6px;
-      margin-bottom: 0.6rem;
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 1.28rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      padding-bottom: 0.7rem;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 0.5rem;
     }
 
     h3 {
-      font-size: 0.82rem;
+      font-size: 0.68rem;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #5a6e47;
-      margin: 1rem 0 0.4rem 0.25rem;
+      letter-spacing: 0.14em;
+      color: var(--faint);
+      margin: 1.15rem 0 0.35rem 0.3rem;
     }
 
     .item {
       display: flex;
       align-items: flex-start;
-      gap: 0.65rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: 6px;
+      gap: 0.8rem;
+      padding: 0.6rem 0.65rem;
+      border-radius: 8px;
       cursor: pointer;
       transition: background 0.12s;
       user-select: none;
     }
 
-    .item:hover { background: #eaf3e0; }
-
-    .item.checked {
-      opacity: 0.5;
-    }
+    .item:hover { background: var(--tint); }
 
     .item.checked .item-name {
       text-decoration: line-through;
-      color: #7a8f6a;
+      text-decoration-color: rgba(47,107,53,0.45);
+      color: var(--faint);
     }
 
+    .item.checked .item-meta { color: #aab79d; }
+    .item.checked .cat-dot { opacity: 0.35; }
+
     .item.highlight {
-      background: #fff9c4;
-      outline: 2px solid #e6c84a;
+      background: #fdf6d8;
+      outline: 2px solid #e2c14d;
     }
 
     .item input[type="checkbox"] {
-      width: 17px;
-      height: 17px;
+      appearance: none;
+      -webkit-appearance: none;
+      width: 19px;
+      height: 19px;
       flex-shrink: 0;
-      margin-top: 3px;
-      accent-color: #3a6b2a;
+      margin-top: 2px;
+      border: 1.5px solid #b9c6ab;
+      border-radius: 6px;
+      background: #fff;
       cursor: pointer;
+      display: grid;
+      place-content: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .item input[type="checkbox"]:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .item input[type="checkbox"]:checked::after {
+      content: "";
+      width: 9px;
+      height: 5px;
+      border-left: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      transform: rotate(-45deg) translate(0, -1px);
+    }
+
+    .item input[type="checkbox"]:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
     }
 
     .cat-dot {
@@ -178,22 +330,21 @@
       height: 10px;
       border-radius: 50%;
       flex-shrink: 0;
-      margin-top: 6px;
-      border: 1.5px solid rgba(0,0,0,0.2);
+      margin-top: 7px;
     }
 
     .item-body { flex: 1; }
 
     .item-name {
       font-weight: 600;
-      font-size: 0.93rem;
-      color: #2c3a22;
+      font-size: 0.95rem;
+      color: var(--ink);
     }
 
     .item-meta {
       font-size: 0.8rem;
-      color: #6a7f5a;
-      margin-top: 0.05rem;
+      color: var(--muted);
+      margin-top: 0.1rem;
     }
 
     .paw {
@@ -203,60 +354,98 @@
       vertical-align: middle;
     }
 
+    .site-link {
+      display: inline-block;
+      margin-left: 0.45rem;
+      font-size: 0.85em;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      opacity: 0.5;
+      transition: opacity 0.12s;
+      vertical-align: middle;
+    }
+
+    .item:hover .site-link { opacity: 1; }
+    .site-link:hover { text-decoration: underline; }
+
     .no-dogs .paw { display: none; }
 
     .dog-hidden { display: none !important; }
 
-    .btn-active {
-      background: #3a6b2a !important;
-      color: white !important;
-    }
-
     .badge-boundary {
       display: inline-block;
-      background: #fff3cd;
-      border: 1px solid #e6c84a;
-      color: #7a6010;
-      font-size: 0.7rem;
+      background: #fdf3d7;
+      border: 1px solid #e8cd7a;
+      color: #8a6d1c;
+      font-size: 0.68rem;
       font-weight: 600;
-      padding: 0.05rem 0.4rem;
+      padding: 0.05rem 0.45rem;
       border-radius: 10px;
-      margin-left: 0.35rem;
+      margin-left: 0.4rem;
       vertical-align: middle;
     }
 
     .notes {
-      margin-top: 2rem;
-      background: #fff;
-      border: 1px solid #cdd9bb;
-      border-radius: 8px;
-      padding: 1rem 1.25rem;
-      font-size: 0.82rem;
-      color: #5a6e47;
+      margin-top: 1.25rem;
+      background: transparent;
+      border: 1px dashed #ccd6bd;
+      border-radius: var(--radius);
+      padding: 1.1rem 1.3rem;
+      font-size: 0.8rem;
+      color: var(--muted);
     }
 
     .notes p { margin-bottom: 0.35rem; }
     .notes p:last-child { margin-bottom: 0; }
 
+    .save-dot {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: #fff;
+      background: var(--accent-deep);
+      padding: 5px 12px;
+      border-radius: 20px;
+      box-shadow: 0 2px 10px rgba(30,50,25,0.3);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    }
+
+    .save-dot.visible { opacity: 1; transform: translateY(0); }
+
     @media (max-width: 600px) {
-      .page-header h1 { font-size: 1.25rem; }
-      #map { height: 280px; }
+      .hero { padding: 2rem 1.25rem 2.4rem; }
+      #map { height: 300px; }
+      section { padding: 1.1rem 0.9rem 0.85rem; }
     }
   </style>
 </head>
 <body>
 
-<div class="page-header">
-  <h1>Parks &amp; Preserves Within ~90 Min of Audubon, PA</h1>
-  <p class="subtitle">Drive times estimated from Audubon, PA 19403 without traffic. Click a map marker to jump to that entry.</p>
-  <div class="stats-bar">
-    <span>Visited: <strong id="count-visited">0</strong></span>
-    <span>Remaining: <strong id="count-remaining">0</strong></span>
-    <span>Total: <strong id="count-total">0</strong></span>
+<header class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">Day-Trip Checklist</p>
+    <h1>Parks &amp; Preserves <span>within 90 minutes of Audubon, Pennsylvania</span></h1>
+    <p class="subtitle">National park sites, state parks, and nature preserves. Drive times estimated from Audubon (19403) without traffic. Click a map pin to jump to its entry.</p>
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="stats-bar">
+        <span><strong id="count-visited">0</strong> visited</span>
+        <span><strong id="count-remaining">0</strong> to go</span>
+        <span><strong id="count-total">0</strong> total</span>
+      </div>
+    </div>
   </div>
-</div>
+</header>
 
-<div id="map"></div>
+<div class="map-shell">
+  <div id="map"></div>
+</div>
 
 <div class="legend">
   <div class="legend-item"><div class="legend-dot" style="background:#2e7d32"></div> NPS Unit</div>
@@ -268,10 +457,11 @@
 </div>
 
 <div class="controls">
-  <button onclick="checkAll()">Check All</button>
-  <button onclick="uncheckAll()">Uncheck All</button>
-  <button onclick="clearStorage()">Reset</button>
-  <button id="btn-dogs" onclick="toggleDogFilter(this)">🐾 Dogs Only</button>
+  <input type="search" id="search-box" placeholder="Search parks &amp; preserves&hellip;" oninput="applyFilters()">
+  <button id="btn-dogs" onclick="toggleDogFilter(this)">🐾 Dog-friendly</button>
+  <button onclick="checkAll()">Check all</button>
+  <button onclick="uncheckAll()">Uncheck all</button>
+  <button class="danger" onclick="clearStorage()">Reset</button>
 </div>
 
 <div class="list-area">
@@ -477,7 +667,7 @@
       <div class="cat-dot" style="background:#1565c0"></div>
       <div class="item-body">
         <div class="item-name">Big Elk Creek State Park</div>
-        <div class="item-meta">~55 min &mdash; New London, PA &mdash; 195 acres; fishing, hiking along Big Elk Creek</div>
+        <div class="item-meta">~55 min &mdash; Landenberg, PA &mdash; ~1,700 acres; fishing, hiking along Big Elk Creek; one of PA's newest state parks</div>
       </div>
     </div>
 
@@ -755,7 +945,7 @@
       <div class="cat-dot" style="background:#c62828"></div>
       <div class="item-body">
         <div class="item-name">Bryn Coed Preserve</div>
-        <div class="item-meta">~25 min &mdash; Pottstown, PA &mdash; 1,505 acres; forest and farmland; one of the largest preserved parcels in greater Philadelphia</div>
+        <div class="item-meta">~25 min &mdash; Chester Springs, PA &mdash; 1,505 acres; forest and farmland; one of the largest preserved parcels in greater Philadelphia</div>
       </div>
     </div>
     <div class="item" id="item-53" onclick="toggle(this)">
@@ -778,8 +968,8 @@
       <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this)">
       <div class="cat-dot" style="background:#c62828"></div>
       <div class="item-body">
-        <div class="item-name">Glades Wildlife Refuge</div>
-        <div class="item-meta">~35 min &mdash; Southern Chester County, PA &mdash; Diverse wetland habitats</div>
+        <div class="item-name">Sadsbury Woods Preserve</div>
+        <div class="item-meta">~40 min &mdash; Coatesville, PA &mdash; 511 acres; largest unfragmented woodland in Chester County; interior-forest songbirds</div>
       </div>
     </div>
     <div class="item" id="item-56" onclick="toggle(this)">
@@ -787,7 +977,7 @@
       <div class="cat-dot" style="background:#c62828"></div>
       <div class="item-body">
         <div class="item-name">Green Hills Preserve</div>
-        <div class="item-meta">~35 min &mdash; Reading, PA &mdash; Rolling grasslands, woodlands, and wetlands</div>
+        <div class="item-meta">~45 min &mdash; Mohnton, PA &mdash; Rolling grasslands, woodlands, and wetlands; Natural Lands' first Berks County preserve</div>
       </div>
     </div>
     <div class="item" id="item-57" onclick="toggle(this)">
@@ -795,7 +985,7 @@
       <div class="cat-dot" style="background:#c62828"></div>
       <div class="item-body">
         <div class="item-name">Meng Preserve</div>
-        <div class="item-meta">~35 min &mdash; Chester County, PA &mdash; Agricultural and natural landscape</div>
+        <div class="item-meta">~25 min &mdash; Schwenksville, PA &mdash; 101 acres; diabase rock outcrops and vernal pools on the Stone Hill Greenway</div>
       </div>
     </div>
     <div class="item" id="item-58" onclick="toggle(this)">
@@ -888,10 +1078,35 @@
     <p>Some Natural Lands preserves require free registration; check natlands.org before visiting.</p>
     <p>Brandywine Conservancy preserves may require membership for some sites.</p>
     <p>🐾 = dogs allowed on leash. The only entry without this icon is Benjamin Franklin National Memorial (indoor museum). Coastal NJ and DE parks restrict dogs on swimming beaches May&ndash;Sept.</p>
-    <p>Your progress is saved automatically in your browser.</p>
+    <p>Your progress syncs live across devices, with a local copy kept in your browser as backup.</p>
   </div>
 
 </div><!-- end list-area -->
+
+<div class="save-dot" id="save-dot">Saved &#10003;</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set, onValue }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCp2PBbqdj_g6NPR9iYQb7Z6tgXbqLtHIA",
+  authDomain:        "lunch-f7021.firebaseapp.com",
+  databaseURL:       "https://lunch-f7021-default-rtdb.firebaseio.com",
+  projectId:         "lunch-f7021",
+  storageBucket:     "lunch-f7021.firebasestorage.app",
+  messagingSenderId: "1053755216064",
+  appId:             "1:1053755216064:web:14b749200f825a4e9bdd25",
+};
+
+const fbApp    = initializeApp(firebaseConfig);
+const db       = getDatabase(fbApp);
+const parksRef = ref(db, "parks-checklist-audubon");
+
+window._fbSetParks = d => set(parksRef, d);
+window._fbOnParks  = cb => onValue(parksRef, snap => cb(snap.val()));
+</script>
 
 <script>
   const STORAGE_KEY = 'parks-checklist-audubon';
@@ -899,81 +1114,81 @@
   // ── Map data: [id, name, lat, lng, color] ──
   const PARKS = [
     // NPS PA
-    [0,  'Valley Forge NHP',                    40.0956, -75.4138, '#2e7d32'],
-    [1,  'Washington Crossing Historic Park',   40.2898, -74.8663, '#2e7d32'],
-    [2,  'Hopewell Furnace NHS',                40.1454, -75.7706, '#2e7d32'],
-    [3,  'Independence NHP',                    39.9496, -75.1503, '#2e7d32'],
-    [4,  'Edgar Allan Poe NHS',                 39.9578, -75.1581, '#2e7d32'],
-    [5,  'Gloria Dei Church NHS',               39.9313, -75.1437, '#2e7d32'],
-    [6,  'Thaddeus Kosciuszko NMem',            39.9478, -75.1478, '#2e7d32'],
-    [7,  'Benjamin Franklin NMem',              39.9584, -75.1727, '#2e7d32'],
-    [8,  'Lower Delaware Wild & Scenic River',  40.3500, -74.9500, '#2e7d32'],
-    [9,  'Delaware Water Gap NRA',              41.0534, -74.9240, '#2e7d32'],
+    [0,  'Valley Forge NHP',                    40.1003, -75.4216, '#2e7d32'],
+    [1,  'Washington Crossing Historic Park',   40.2945, -74.8730, '#2e7d32'],
+    [2,  'Hopewell Furnace NHS',                40.2073, -75.7740, '#2e7d32'],
+    [3,  'Independence NHP',                    39.9489, -75.1500, '#2e7d32'],
+    [4,  'Edgar Allan Poe NHS',                 39.9613, -75.1494, '#2e7d32'],
+    [5,  'Gloria Dei Church NHS',               39.9345, -75.1442, '#2e7d32'],
+    [6,  'Thaddeus Kosciuszko NMem',            39.9430, -75.1483, '#2e7d32'],
+    [7,  'Benjamin Franklin NMem',              39.9582, -75.1737, '#2e7d32'],
+    [8,  'Lower Delaware Wild & Scenic River',  40.3640, -74.9480, '#2e7d32'],
+    [9,  'Delaware Water Gap NRA',              40.9717, -75.1257, '#2e7d32'],
     // NPS NJ
-    [10, 'Morristown NHP',                      40.7968, -74.4773, '#2e7d32'],
+    [10, 'Morristown NHP',                      40.7973, -74.4684, '#2e7d32'],
     // NPS DE
-    [11, 'First State NHP',                     39.7915, -75.5610, '#2e7d32'],
+    [11, 'First State NHP (Woodlawn Tract)',    39.8290, -75.5760, '#2e7d32'],
     // PA State Parks
-    [12, 'Evansburg SP',                        40.1901, -75.3760, '#1565c0'],
-    [13, 'Fort Washington SP',                  40.1434, -75.2127, '#1565c0'],
-    [14, 'Tyler SP',                            40.2334, -74.9846, '#1565c0'],
-    [15, 'Neshaminy SP',                        40.0834, -74.8676, '#1565c0'],
-    [16, 'Delaware Canal SP',                   40.3668, -74.9579, '#1565c0'],
-    [17, 'Washington Crossing SP (PA)',         40.2937, -74.8700, '#1565c0'],
-    [18, 'Nockamixon SP',                       40.4670, -75.2354, '#1565c0'],
-    [19, 'Ralph Stover SP',                     40.4209, -75.0676, '#1565c0'],
-    [20, 'Marsh Creek SP',                      40.0540, -75.7318, '#1565c0'],
-    [21, 'French Creek SP',                     40.2165, -75.7754, '#1565c0'],
-    [22, 'Big Elk Creek SP',                    39.7390, -75.9376, '#1565c0'],
-    [23, 'Ridley Creek SP',                     39.9476, -75.4131, '#1565c0'],
-    [24, 'Nolde Forest EEC',                    40.2854, -75.9437, '#1565c0'],
-    [25, 'Tuscarora SP',                        40.7176, -75.9337, '#1565c0'],
-    [26, 'Jacobsburg EEC',                      40.7176, -75.3026, '#1565c0'],
-    [27, 'Beltzville SP',                       40.8623, -75.6373, '#1565c0'],
-    [28, 'Lehigh Gorge SP',                     41.0668, -75.7176, '#1565c0'],
+    [12, 'Evansburg SP',                        40.1846, -75.4119, '#1565c0'],
+    [13, 'Fort Washington SP',                  40.1366, -75.2105, '#1565c0'],
+    [14, 'Tyler SP',                            40.2330, -74.9560, '#1565c0'],
+    [15, 'Neshaminy SP',                        40.0775, -74.9120, '#1565c0'],
+    [16, 'Delaware Canal SP (New Hope)',        40.3621, -74.9460, '#1565c0'],
+    [17, 'Washington Crossing SP (PA)',         40.2937, -74.8740, '#1565c0'],
+    [18, 'Nockamixon SP',                       40.4655, -75.2300, '#1565c0'],
+    [19, 'Ralph Stover SP',                     40.4350, -75.1030, '#1565c0'],
+    [20, 'Marsh Creek SP',                      40.0560, -75.7270, '#1565c0'],
+    [21, 'French Creek SP',                     40.2026, -75.7906, '#1565c0'],
+    [22, 'Big Elk Creek SP',                    39.7440, -75.8430, '#1565c0'],
+    [23, 'Ridley Creek SP',                     39.9500, -75.4450, '#1565c0'],
+    [24, 'Nolde Forest EEC',                    40.2820, -75.9460, '#1565c0'],
+    [25, 'Tuscarora SP',                        40.7700, -76.0540, '#1565c0'],
+    [26, 'Jacobsburg EEC',                      40.7846, -75.2930, '#1565c0'],
+    [27, 'Beltzville SP',                       40.8510, -75.6280, '#1565c0'],
+    [28, 'Lehigh Gorge SP (White Haven)',       41.0540, -75.7770, '#1565c0'],
     // NJ State Parks
-    [29, 'Washington Crossing SP (NJ)',         40.2973, -74.8681, '#e65100'],
-    [30, "Bull's Island Recreation Area",       40.4087, -74.9965, '#e65100'],
-    [31, 'Brendan T. Byrne SF',                 39.9040, -74.5448, '#e65100'],
-    [32, 'Wharton SF',                          39.6590, -74.6568, '#e65100'],
-    [33, 'Penn SF',                             39.7790, -74.5426, '#e65100'],
-    [34, 'Bass River SF',                       39.6268, -74.4376, '#e65100'],
-    [35, 'Parvin SP',                           39.5068, -75.1254, '#e65100'],
-    [36, 'Belleplain SF',                       39.2543, -74.8637, '#e65100'],
-    [37, 'Allaire SP',                          40.1629, -74.1318, '#e65100'],
-    [38, 'Island Beach SP',                     39.9265, -74.0943, '#e65100'],
-    [39, 'Cheesequake SP',                      40.4437, -74.2651, '#e65100'],
+    [29, 'Washington Crossing SP (NJ)',         40.2980, -74.8520, '#e65100'],
+    [30, "Bull's Island Recreation Area",       40.4080, -75.0360, '#e65100'],
+    [31, 'Brendan T. Byrne SF',                 39.8940, -74.5450, '#e65100'],
+    [32, 'Wharton SF (Batsto Village)',         39.6437, -74.6470, '#e65100'],
+    [33, 'Penn SF (Lake Oswego)',               39.7230, -74.5060, '#e65100'],
+    [34, 'Bass River SF',                       39.6240, -74.4350, '#e65100'],
+    [35, 'Parvin SP',                           39.5090, -75.1290, '#e65100'],
+    [36, 'Belleplain SF',                       39.2630, -74.8500, '#e65100'],
+    [37, 'Allaire SP',                          40.1570, -74.1230, '#e65100'],
+    [38, 'Island Beach SP',                     39.8700, -74.0930, '#e65100'],
+    [39, 'Cheesequake SP',                      40.4370, -74.2640, '#e65100'],
     // DE State Parks
-    [40, 'Brandywine Creek SP',                 39.8076, -75.5840, '#00838f'],
-    [41, 'Alapocas Run SP',                     39.7698, -75.5668, '#00838f'],
-    [42, 'Bellevue SP',                         39.7954, -75.5027, '#00838f'],
-    [43, 'White Clay Creek SP',                 39.6854, -75.7526, '#00838f'],
-    [44, 'Lums Pond SP',                        39.5704, -75.7026, '#00838f'],
-    [45, 'Fair Hill NRMA',                      39.7026, -75.8637, '#00838f'],
+    [40, 'Brandywine Creek SP',                 39.8080, -75.5790, '#00838f'],
+    [41, 'Alapocas Run SP',                     39.7720, -75.5560, '#00838f'],
+    [42, 'Bellevue SP',                         39.7790, -75.4990, '#00838f'],
+    [43, 'White Clay Creek SP',                 39.7130, -75.7660, '#00838f'],
+    [44, 'Lums Pond SP',                        39.5570, -75.7250, '#00838f'],
+    [45, 'Fair Hill NRMA',                      39.7050, -75.8330, '#00838f'],
     // MD State Parks
-    [46, 'Susquehanna SP',                      39.5665, -76.0993, '#6a1b9a'],
-    [47, 'Elk Neck SP',                         39.4665, -75.9737, '#6a1b9a'],
-    [48, 'Gunpowder Falls SP',                  39.4826, -76.4293, '#6a1b9a'],
-    [49, 'Patapsco Valley SP',                  39.2665, -76.7526, '#6a1b9a'],
+    [46, 'Susquehanna SP',                      39.6080, -76.1420, '#6a1b9a'],
+    [47, 'Elk Neck SP',                         39.4790, -75.9870, '#6a1b9a'],
+    [48, 'Gunpowder Falls SP (Big Gunpowder)',  39.4480, -76.4080, '#6a1b9a'],
+    [49, 'Patapsco Valley SP (Hilton Area)',    39.2496, -76.7269, '#6a1b9a'],
     // Nature Preserves
-    [50, 'Audubon Center at Mill Grove',        40.1276, -75.4368, '#c62828'],
-    [51, 'Gwynedd Wildlife Preserve',           40.2026, -75.3068, '#c62828'],
-    [52, 'Bryn Coed Preserve',                  40.2368, -75.5793, '#c62828'],
-    [53, 'Binky Lee Preserve',                  40.0793, -75.6068, '#c62828'],
-    [54, 'Hildacy Preserve',                    39.9293, -75.3876, '#c62828'],
-    [55, 'Glades Wildlife Refuge',              39.8793, -75.8068, '#c62828'],
-    [56, 'Green Hills Preserve',                40.3293, -75.8568, '#c62828'],
-    [57, 'Meng Preserve',                       40.0293, -75.7568, '#c62828'],
-    [58, "Crow's Nest Preserve",                40.2293, -75.7368, '#c62828'],
-    [59, 'Stroud Preserve',                     39.9493, -75.6268, '#c62828'],
-    [60, 'ChesLen Preserve',                    39.9793, -75.7568, '#c62828'],
-    [61, 'Mariton Wildlife Sanctuary',          40.6793, -75.2268, '#c62828'],
-    [62, 'Peace Valley Nature Center',          40.3293, -75.1568, '#c62828'],
-    [63, "Bowman's Hill Wildflower Preserve",   40.3093, -74.8768, '#c62828'],
-    [64, 'Honey Hollow / BCAS',                 40.3293, -74.9068, '#c62828'],
-    [65, 'The Laurels Preserve',                39.9568, -75.7793, '#c62828'],
-    [66, 'Waterloo Mills Preserve',             40.0368, -75.5468, '#c62828'],
-    [67, 'White Clay Creek Preserve (PA)',      39.8568, -75.7793, '#c62828'],
+    [50, 'Audubon Center at Mill Grove',        40.1226, -75.4448, '#c62828'],
+    [51, 'Gwynedd Wildlife Preserve',           40.1900, -75.2480, '#c62828'],
+    [52, 'Bryn Coed Preserve',                  40.0950, -75.6700, '#c62828'],
+    [53, 'Binky Lee Preserve',                  40.0730, -75.6220, '#c62828'],
+    [54, 'Hildacy Preserve',                    39.9290, -75.4120, '#c62828'],
+    [55, 'Sadsbury Woods Preserve',             39.9900, -75.8850, '#c62828'],
+    [56, 'Green Hills Preserve',                40.2500, -75.9350, '#c62828'],
+    [57, 'Meng Preserve',                       40.2470, -75.4860, '#c62828'],
+    [58, "Crow's Nest Preserve",                40.1880, -75.7550, '#c62828'],
+    [59, 'Stroud Preserve',                     39.9510, -75.6430, '#c62828'],
+    [60, 'ChesLen Preserve',                    39.9430, -75.7280, '#c62828'],
+    [61, 'Mariton Wildlife Sanctuary',          40.6300, -75.2090, '#c62828'],
+    [62, 'Peace Valley Nature Center',          40.3270, -75.1740, '#c62828'],
+    [63, "Bowman's Hill Wildflower Preserve",   40.3290, -74.9400, '#c62828'],
+    [64, 'Honey Hollow / BCAS',                 40.3440, -74.9960, '#c62828'],
+    [65, 'The Laurels Preserve',                39.8880, -75.7800, '#c62828'],
+    [66, 'Waterloo Mills Preserve',             40.0260, -75.4290, '#c62828'],
+    [67, 'White Clay Creek Preserve (PA)',      39.7350, -75.7690, '#c62828'],
   ];
 
   // ── Init map ──
@@ -990,24 +1205,12 @@
     className: '',
     iconAnchor: [10, 10]
   });
-  L.marker([40.1218, -75.4368], { icon: homeIcon })
+  L.marker([40.1226, -75.4310], { icon: homeIcon })
     .addTo(map)
     .bindTooltip('Audubon, PA (home base)', { permanent: false });
 
   // Build markers
   const markers = {};
-
-  function makeCircleIcon(color, checked) {
-    const opacity = checked ? 0.35 : 1;
-    return L.circleMarker([0, 0], {
-      radius: 7,
-      fillColor: color,
-      color: 'rgba(0,0,0,0.4)',
-      weight: 1.5,
-      fillOpacity: opacity,
-      opacity: opacity
-    });
-  }
 
   PARKS.forEach(([id, name, lat, lng, color]) => {
     const marker = L.circleMarker([lat, lng], {
@@ -1045,44 +1248,60 @@
     return document.querySelectorAll('.item');
   }
 
+  function itemId(item) {
+    return parseInt(item.id.replace('item-', ''));
+  }
+
+  function setItemChecked(item, checked) {
+    item.querySelector('input').checked = checked;
+    item.classList.toggle('checked', checked);
+    updateMarkerOpacity(itemId(item), checked);
+  }
+
   function toggle(item) {
-    const cb = item.querySelector('input');
-    cb.checked = !cb.checked;
-    item.classList.toggle('checked', cb.checked);
-    const id = parseInt(item.id.replace('item-', ''));
-    updateMarkerOpacity(id, cb.checked);
+    setItemChecked(item, !item.querySelector('input').checked);
     saveState();
   }
 
   function toggleCheck(cb) {
-    const item = cb.closest('.item');
-    item.classList.toggle('checked', cb.checked);
-    const id = parseInt(item.id.replace('item-', ''));
-    updateMarkerOpacity(id, cb.checked);
+    setItemChecked(cb.closest('.item'), cb.checked);
     saveState();
   }
 
-  function saveState() {
+  function currentState() {
     const state = {};
-    getItems().forEach((item, i) => {
-      state[i] = item.querySelector('input').checked;
+    getItems().forEach(item => {
+      state[itemId(item)] = item.querySelector('input').checked;
     });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return state;
+  }
+
+  function applyState(state) {
+    state = state || {};
+    getItems().forEach(item => setItemChecked(item, !!state[itemId(item)]));
     updateStats();
   }
 
-  function loadState() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    const state = saved ? JSON.parse(saved) : {};
-    getItems().forEach((item, i) => {
-      if (state[i]) {
-        item.querySelector('input').checked = true;
-        item.classList.add('checked');
-        const id = parseInt(item.id.replace('item-', ''));
-        updateMarkerOpacity(id, true);
-      }
-    });
+  // ── Persistence: Firebase live sync; localStorage is the instant-load/offline cache ──
+
+  let remoteReady = false;
+  let saveTimer   = null;
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState()));
     updateStats();
+    if (!remoteReady) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      window._fbSetParks(currentState()).then(flashSave).catch(console.error);
+    }, 600);
+  }
+
+  function flashSave() {
+    const el = document.getElementById('save-dot');
+    if (!el) return;
+    el.classList.add('visible');
+    setTimeout(() => el.classList.remove('visible'), 1800);
   }
 
   function updateStats() {
@@ -1092,25 +1311,17 @@
     document.getElementById('count-total').textContent = total;
     document.getElementById('count-visited').textContent = visited;
     document.getElementById('count-remaining').textContent = total - visited;
+    const pct = total ? Math.round(visited / total * 100) : 0;
+    document.getElementById('progress-fill').style.width = pct + '%';
   }
 
   function checkAll() {
-    getItems().forEach(item => {
-      item.querySelector('input').checked = true;
-      item.classList.add('checked');
-      const id = parseInt(item.id.replace('item-', ''));
-      updateMarkerOpacity(id, true);
-    });
+    getItems().forEach(item => setItemChecked(item, true));
     saveState();
   }
 
   function uncheckAll() {
-    getItems().forEach(item => {
-      item.querySelector('input').checked = false;
-      item.classList.remove('checked');
-      const id = parseInt(item.id.replace('item-', ''));
-      updateMarkerOpacity(id, false);
-    });
+    getItems().forEach(item => setItemChecked(item, false));
     saveState();
   }
 
@@ -1119,7 +1330,28 @@
     uncheckAll();
   }
 
-  loadState();
+  // Paint cached state immediately, then let Firebase take over.
+  const cached = localStorage.getItem(STORAGE_KEY);
+  applyState(cached ? JSON.parse(cached) : {});
+
+  function waitForFb() {
+    if (window._fbOnParks) {
+      window._fbOnParks(data => {
+        const firstLoad = !remoteReady;
+        remoteReady = true;
+        if (data) {
+          applyState(data);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState()));
+        } else if (firstLoad && cached) {
+          // Remote is empty but this browser has saved progress — seed Firebase with it.
+          saveState();
+        }
+      });
+    } else {
+      setTimeout(waitForFb, 50);
+    }
+  }
+  waitForFb();
 
   // ── Dog-friendly icons & filter ──
 
@@ -1132,17 +1364,127 @@
     nameEl.appendChild(paw);
   });
 
+  // ── Official website links (all URLs verified live) ──
+
+  const SITES = {
+    0:  'https://www.nps.gov/vafo/index.htm',
+    1:  'https://www.washingtoncrossingpark.org/',
+    2:  'https://www.nps.gov/hofu/index.htm',
+    3:  'https://www.nps.gov/inde/index.htm',
+    4:  'https://www.nps.gov/edal/index.htm',
+    5:  'https://www.nps.gov/glde/index.htm',
+    6:  'https://www.nps.gov/thko/index.htm',
+    7:  'https://www.nps.gov/inde/learn/historyculture/places-benjaminfranklinnationalmemorial.htm',
+    8:  'https://www.nps.gov/lode/index.htm',
+    9:  'https://www.nps.gov/dewa/index.htm',
+    10: 'https://www.nps.gov/morr/index.htm',
+    11: 'https://www.nps.gov/frst/index.htm',
+    12: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/evansburg-state-park',
+    13: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/fort-washington-state-park',
+    14: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/tyler-state-park',
+    15: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/neshaminy-state-park',
+    16: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/delaware-canal-state-park',
+    17: 'https://www.washingtoncrossingpark.org/',
+    18: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/nockamixon-state-park',
+    19: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/ralph-stover-state-park',
+    20: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/marsh-creek-state-park',
+    21: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/french-creek-state-park',
+    22: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/big-elk-creek-state-park',
+    23: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/ridley-creek-state-park',
+    24: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/nolde-forest-environmental-education-center',
+    25: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/tuscarora-state-park',
+    26: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/jacobsburg-environmental-education-center',
+    27: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/beltzville-state-park',
+    28: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/lehigh-gorge-state-park',
+    29: 'https://dep.nj.gov/njparksandforests/parks-and-forests/washington-crossing-state-park/',
+    30: 'https://dep.nj.gov/njparksandforests/parks-and-forests/bulls-island/',
+    31: 'https://dep.nj.gov/njparksandforests/parks-and-forests/brendan-t-byrne-state-forest/',
+    32: 'https://dep.nj.gov/njparksandforests/parks-and-forests/wharton-state-forest/',
+    33: 'https://dep.nj.gov/njparksandforests/parks-and-forests/penn-state-forest/',
+    34: 'https://dep.nj.gov/njparksandforests/parks-and-forests/bass-river-state-forest/',
+    35: 'https://dep.nj.gov/njparksandforests/parks-and-forests/parvin-state-park/',
+    36: 'https://dep.nj.gov/njparksandforests/parks-and-forests/belleplain-state-forest/',
+    37: 'https://dep.nj.gov/njparksandforests/parks-and-forests/allaire-state-park/',
+    38: 'https://dep.nj.gov/njparksandforests/parks-and-forests/island-beach-state-park/',
+    39: 'https://dep.nj.gov/njparksandforests/parks-and-forests/cheesequake-state-park/',
+    40: 'https://www.destateparks.com/park/brandywine-creek/',
+    41: 'https://www.destateparks.com/park/alapocas-run/',
+    42: 'https://www.destateparks.com/park/bellevue/',
+    43: 'https://www.destateparks.com/park/white-clay-creek/',
+    44: 'https://www.destateparks.com/park/lums-pond/',
+    45: 'https://dnr.maryland.gov/publiclands/Pages/central/fairhill.aspx',
+    46: 'https://dnr.maryland.gov/publiclands/Pages/central/susquehanna.aspx',
+    47: 'https://dnr.maryland.gov/publiclands/Pages/central/elkneck.aspx',
+    48: 'https://dnr.maryland.gov/publiclands/Pages/central/gunpowder.aspx',
+    49: 'https://dnr.maryland.gov/publiclands/Pages/central/patapsco.aspx',
+    50: 'https://johnjames.audubon.org/',
+    51: 'https://www.natlands.org/visit/gwynedd-preserve/',
+    52: 'https://www.natlands.org/visit/bryn-coed-preserve/',
+    53: 'https://www.natlands.org/visit/binky-lee-preserve/',
+    54: 'https://www.natlands.org/visit/hildacy-preserve/',
+    55: 'https://www.natlands.org/visit/sadsbury-woods-preserve/',
+    56: 'https://www.natlands.org/visit/green-hills-preserve/',
+    57: 'https://www.natlands.org/visit/meng-preserve/',
+    58: 'https://www.natlands.org/visit/crows-nest-preserve/',
+    59: 'https://www.natlands.org/visit/stroud-preserve/',
+    60: 'https://www.natlands.org/visit/cheslen-preserve/',
+    61: 'https://www.natlands.org/visit/mariton-wildlife-sanctuary/',
+    62: 'https://peacevalleynaturecenter.org/',
+    63: 'https://bhwp.org/',
+    64: 'https://bcas.org/',
+    65: 'https://www.brandywine.org/conservancy/laurels-preserve',
+    66: 'https://www.brandywine.org/conservancy/waterloo-mills-preserve',
+    67: 'https://www.pa.gov/agencies/dcnr/recreation/where-to-go/state-parks/find-a-park/white-clay-creek-preserve',
+  };
+
+  getItems().forEach(item => {
+    const url = SITES[itemId(item)];
+    if (!url) return;
+    const a = document.createElement('a');
+    a.className = 'site-link';
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.title = 'Official website';
+    a.textContent = '↗';
+    a.addEventListener('click', e => e.stopPropagation());
+    item.querySelector('.item-name').appendChild(a);
+  });
+
   let dogFilterActive = false;
 
   function toggleDogFilter(btn) {
     dogFilterActive = !dogFilterActive;
     btn.classList.toggle('btn-active', dogFilterActive);
-    document.querySelectorAll('.item').forEach(item => {
-      if (dogFilterActive && item.classList.contains('no-dogs')) {
-        item.classList.add('dog-hidden');
-      } else {
-        item.classList.remove('dog-hidden');
-      }
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const q = document.getElementById('search-box').value.trim().toLowerCase();
+
+    getItems().forEach(item => {
+      const hideDog    = dogFilterActive && item.classList.contains('no-dogs');
+      const hideSearch = q && !item.textContent.toLowerCase().includes(q);
+      item.classList.toggle('dog-hidden', hideDog || hideSearch);
+    });
+
+    // Hide subgroup headings and whole sections left with no visible entries
+    document.querySelectorAll('.list-area section').forEach(sec => {
+      let anyVisible = false;
+      let currentH3 = null, groupVisible = false;
+      Array.from(sec.children).forEach(el => {
+        if (el.tagName === 'H3') {
+          if (currentH3) currentH3.style.display = groupVisible ? '' : 'none';
+          currentH3 = el;
+          groupVisible = false;
+        } else if (el.classList.contains('item')) {
+          const visible = !el.classList.contains('dog-hidden');
+          groupVisible = groupVisible || visible;
+          anyVisible = anyVisible || visible;
+        }
+      });
+      if (currentH3) currentH3.style.display = groupVisible ? '' : 'none';
+      sec.style.display = anyVisible ? '' : 'none';
     });
   }
 </script>
