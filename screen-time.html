@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0E1218">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Road Trip Screen Time</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-top:#0E1218;
+    --bg-bot:#161C26;
+    --panel:#1B2330;
+    --panel-2:#222C3B;
+    --line:#2C3849;
+    --ink:#F2EFE9;
+    --ink-dim:#9AA7B8;
+    --amber:#FFB23E;
+    --green:#36C796;
+    --red:#F1604E;
+    --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Fredoka',system-ui,-apple-system,sans-serif;
+    background:linear-gradient(170deg,var(--bg-top),var(--bg-bot));
+    color:var(--ink);
+    min-height:100vh;
+    padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 24px);
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    text-align:center;
+    padding:22px 0 8px;
+  }
+  .eyebrow{
+    font-size:13px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--amber);font-weight:600;margin:0 0 4px;
+  }
+  h1{
+    font-size:26px;font-weight:600;margin:0;letter-spacing:.01em;
+  }
+  .sync{
+    display:inline-flex;align-items:center;gap:6px;margin-top:8px;
+    font-size:12px;color:var(--ink-dim);font-weight:500;
+  }
+  .sync .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-dim);transition:background .3s;}
+  .sync.live .dot{background:var(--green);box-shadow:0 0 8px var(--green);}
+  .sync.live{color:var(--green);}
+  .grid{
+    display:grid;gap:16px;max-width:760px;margin:18px auto 0;
+    grid-template-columns:1fr;
+  }
+  @media(min-width:680px){.grid{grid-template-columns:1fr 1fr;}}
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:20px 18px 18px;
+    box-shadow:var(--shadow);
+    position:relative;
+    transition:border-color .3s, box-shadow .3s;
+  }
+  .card.out{
+    border-color:var(--red);
+    box-shadow:0 0 0 1px var(--red), 0 0 26px rgba(241,96,78,.35);
+    animation:pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes pulse{50%{box-shadow:0 0 0 1px var(--red),0 0 6px rgba(241,96,78,.15);}}
+
+  .name-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;}
+  .name{
+    font-size:20px;font-weight:600;background:none;border:none;color:var(--ink);
+    text-align:center;width:auto;max-width:170px;padding:4px 6px;border-radius:10px;
+    font-family:inherit;
+  }
+  .name:focus{outline:none;background:var(--panel-2);}
+  .pencil{font-size:13px;color:var(--ink-dim);}
+
+  .gauge{position:relative;width:200px;height:200px;margin:6px auto 4px;}
+  .gauge svg{transform:rotate(-90deg);}
+  .gauge .track{fill:none;stroke:var(--line);stroke-width:14;}
+  .gauge .fill{fill:none;stroke:var(--green);stroke-width:14;stroke-linecap:round;
+    transition:stroke-dashoffset .4s linear, stroke .4s;}
+  .readout{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+  }
+  .time{font-size:42px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1;}
+  .of-limit{font-size:13px;color:var(--ink-dim);margin-top:6px;}
+
+  .primary{
+    width:100%;border:none;border-radius:14px;padding:14px;
+    font-family:inherit;font-size:18px;font-weight:600;color:#0E1218;
+    background:var(--amber);margin-top:10px;cursor:pointer;
+    transition:transform .08s, filter .2s;
+  }
+  .primary:active{transform:scale(.98);}
+  .primary.running{background:var(--panel-2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line);}
+  .primary:disabled{opacity:.45;cursor:default;}
+
+  .adjust{margin-top:14px;}
+  .adjust .lbl{
+    display:flex;justify-content:space-between;font-size:12px;font-weight:600;
+    text-transform:uppercase;letter-spacing:.08em;color:var(--ink-dim);margin:0 2px 6px;
+  }
+  .adjust .lbl .good{color:var(--green);}
+  .adjust .lbl .bad{color:var(--red);}
+  .btn-row{display:flex;gap:8px;}
+  .chip{
+    flex:1;border:1px solid var(--line);background:var(--panel-2);
+    color:var(--ink);font-family:inherit;font-size:15px;font-weight:600;
+    padding:11px 0;border-radius:12px;cursor:pointer;transition:transform .08s, background .2s;
+  }
+  .chip:active{transform:scale(.95);}
+  .chip.add{color:var(--green);}
+  .chip.sub{color:var(--red);}
+
+  .footer-row{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;}
+  .limit-edit{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-dim);}
+  .limit-edit input{
+    width:48px;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+    font-family:inherit;font-size:14px;text-align:center;border-radius:8px;padding:5px 2px;
+  }
+  .limit-edit input:focus{outline:none;border-color:var(--amber);}
+  .reset{
+    background:none;border:none;color:var(--ink-dim);font-family:inherit;font-size:13px;
+    cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:6px;
+  }
+  .reset:active{color:var(--ink);}
+
+  /* Activity log */
+  .log-wrap{max-width:760px;margin:18px auto 0;}
+  .log-head{display:flex;justify-content:space-between;align-items:center;padding:0 4px 8px;}
+  .log-head h2{font-size:15px;font-weight:600;margin:0;color:var(--ink-dim);
+    text-transform:uppercase;letter-spacing:.1em;}
+  .log-head button{background:none;border:none;color:var(--ink-dim);font-family:inherit;
+    font-size:13px;cursor:pointer;}
+  .log{
+    background:var(--panel);border:1px solid var(--line);border-radius:18px;
+    padding:6px;list-style:none;margin:0;min-height:54px;
+  }
+  .log li{
+    display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;
+    font-size:15px;
+  }
+  .log li + li{border-top:1px solid var(--line);}
+  .log .delta{font-weight:600;font-variant-numeric:tabular-nums;min-width:54px;}
+  .log .delta.pos{color:var(--green);}
+  .log .delta.neg{color:var(--red);}
+  .log .who{flex:1;}
+  .log .when{font-size:12px;color:var(--ink-dim);}
+  .log .empty{color:var(--ink-dim);text-align:center;padding:14px;font-size:14px;}
+
+  .tip{max-width:760px;margin:16px auto 0;text-align:center;color:var(--ink-dim);font-size:13px;}
+
+  .save-dot{
+    position:fixed;bottom:18px;right:18px;font-size:11px;font-family:inherit;
+    color:var(--ink-dim);background:var(--panel);padding:5px 12px;border-radius:20px;
+    border:1px solid var(--line);box-shadow:var(--shadow);opacity:0;transition:opacity .3s;
+  }
+  .save-dot.visible{opacity:1;}
+</style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">Miles &amp; Minutes</p>
+    <h1>Road Trip Screen Time</h1>
+    <div class="sync" id="sync"><span class="dot"></span><span id="sync-text">Connecting…</span></div>
+  </header>
+
+  <main class="grid" id="cards"></main>
+
+  <section class="log-wrap">
+    <div class="log-head">
+      <h2>Recent activity</h2>
+      <button id="clearLog">Clear</button>
+    </div>
+    <ul class="log" id="log"></ul>
+  </section>
+
+  <p class="tip">Shared across every device on this link. Tap a name to rename. Tap the minutes number to change a kid's limit.</p>
+
+  <div class="save-dot" id="save-dot">Saved &#10003;</div>
+
+<!-- Firebase realtime sync (shared with the other apps in lunch-f7021) -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue, set }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCp2PBbqdj_g6NPR9iYQb7Z6tgXbqLtHIA",
+  authDomain:        "lunch-f7021.firebaseapp.com",
+  databaseURL:       "https://lunch-f7021-default-rtdb.firebaseio.com",
+  projectId:         "lunch-f7021",
+  storageBucket:     "lunch-f7021.firebasestorage.app",
+  messagingSenderId: "1053755216064",
+  appId:             "1:1053755216064:web:14b749200f825a4e9bdd25",
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db    = getDatabase(fbApp);
+const stRef = ref(db, "screen-time");
+
+window._fbSet = d  => set(stRef, d);
+window._fbOn  = cb => onValue(stRef, snap => cb(snap.val()), err => cb(undefined, err));
+</script>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- persistence ---------- */
+  var KEY = "rtScreenTime.v1";
+  function loadLocal(){
+    try{ var s = localStorage.getItem(KEY); return s ? JSON.parse(s) : null; }
+    catch(e){ return null; }
+  }
+
+  // remoteReady gates Firebase writes until the first snapshot has arrived,
+  // so we never clobber shared state with a half-loaded local copy.
+  var remoteReady = false;
+  var pushTimer   = null;
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+    if(remoteReady && window._fbSet){
+      clearTimeout(pushTimer);
+      pushTimer = setTimeout(function(){
+        window._fbSet(state).then(flashSave).catch(function(){});
+      }, 500);
+    }
+  }
+  function flashSave(){
+    var el = document.getElementById("save-dot");
+    if(!el) return;
+    el.classList.add("visible");
+    setTimeout(function(){ el.classList.remove("visible"); }, 1500);
+  }
+
+  /* ---------- state ---------- */
+  var defaults = {
+    kids: [
+      { id:"a", name:"V", limit:90, remaining:90*60, running:false, startedAt:null, alerted:false },
+      { id:"b", name:"X", limit:90, remaining:90*60, running:false, startedAt:null, alerted:false }
+    ],
+    log: []
+  };
+  var state = loadLocal() || defaults;
+  if(!state.kids){ state = defaults; }
+  if(!state.log){ state.log = []; }
+
+  function findKid(id){
+    for(var i=0;i<state.kids.length;i++){ if(state.kids[i].id===id) return state.kids[i]; }
+    return null;
+  }
+
+  /* ---------- audio (unlocked on first tap) ---------- */
+  var audioCtx = null;
+  function unlockAudio(){
+    if(audioCtx) return;
+    try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+  }
+  function beep(){
+    if(!audioCtx) return;
+    var t = audioCtx.currentTime;
+    [0,0.18,0.36].forEach(function(off){
+      var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type="sine"; o.frequency.value=880;
+      o.connect(g); g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0.0001,t+off);
+      g.gain.exponentialRampToValueAtTime(0.25,t+off+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+off+0.15);
+      o.start(t+off); o.stop(t+off+0.16);
+    });
+  }
+
+  /* ---------- helpers ---------- */
+  function liveRemaining(k){
+    if(k.running && k.startedAt){
+      var elapsed = Math.floor((Date.now() - k.startedAt)/1000);
+      return Math.max(0, k.remaining - elapsed);
+    }
+    return Math.max(0, k.remaining);
+  }
+  function commit(k){ // fold running time back into remaining
+    if(k.running && k.startedAt){
+      k.remaining = liveRemaining(k);
+      k.startedAt = Date.now();
+    }
+  }
+  function fmt(sec){
+    sec = Math.max(0, Math.round(sec));
+    var m = Math.floor(sec/60), s = sec%60;
+    return m + ":" + (s<10?"0":"") + s;
+  }
+  function ago(ts){
+    var d = Math.floor((Date.now()-ts)/1000);
+    if(d<60) return "just now";
+    if(d<3600) return Math.floor(d/60)+"m ago";
+    return Math.floor(d/3600)+"h ago";
+  }
+
+  /* ---------- actions ---------- */
+  function toggle(k){
+    if(!k) return;
+    unlockAudio();
+    if(k.running){
+      commit(k); k.running=false; k.startedAt=null;
+    }else{
+      if(liveRemaining(k) <= 0) return;
+      k.running=true; k.startedAt=Date.now(); k.alerted=false;
+    }
+    save(); render();
+  }
+  function adjust(k, minutes){
+    if(!k) return;
+    commit(k);
+    k.remaining = Math.max(0, Math.min(600*60, k.remaining + minutes*60));
+    if(k.remaining>0) k.alerted=false;
+    logEvent(k.name, minutes);
+    save(); render();
+  }
+  function resetToLimit(k){
+    if(!k) return;
+    k.remaining = k.limit*60; k.running=false; k.startedAt=null; k.alerted=false;
+    save(); render();
+  }
+  function setLimit(k, mins){
+    if(!k) return;
+    mins = Math.max(0, Math.min(600, Math.round(mins||0)));
+    k.limit = mins;
+    save();
+  }
+  function logEvent(name, minutes){
+    state.log.unshift({ name:name, delta:minutes, ts:Date.now() });
+    state.log = state.log.slice(0,12);
+  }
+
+  /* ---------- rendering ---------- */
+  var cardsEl = document.getElementById("cards");
+  var logEl = document.getElementById("log");
+  var C = 2*Math.PI*86; // gauge circumference (r=86)
+
+  function ringColor(frac){
+    if(frac>0.5) return getCSS("--green");
+    if(frac>0.2) return getCSS("--amber");
+    return getCSS("--red");
+  }
+  function getCSS(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+  function buildCards(){
+    cardsEl.innerHTML = "";
+    state.kids.forEach(function(k){
+      var card = document.createElement("div");
+      card.className="card"; card.dataset.id=k.id;
+      card.innerHTML =
+        '<div class="name-row">'+
+          '<input class="name" value="'+escapeHtml(k.name)+'" maxlength="14" aria-label="Name">'+
+          '<span class="pencil">&#9998;</span>'+
+        '</div>'+
+        '<div class="gauge">'+
+          '<svg width="200" height="200" viewBox="0 0 200 200">'+
+            '<circle class="track" cx="100" cy="100" r="86"></circle>'+
+            '<circle class="fill" cx="100" cy="100" r="86" '+
+              'stroke-dasharray="'+C+'" stroke-dashoffset="0"></circle>'+
+          '</svg>'+
+          '<div class="readout"><div class="time">0:00</div>'+
+          '<div class="of-limit"></div></div>'+
+        '</div>'+
+        '<button class="primary">Start</button>'+
+        '<div class="adjust">'+
+          '<div class="lbl"><span class="good">Reward</span><span class="bad">Penalty</span></div>'+
+          '<div class="btn-row">'+
+            '<button class="chip add" data-d="5">+5</button>'+
+            '<button class="chip add" data-d="10">+10</button>'+
+            '<button class="chip add" data-d="15">+15</button>'+
+            '<button class="chip sub" data-d="-5">&minus;5</button>'+
+            '<button class="chip sub" data-d="-10">&minus;10</button>'+
+            '<button class="chip sub" data-d="-15">&minus;15</button>'+
+          '</div>'+
+        '</div>'+
+        '<div class="footer-row">'+
+          '<label class="limit-edit">Limit'+
+            '<input type="number" class="limit" value="'+k.limit+'" min="0" max="600" inputmode="numeric"> min'+
+          '</label>'+
+          '<button class="reset">Reset to limit</button>'+
+        '</div>';
+      cardsEl.appendChild(card);
+
+      // Wire events by id (look up fresh each time) so a live remote update,
+      // which replaces the kids array, never leaves a handler on a stale object.
+      var id = card.dataset.id;
+      var nameInput = card.querySelector(".name");
+      nameInput.addEventListener("change", function(){
+        var kk = findKid(id); if(!kk) return;
+        kk.name = nameInput.value.trim() || "Kid"; save(); render();
+      });
+      card.querySelector(".primary").addEventListener("click", function(){ toggle(findKid(id)); });
+      card.querySelectorAll(".chip").forEach(function(b){
+        b.addEventListener("click", function(){ adjust(findKid(id), parseInt(b.dataset.d,10)); });
+      });
+      var limitInput = card.querySelector(".limit");
+      limitInput.addEventListener("change", function(){ setLimit(findKid(id), parseInt(limitInput.value,10)); });
+      card.querySelector(".reset").addEventListener("click", function(){ resetToLimit(findKid(id)); });
+    });
+  }
+
+  function render(){
+    if(cardsEl.children.length !== state.kids.length) buildCards();
+    state.kids.forEach(function(k){
+      var card = cardsEl.querySelector('[data-id="'+k.id+'"]');
+      if(!card) return;
+      var rem = liveRemaining(k);
+      var frac = k.limit>0 ? Math.max(0, Math.min(1, rem/(k.limit*60))) : 0;
+
+      card.querySelector(".time").textContent = fmt(rem);
+      card.querySelector(".of-limit").textContent = "of " + k.limit + " min";
+
+      var fill = card.querySelector(".fill");
+      fill.style.strokeDashoffset = C*(1-frac);
+      fill.style.stroke = ringColor(frac);
+
+      var btn = card.querySelector(".primary");
+      if(rem<=0){
+        btn.textContent = "Time's up"; btn.disabled = true; btn.classList.remove("running");
+      }else{
+        btn.disabled = false;
+        btn.textContent = k.running ? "Pause" : "Start";
+        btn.classList.toggle("running", k.running);
+      }
+      card.classList.toggle("out", rem<=0);
+
+      // keep inputs in sync only when not focused (avoid fighting the user)
+      var nm = card.querySelector(".name");
+      if(document.activeElement!==nm && nm.value!==k.name) nm.value=k.name;
+      var lm = card.querySelector(".limit");
+      if(document.activeElement!==lm && +lm.value!==k.limit) lm.value=k.limit;
+    });
+    renderLog();
+  }
+
+  function renderLog(){
+    if(!state.log.length){
+      logEl.innerHTML = '<li class="empty">No rewards or penalties yet.</li>';
+      return;
+    }
+    logEl.innerHTML = state.log.map(function(e){
+      var pos = e.delta>=0;
+      return '<li><span class="delta '+(pos?"pos":"neg")+'">'+(pos?"+":"−")+
+        Math.abs(e.delta)+'m</span>'+
+        '<span class="who">'+escapeHtml(e.name)+' &middot; '+(pos?"Reward":"Penalty")+'</span>'+
+        '<span class="when">'+ago(e.ts)+'</span></li>';
+    }).join("");
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g,function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  /* ---------- tick loop ---------- */
+  function tick(){
+    var changed=false;
+    state.kids.forEach(function(k){
+      if(k.running && liveRemaining(k)<=0){
+        k.remaining=0; k.running=false; k.startedAt=null;
+        if(!k.alerted){ k.alerted=true; beep(); }
+        changed=true;
+      }
+    });
+    if(changed) save();
+    render();
+  }
+
+  document.getElementById("clearLog").addEventListener("click", function(){
+    state.log=[]; save(); renderLog();
+  });
+
+  /* ---------- realtime sync ---------- */
+  function setSync(live, text){
+    var el = document.getElementById("sync");
+    el.classList.toggle("live", !!live);
+    document.getElementById("sync-text").textContent = text;
+  }
+
+  function applyRemote(data, err){
+    if(err){ setSync(false, "Offline — saved on this device"); return; }
+    if(data && data.kids){
+      // Shared DB is the source of truth once we're connected.
+      state.kids = data.kids.map(function(k){
+        return {
+          id:k.id, name:k.name, limit:k.limit||0, remaining:k.remaining||0,
+          running:!!k.running, startedAt:k.startedAt||null, alerted:!!k.alerted
+        };
+      });
+      state.log = data.log || [];
+      remoteReady = true;
+    }else{
+      // Empty path — seed it with whatever we have locally.
+      remoteReady = true;
+      save();
+    }
+    setSync(true, "Live — shared across devices");
+    if(cardsEl.children.length !== state.kids.length) buildCards();
+    render();
+  }
+
+  function waitForFb(){
+    if(window._fbOn){
+      window._fbOn(applyRemote);
+    }else{
+      setTimeout(waitForFb, 50);
+    }
+  }
+
+  buildCards();
+  render();
+  setInterval(tick, 1000);
+  // If Firebase never connects, keep working locally.
+  setTimeout(function(){ if(!remoteReady) setSync(false, "Offline — saved on this device"); }, 4000);
+  waitForFb();
+})();
+</script>
+</body>
+</html>
