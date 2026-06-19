@@ -7,9 +7,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -341,6 +341,22 @@
 
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
+
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(e) { return { error: e }; }
+  render() {
+    if (this.state.error) return (
+      <div style={{padding:40,textAlign:'center',color:'#ef5350',fontFamily:'sans-serif'}}>
+        <div style={{fontSize:'2rem',marginBottom:12}}>⚠️</div>
+        <div style={{fontWeight:700,marginBottom:8}}>Something went wrong</div>
+        <div style={{fontSize:'0.85rem',color:'#999',marginBottom:16}}>{String(this.state.error)}</div>
+        <button onClick={() => window.location.reload()} style={{background:'#ef5350',color:'#fff',border:'none',borderRadius:6,padding:'8px 20px',cursor:'pointer'}}>Reload</button>
+      </div>
+    );
+    return this.props.children;
+  }
+}
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 const GROUPS = {
@@ -797,8 +813,11 @@ function App() {
   const [tab, setTab]               = useState(0);
   const [players, setPlayers]       = useState([]);
   const [newPlayer, setNewPlayer]   = useState("");
-  const [activePlayer, setActivePlayer] = useState(() => localStorage.getItem('wc_my_name') || null);
-  const [myPlayer, setMyPlayer]     = useState(() => localStorage.getItem('wc_my_name') || null);
+  const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+  const lsDel = k => { try { localStorage.removeItem(k); } catch {} };
+  const [activePlayer, setActivePlayer] = useState(() => lsGet('wc_my_name') || null);
+  const [myPlayer, setMyPlayer]     = useState(() => lsGet('wc_my_name') || null);
   const initializedRef              = useRef(false);
   const [allPicks, setAllPicks]     = useState({});
   const [results, setResults]       = useState({ groups: {}, knockout: {} });
@@ -811,7 +830,7 @@ function App() {
 
   const [thirdRanked, setThirdRanked]             = useState([]);
   const [resultThirdRanked, setResultThirdRanked] = useState([]);
-  const [isAdmin, setIsAdmin]                     = useState(() => localStorage.getItem('wc_admin') === '1');
+  const [isAdmin, setIsAdmin]                     = useState(() => lsGet('wc_admin') === '1');
   const [adminInput, setAdminInput]               = useState('');
   const [showAdminLogin, setShowAdminLogin]       = useState(false);
 
@@ -856,7 +875,7 @@ function App() {
       });
       setAllPicks(rebuilt);
       if (!initializedRef.current) {
-        const me = localStorage.getItem('wc_my_name');
+        const me = lsGet('wc_my_name');
         const myPicks = me && rebuilt[me];
         if (myPicks) {
           setGroupPicks(myPicks.groups || {});
@@ -880,7 +899,7 @@ function App() {
     const key = sanitizeKey(name);
     wcRef.child('players').child(key).set(name);
     wcRef.child('picks').child(key).set({ groups: {}, knockout: {} });
-    localStorage.setItem('wc_my_name', name);
+    lsSet('wc_my_name', name);
     setMyPlayer(name);
     setNewPlayer("");
     setActivePlayer(name);
@@ -927,14 +946,14 @@ function App() {
     wcRef.child('players').child(key).remove();
     wcRef.child('picks').child(key).remove();
     if (name === myPlayer) {
-      localStorage.removeItem('wc_my_name');
+      lsDel('wc_my_name');
       setMyPlayer(null); setActivePlayer(null);
     }
   };
 
   const adminLogin = () => {
     if (adminInput === 'WC*2026') {
-      localStorage.setItem('wc_admin', '1');
+      lsSet('wc_admin', '1');
       setIsAdmin(true); setShowAdminLogin(false); setAdminInput('');
     } else {
       alert('Incorrect password.');
@@ -942,7 +961,7 @@ function App() {
   };
 
   const adminLogout = () => {
-    localStorage.removeItem('wc_admin');
+    lsDel('wc_admin');
     setIsAdmin(false);
   };
 
@@ -1780,7 +1799,9 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <ErrorBoundary><App /></ErrorBoundary>
+);
 </script>
 </body>
 </html>
