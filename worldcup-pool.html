@@ -643,7 +643,7 @@ const ESPN_NAMES = {
   'Curacao': 'Curaçao',
   'Korea Republic': 'South Korea',
   'IR Iran': 'Iran',
-  'DR Congo': 'DR Congo',
+  'Congo DR': 'DR Congo',
 };
 const espnName = n => ESPN_NAMES[n] || n;
 
@@ -677,6 +677,7 @@ async function syncESPN(currentResults) {
   try {
     const r = await fetch('https://site.api.espn.com/apis/v2/sports/soccer/fifa.world/standings?season=2026');
     const d = await r.json();
+    const thirdCands = [];  // each group's 3rd-placed team, with FIFA tiebreaker stats
     for (const grp of (d.children || [])) {
       const raw    = (grp.abbreviation || grp.name || '').trim();
       const letter = raw.length === 1 ? raw : raw.replace(/^Group\s*/i, '').trim();
@@ -689,10 +690,35 @@ async function syncESPN(currentResults) {
       if (gp === 0) continue;
       const top2 = entries.slice(0, 3).map(e => espnName(e.team.displayName));
       if (top2[0] && top2[1]) out.groups[letter] = top2;
+
+      const e3 = entries[2];
+      if (e3) {
+        const st = n => +(e3.stats?.find(s => s.name === n)?.value ?? 0);
+        thirdCands.push({
+          team:     espnName(e3.team.displayName),
+          advanced: st('advanced') === 1,
+          gp,
+          pts: st('points'), gd: st('pointDifferential'), gf: st('pointsFor'),
+        });
+      }
+    }
+
+    // 2. Best 8 third-place teams → out.thirdRanked, once the group stage is complete.
+    // Prefer ESPN's own `advanced` flag; fall back to FIFA tiebreakers
+    // (points → goal difference → goals scored) if the flag isn't set on exactly 8.
+    const doneThirds = thirdCands.filter(t => t.team && t.gp >= 3);
+    if (doneThirds.length === Object.keys(GROUPS).length) {
+      const flagged = doneThirds.filter(t => t.advanced).map(t => t.team);
+      out.thirdRanked = flagged.length === 8
+        ? flagged
+        : doneThirds.slice()
+            .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf)
+            .slice(0, 8)
+            .map(t => t.team);
     }
   } catch(e) { console.warn('ESPN standings sync failed:', e); }
 
-  // 2. Knockout results — fetch all completed matches from R32 start through today
+  // 3. Knockout results — fetch all completed matches from R32 start through today
   try {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     if (today >= '20260628') {
