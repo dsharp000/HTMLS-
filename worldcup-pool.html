@@ -47,7 +47,12 @@
     .tab-btn:hover:not(.active) { color:var(--text); }
 
     /* LAYOUT */
-    .content { flex:1; padding:18px; overflow-y:auto; }
+    .content { flex:1; padding:18px; overflow:auto; scrollbar-width:thin; scrollbar-color:var(--border) var(--dark2); }
+    .content::-webkit-scrollbar { width:12px; height:12px; -webkit-appearance:none; }
+    .content::-webkit-scrollbar-track { background:var(--dark2); }
+    .content::-webkit-scrollbar-thumb { background:var(--border); border-radius:6px; border:2px solid var(--dark2); }
+    .content::-webkit-scrollbar-thumb:hover { background:var(--accent); }
+    .content::-webkit-scrollbar-corner { background:var(--dark2); }
     .section-title { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; letter-spacing:1px; color:var(--accent); margin-bottom:16px; }
 
     /* BUTTONS */
@@ -129,6 +134,9 @@
 
     /* BRACKET */
     .bracket-scroll { overflow-x:auto; padding-bottom:8px; }
+    /* Bracket wrapper: don't trap the overflow — let .content scroll both ways
+       so the horizontal scrollbar sits at the bottom of the window (reachable). */
+    .bracket-area { overflow:visible; padding-bottom:4px; }
     .bracket-rounds { display:flex; gap:14px; min-width:fit-content; }
     .bracket-round { min-width:175px; }
     .round-title { font-family:'Bebas Neue',sans-serif; font-size:0.95rem; letter-spacing:1px; color:var(--muted); margin-bottom:10px; }
@@ -178,6 +186,8 @@
     .lb-medal { font-size:1.6rem; min-width:36px; text-align:center; }
     .lb-info { flex:1; }
     .lb-name { font-weight:700; font-size:0.95rem; }
+    .lb-name-link { cursor:pointer; display:inline-block; transition:color .15s; }
+    .lb-name-link:hover { color:var(--accent); text-decoration:underline; }
     .lb-champ { font-size:0.78rem; color:var(--gold); margin-top:4px; }
     .lb-score { font-family:'Bebas Neue',sans-serif; font-size:2.2rem; color:var(--accent); line-height:1; min-width:50px; text-align:right; }
     .lb-score.zero { color:var(--muted); }
@@ -403,6 +413,18 @@ if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
 const wcRef = db.ref('worldcup');
 function sanitizeKey(n) { return n.replace(/[.#$[\]/\s]/g, '_'); }
+// Firebase stores sparse arrays (e.g. knockout slots [0,1,2,8]) as objects with
+// numeric string keys. Normalize object-or-array back into a real array so
+// indexing and .length behave correctly during scoring and bracket rendering.
+function arrify(v) {
+  if (Array.isArray(v)) return v;
+  if (v && typeof v === 'object') {
+    const out = [];
+    for (const k of Object.keys(v)) { const i = +k; if (!Number.isNaN(i)) out[i] = v[k]; }
+    return out;
+  }
+  return [];
+}
 
 // ─── BRACKET CONSTANTS ───────────────────────────────────────────────────────
 const B_UNIT = 112, B_SH = 100, B_COLS = 8;
@@ -553,7 +575,7 @@ function getKnockoutMatchups(roundKey, koData, groupsData, thirdRanked) {
     return matchups;
   }
   const prevKey = ROUND_KEYS[idx - 1];
-  const prev    = koData[prevKey] || [];
+  const prev    = arrify(koData[prevKey]);
   const matchups = [];
   for (let i = 0; i < prev.length; i += 2) matchups.push([prev[i] || null, prev[i + 1] || null]);
   return matchups;
@@ -623,8 +645,8 @@ function calcScore(playerPicks, results) {
   }
 
   for (const rk of ROUND_KEYS) {
-    const rr = results.knockout[rk] || [];
-    const pr = playerPicks.knockout[rk] || [];
+    const rr = arrify(results.knockout?.[rk]);
+    const pr = arrify(playerPicks.knockout?.[rk]);
     const pts_per = SCORING[rk];
     for (let i = 0; i < Math.max(rr.length, pr.length); i++) {
       if (pr[i] && rr[i] && pr[i] === rr[i]) {
@@ -1034,6 +1056,12 @@ function App() {
   // Anyone may view others' picks once picks lock (so they can't be copied beforehand); admin may at any time.
   const canViewAll = isAdmin || picksLocked;
 
+  // Open a player's card (their Groups/Bracket picks), same as clicking them on the Players tab.
+  const goToPlayerCard = p => {
+    if (p === myPlayer) { setActivePlayer(p); setTab(1); }
+    else if (canViewAll) { loadPlayer(p); }
+  };
+
   const handleGroupPick = (letter, team, rank) => {
     setGroupPicks(prev => {
       const curr = [...(prev[letter] || [])];
@@ -1370,7 +1398,7 @@ function App() {
               const NH = B_COLS * B_UNIT;
               const cp = { ko: knockoutPicks, resultKo: results.knockout, onPick: pickKO };
               return (
-                <div style={{ overflowX:'auto', paddingBottom:12 }}>
+                <div className="bracket-area">
                   <div style={{ display:'flex', gap:4, minWidth:'max-content', padding:'14px 0', alignItems:'flex-start' }}>
                     <BracketCol title="R32" roundKey="r32" halfOffset={0} count={8} level={0} allMatchups={r32m} {...cp} />
                     <BracketCol title="R16" roundKey="r16" halfOffset={0} count={4} level={1} allMatchups={r16m} {...cp} />
@@ -1752,7 +1780,7 @@ function App() {
                       <div key={s.name} className={`lb-row rank-${i + 1}`}>
                         <div className="lb-medal">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}</div>
                         <div className="lb-info">
-                          <div className="lb-name">{s.name}</div>
+                          <div className="lb-name lb-name-link" onClick={() => goToPlayerCard(s.name)} title="View picks">{s.name}{s.name === myPlayer && <span style={{ fontSize: "0.72rem", color: "var(--accent)", fontWeight: 400 }}> (you)</span>}</div>
                           <div className="lb-breakdown">
                             {[
                               ["Grp", s.breakdown.group],
