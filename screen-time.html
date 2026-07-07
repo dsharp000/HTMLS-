@@ -95,6 +95,18 @@
   .time{font-size:42px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1;}
   .of-limit{font-size:13px;color:var(--ink-dim);margin-top:6px;}
 
+  .mode-row{
+    display:flex;gap:0;margin-top:2px;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:12px;
+    padding:3px;
+  }
+  .mode-btn{
+    flex:1;border:none;background:transparent;color:var(--ink-dim);
+    font-family:inherit;font-size:13px;font-weight:600;padding:8px 0;
+    border-radius:9px;cursor:pointer;transition:background .2s,color .2s;
+  }
+  .mode-btn.active{background:var(--amber);color:#0E1218;}
+
   .primary{
     width:100%;border:none;border-radius:14px;padding:14px;
     font-family:inherit;font-size:18px;font-weight:600;color:#0E1218;
@@ -247,14 +259,15 @@ window._fbOn  = cb => onValue(stRef, snap => cb(snap.val()), err => cb(undefined
   /* ---------- state ---------- */
   var defaults = {
     kids: [
-      { id:"a", name:"V", limit:90, remaining:90*60, running:false, startedAt:null, alerted:false },
-      { id:"b", name:"X", limit:90, remaining:90*60, running:false, startedAt:null, alerted:false }
+      { id:"a", name:"V", limit:90, remaining:90*60, running:false, startedAt:null, alerted:false, mode:"timer" },
+      { id:"b", name:"X", limit:90, remaining:90*60, running:false, startedAt:null, alerted:false, mode:"timer" }
     ],
     log: []
   };
   var state = loadLocal() || defaults;
   if(!state.kids){ state = defaults; }
   if(!state.log){ state.log = []; }
+  state.kids.forEach(function(k){ if(!k.mode) k.mode = "timer"; });
 
   function findKid(id){
     for(var i=0;i<state.kids.length;i++){ if(state.kids[i].id===id) return state.kids[i]; }
@@ -324,7 +337,8 @@ window._fbOn  = cb => onValue(stRef, snap => cb(snap.val()), err => cb(undefined
     commit(k);
     k.remaining = Math.max(0, Math.min(600*60, k.remaining + minutes*60));
     if(k.remaining>0) k.alerted=false;
-    logEvent(k.name, minutes);
+    // minutes>0 always means reward internally; display sign follows the kid's mode
+    logEvent(k.name, k.mode==="stopwatch" ? -minutes : minutes, minutes>0 ? "Reward" : "Penalty");
     save(); render();
   }
   function resetToLimit(k){
@@ -338,8 +352,8 @@ window._fbOn  = cb => onValue(stRef, snap => cb(snap.val()), err => cb(undefined
     k.limit = mins;
     save();
   }
-  function logEvent(name, minutes){
-    state.log.unshift({ name:name, delta:minutes, ts:Date.now() });
+  function logEvent(name, minutes, kind){
+    state.log.unshift({ name:name, delta:minutes, ts:Date.now(), kind:kind });
     state.log = state.log.slice(0,12);
   }
 
@@ -374,6 +388,10 @@ window._fbOn  = cb => onValue(stRef, snap => cb(snap.val()), err => cb(undefined
           '<div class="readout"><div class="time">0:00</div>'+
           '<div class="of-limit"></div></div>'+
         '</div>'+
+        '<div class="mode-row">'+
+          '<button class="mode-btn" data-mode="timer">&#9203; Timer</button>'+
+          '<button class="mode-btn" data-mode="stopwatch">&#9201; Stopwatch</button>'+
+        '</div>'+
         '<button class="primary">Start</button>'+
         '<div class="adjust">'+
           '<div class="lbl"><span class="good">Reward</span><span class="bad">Penalty</span></div>'+
@@ -403,6 +421,13 @@ window._fbOn  = cb => onValue(stRef, snap => cb(snap.val()), err => cb(undefined
         kk.name = nameInput.value.trim() || "Kid"; save(); render();
       });
       card.querySelector(".primary").addEventListener("click", function(){ toggle(findKid(id)); });
+      card.querySelectorAll(".mode-btn").forEach(function(b){
+        b.addEventListener("click", function(){
+          var kk = findKid(id); if(!kk || kk.mode===b.dataset.mode) return;
+          commit(kk); kk.mode = b.dataset.mode;
+          save(); render();
+        });
+      });
       card.querySelectorAll(".chip").forEach(function(b){
         b.addEventListener("click", function(){ adjust(findKid(id), parseInt(b.dataset.d,10)); });
       });
@@ -419,13 +444,28 @@ window._fbOn  = cb => onValue(stRef, snap => cb(snap.val()), err => cb(undefined
       if(!card) return;
       var rem = liveRemaining(k);
       var frac = k.limit>0 ? Math.max(0, Math.min(1, rem/(k.limit*60))) : 0;
+      var sw = k.mode==="stopwatch";
 
-      card.querySelector(".time").textContent = fmt(rem);
-      card.querySelector(".of-limit").textContent = "of " + k.limit + " min";
+      // Stopwatch counts up (time used); timer counts down (time left).
+      card.querySelector(".time").textContent = sw ? fmt(k.limit*60 - rem) : fmt(rem);
+      card.querySelector(".of-limit").textContent = (sw ? "used of " : "of ") + k.limit + " min";
 
+      // Ring fills with elapsed time in stopwatch mode, drains with remaining in timer mode;
+      // color always reflects how much is left.
       var fill = card.querySelector(".fill");
-      fill.style.strokeDashoffset = C*(1-frac);
+      fill.style.strokeDashoffset = sw ? C*frac : C*(1-frac);
       fill.style.stroke = ringColor(frac);
+
+      card.querySelectorAll(".mode-btn").forEach(function(b){
+        b.classList.toggle("active", b.dataset.mode===k.mode);
+      });
+
+      // In stopwatch mode a penalty ADDS time to the clock (and a reward takes it off),
+      // so the chip labels flip; the internal adjustment is the same either way.
+      card.querySelectorAll(".chip").forEach(function(b){
+        var disp = sw ? -parseInt(b.dataset.d,10) : parseInt(b.dataset.d,10);
+        b.innerHTML = (disp>0 ? "+" : "&minus;") + Math.abs(disp);
+      });
 
       var btn = card.querySelector(".primary");
       if(rem<=0){
@@ -436,6 +476,8 @@ window._fbOn  = cb => onValue(stRef, snap => cb(snap.val()), err => cb(undefined
         btn.classList.toggle("running", k.running);
       }
       card.classList.toggle("out", rem<=0);
+
+      card.querySelector(".reset").textContent = sw ? "Reset to 0:00" : "Reset to limit";
 
       // keep inputs in sync only when not focused (avoid fighting the user)
       var nm = card.querySelector(".name");
@@ -452,10 +494,12 @@ window._fbOn  = cb => onValue(stRef, snap => cb(snap.val()), err => cb(undefined
       return;
     }
     logEl.innerHTML = state.log.map(function(e){
-      var pos = e.delta>=0;
-      return '<li><span class="delta '+(pos?"pos":"neg")+'">'+(pos?"+":"−")+
+      // kind marks good/bad (color); the sign shows what happened on that kid's clock
+      var kind = e.kind || (e.delta>=0 ? "Reward" : "Penalty");
+      var good = kind==="Reward";
+      return '<li><span class="delta '+(good?"pos":"neg")+'">'+(e.delta>=0?"+":"−")+
         Math.abs(e.delta)+'m</span>'+
-        '<span class="who">'+escapeHtml(e.name)+' &middot; '+(pos?"Reward":"Penalty")+'</span>'+
+        '<span class="who">'+escapeHtml(e.name)+' &middot; '+kind+'</span>'+
         '<span class="when">'+ago(e.ts)+'</span></li>';
     }).join("");
   }
@@ -498,7 +542,8 @@ window._fbOn  = cb => onValue(stRef, snap => cb(snap.val()), err => cb(undefined
       state.kids = data.kids.map(function(k){
         return {
           id:k.id, name:k.name, limit:k.limit||0, remaining:k.remaining||0,
-          running:!!k.running, startedAt:k.startedAt||null, alerted:!!k.alerted
+          running:!!k.running, startedAt:k.startedAt||null, alerted:!!k.alerted,
+          mode:k.mode||"timer"
         };
       });
       state.log = data.log || [];
