@@ -125,6 +125,7 @@
       max-width: 900px;
       margin: 0 auto 2rem;
       padding: 0 1.5rem;
+      position: relative;
     }
     .meter-header {
       display: flex;
@@ -143,22 +144,112 @@
       font-variant-numeric: tabular-nums;
     }
     .meter-track {
-      height: 10px;
+      height: 14px;
       background: var(--surf2);
-      border-radius: 5px;
+      border-radius: 7px;
       overflow: hidden;
       border: 1px solid var(--border);
+      display: flex;
+      gap: 2px;               /* surface gap between traveler segments */
+      position: relative;
     }
-    .meter-fill {
+    .meter-track.over { border-color: var(--danger); }
+    /* Everything past the limit line is off the scale — striped red overlay */
+    .over-zone {
+      position: absolute;
+      top: 0; bottom: 0; right: 0;
+      background: repeating-linear-gradient(135deg,
+        rgba(248,113,113,0.55) 0 4px, rgba(13,13,13,0.55) 4px 8px);
+      pointer-events: none;
+    }
+    .limit-line {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 2px;
+      background: var(--danger);
+      pointer-events: none;
+    }
+
+    /* Over-limit banner */
+    @keyframes ob-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+    .over-banner {
+      display: none;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.7rem;
+      padding: 0.75rem 1rem;
+      background: rgba(248,113,113,0.09);
+      border: 1px solid rgba(248,113,113,0.5);
+      border-radius: 8px;
+    }
+    .over-banner.show { display: flex; }
+    .ob-icon { font-size: 1.4rem; line-height: 1; animation: ob-pulse 1.5s ease-in-out infinite; }
+    .ob-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--danger);
+      letter-spacing: 0.04em;
+    }
+    .ob-sub { font-size: 0.76rem; color: var(--text); margin-top: 0.15rem; }
+    .meter-seg {
       height: 100%;
-      border-radius: 5px;
-      transition: width 0.4s ease, background 0.4s ease;
+      transition: width 0.4s ease;
+      min-width: 0;
+      cursor: default;
     }
+    .meter-seg:first-child { border-radius: 7px 0 0 7px; }
+    .meter-seg:hover { filter: brightness(1.2); }
     .meter-status {
       margin-top: 0.5rem;
       text-align: right;
       font-size: 0.78rem;
       font-weight: 600;
+    }
+    .meter-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 1.1rem;
+      margin-top: 0.6rem;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      color: var(--text);
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .legend-item:hover .legend-name { color: var(--accent); }
+    .legend-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .legend-name { transition: color 0.15s; }
+    .legend-lbs {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .meter-tip {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0;
+      background: var(--surf2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.72rem;
+      color: var(--text);
+      transform: translate(-50%, -130%);
+      white-space: nowrap;
+      transition: opacity 0.12s;
+      z-index: 5;
+      font-variant-numeric: tabular-nums;
     }
 
     /* ── Person grid ──────────────────────────────────────────── */
@@ -190,6 +281,13 @@
       gap: 0.5rem;
     }
 
+    .person-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
     .person-name-input {
       background: transparent;
       border: none;
@@ -211,9 +309,22 @@
       border-radius: 20px;
       background: var(--surf2);
       border: 1px solid var(--border);
+      color: var(--text);
       white-space: nowrap;
       flex-shrink: 0;
     }
+
+    /* Body vs gear split bar */
+    .split-bar {
+      display: flex;
+      gap: 2px;               /* surface gap between the two segments */
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 0.45rem 1rem 0;
+      background: var(--surf2);
+    }
+    .split-seg { height: 100%; transition: width 0.3s ease; }
 
     /* ── Body weight row ──────────────────────────────────────── */
     .bw-row {
@@ -439,10 +550,17 @@
     <span class="meter-label">Total Load</span>
     <span class="meter-numbers" id="meter-numbers">— / 850 lbs</span>
   </div>
-  <div class="meter-track">
-    <div class="meter-fill" id="meter-fill" style="width:0%;background:var(--ok)"></div>
+  <div class="meter-track" id="meter-track"></div>
+  <div class="over-banner" id="over-banner">
+    <span class="ob-icon">⚠️</span>
+    <div>
+      <div class="ob-title" id="ob-title">OFF THE SCALE</div>
+      <div class="ob-sub" id="ob-sub"></div>
+    </div>
   </div>
   <div class="meter-status" id="meter-status"></div>
+  <div class="meter-legend" id="meter-legend"></div>
+  <div class="meter-tip" id="meter-tip"></div>
 </div>
 
 <!-- 4 person cards -->
@@ -479,6 +597,16 @@ const db  = getDatabase(app);
 const LIMIT = 850;
 const SLOTS = ['slot1','slot2','slot3','slot4'];
 const SLOT_LABELS = ['Traveler 1','Traveler 2','Traveler 3','Traveler 4'];
+
+// Per-traveler identity colors (fixed order; contrast-checked against the dark surface).
+// `main` marks the traveler everywhere; `tint` is a lighter step of the same hue for
+// the gear half of the body/gear split bar.
+const SLOT_COLORS = {
+  slot1: { main:'#3987e5', tint:'#86b6ef' },  // blue
+  slot2: { main:'#199e70', tint:'#5fcda2' },  // aqua
+  slot3: { main:'#c98500', tint:'#edb84d' },  // yellow
+  slot4: { main:'#008300', tint:'#4fae4f' },  // green
+};
 
 const DEFAULT_GEAR = [
   { id:'g01', name:'Clothes',            weight:3.0,  included:true },
@@ -541,30 +669,89 @@ function setIfNotFocused(id, value) {
 
 function renderMeter() {
   const total = grandTotal();
-  const pct   = Math.min(100, (total / LIMIT) * 100);
+  const pct   = (total / LIMIT) * 100;
   const rem   = LIMIT - total;
 
-  let color, statusText, statusColor;
+  // Per-traveler segments. If over the limit, scale everything to fit the track
+  // so proportions stay honest; the limit line + striped over-zone mark what's off the scale.
+  const over  = total > LIMIT;
+  const scale = over ? LIMIT / total : 1;
+  const track = document.getElementById('meter-track');
+  track.classList.toggle('over', over);
+  let trackHtml = SLOTS.map(id => {
+    const p = personTotal(members[id]);
+    if (p <= 0) return '';
+    const w = (p / LIMIT) * 100 * scale;
+    return `<div class="meter-seg" id="mseg-${id}" style="width:${w}%;background:${SLOT_COLORS[id].main}"></div>`;
+  }).join('');
+  if (over) {
+    const limitPct = (LIMIT / total) * 100;
+    trackHtml += `<div class="over-zone" style="left:${limitPct}%"></div>` +
+                 `<div class="limit-line" style="left:${limitPct}%"></div>`;
+  }
+  track.innerHTML = trackHtml;
+
+  // Over-limit banner
+  const banner = document.getElementById('over-banner');
+  banner.classList.toggle('show', over);
+  if (over) {
+    document.getElementById('ob-title').textContent = `OFF THE SCALE — ${fmt(total - LIMIT)} LBS OVER`;
+    document.getElementById('ob-sub').textContent =
+      `The plane lifts 850 lbs. You're asking it to lift ${fmt(total)}. Cut ${fmt(total - LIMIT)} lbs of gear before wheels up.`;
+  }
+
+  // Hover tooltip per segment
+  const tip = document.getElementById('meter-tip');
+  const wrap = tip.parentElement;
+  SLOTS.forEach(id => {
+    const seg = document.getElementById(`mseg-${id}`);
+    if (!seg) return;
+    seg.addEventListener('mouseenter', () => {
+      const p = personTotal(members[id]);
+      const name = (members[id]?.name || '').trim() || SLOT_LABELS[SLOTS.indexOf(id)];
+      const share = total > 0 ? Math.round((p / total) * 100) : 0;
+      tip.textContent = `${name} — ${fmt(p)} lbs (${share}% of load)`;
+      const segR = seg.getBoundingClientRect(), wrapR = wrap.getBoundingClientRect();
+      tip.style.left = (segR.left - wrapR.left + segR.width / 2) + 'px';
+      tip.style.top  = (segR.top - wrapR.top) + 'px';
+      tip.style.opacity = '1';
+    });
+    seg.addEventListener('mouseleave', () => { tip.style.opacity = '0'; });
+  });
+
+  // Legend: identity dot + name + weight, click scrolls to the card
+  document.getElementById('meter-legend').innerHTML = SLOTS.map((id, i) => {
+    const name = esc((members[id]?.name || '').trim() || SLOT_LABELS[i]);
+    return `<button class="legend-item" onclick="document.getElementById('card-${id}').scrollIntoView({behavior:'smooth',block:'center'})">
+      <span class="legend-dot" style="background:${SLOT_COLORS[id].main}"></span>
+      <span class="legend-name">${name}</span>
+      <span class="legend-lbs">${fmt(personTotal(members[id]))} lbs</span>
+    </button>`;
+  }).join('');
+
+  let statusText, statusColor;
   if (pct >= 100) {
-    color = '#dc2626'; statusColor = 'var(--danger)';
+    statusColor = 'var(--danger)';
     statusText = `⚠ ${fmt(Math.abs(rem))} lbs OVER the limit`;
   } else if (pct >= 95) {
-    color = '#f97316'; statusColor = '#f97316';
-    statusText = `${fmt(rem)} lbs remaining — cutting it close`;
+    statusColor = '#f97316';
+    statusText = `⚠ ${fmt(rem)} lbs remaining — cutting it close`;
   } else if (pct >= 80) {
-    color = 'var(--warn)'; statusColor = 'var(--warn)';
+    statusColor = 'var(--warn)';
     statusText = `${fmt(rem)} lbs remaining`;
   } else {
-    color = 'var(--ok)'; statusColor = 'var(--ok)';
+    statusColor = 'var(--ok)';
     statusText = `${fmt(rem)} lbs remaining`;
   }
 
-  document.getElementById('meter-fill').style.width      = `${pct}%`;
-  document.getElementById('meter-fill').style.background = color;
-  document.getElementById('meter-numbers').textContent   = `${fmt(total)} / ${LIMIT} lbs`;
+  const nums = document.getElementById('meter-numbers');
+  nums.textContent = `${over ? '⚠ ' : ''}${fmt(total)} / ${LIMIT} lbs`;
+  nums.style.color = over ? 'var(--danger)' : 'var(--text)';
+  nums.style.fontWeight = over ? '700' : '400';
   const status = document.getElementById('meter-status');
   status.textContent = statusText;
   status.style.color = statusColor;
+  status.style.display = over ? 'none' : '';  // banner carries the over-limit message
 }
 
 // ── Render one card ─────────────────────────────────────────────
@@ -576,14 +763,25 @@ function renderCard(slotId, member) {
   const pTotal   = personTotal(member);
   const gTotal   = gearTotal(member);
   const bw       = Number(member.bodyWeight) || 0;
-  const badgeCol = pTotal > 250 ? 'var(--warn)' : 'var(--accent)';
 
-  // Update non-input elements
+  // Badge text stays in the text color; heavy load flagged with an icon, not color-alone.
   const badge = document.getElementById(`ptotal-${slotId}`);
   if (badge) {
-    badge.textContent = `${fmt(pTotal)} lbs`;
-    badge.style.color = badgeCol;
-    badge.style.borderColor = badgeCol;
+    badge.textContent = `${pTotal > 250 ? '⚠ ' : ''}${fmt(pTotal)} lbs`;
+    badge.style.borderColor = pTotal > 250 ? 'var(--warn)' : 'var(--border)';
+  }
+
+  // Body vs gear split bar (two steps of this traveler's hue)
+  const split = document.getElementById(`split-${slotId}`);
+  if (split) {
+    const c = SLOT_COLORS[slotId];
+    if (pTotal > 0) {
+      split.innerHTML =
+        `<div class="split-seg" style="width:${(bw / pTotal) * 100}%;background:${c.main}" title="Body ${fmt(bw)} lbs"></div>` +
+        `<div class="split-seg" style="width:${(gTotal / pTotal) * 100}%;background:${c.tint}" title="Gear ${fmt(gTotal)} lbs"></div>`;
+    } else {
+      split.innerHTML = '';
+    }
   }
 
   const gSub = document.getElementById(`gsub-${slotId}`);
@@ -659,12 +857,15 @@ function buildCard(slotId, label) {
   const card = document.getElementById(`card-${slotId}`);
   card.innerHTML = `
     <div class="card-header">
+      <span class="person-dot" style="background:${SLOT_COLORS[slotId].main}"></span>
       <input type="text" class="person-name-input" id="name-${slotId}"
              placeholder="${label}"
              onblur="window._saveName('${slotId}',this.value)"
              onkeydown="if(event.key==='Enter')this.blur()">
       <div class="person-total-badge" id="ptotal-${slotId}">0.0 lbs</div>
     </div>
+
+    <div class="split-bar" id="split-${slotId}"></div>
 
     <div class="bw-row">
       <span class="bw-label">Body weight</span>
@@ -710,24 +911,42 @@ function render() {
 
 // ── Firebase write helpers ───────────────────────────────────────
 
+// Refresh a card's computed displays (badge, gear subtotal, summary, split bar) + the meter.
+function refreshCardStats(slotId) {
+  const pTotal = personTotal(members[slotId]);
+  const gTotal = gearTotal(members[slotId]);
+  const bw     = Number(members[slotId]?.bodyWeight) || 0;
+  const badge   = document.getElementById(`ptotal-${slotId}`);
+  const gSub    = document.getElementById(`gsub-${slotId}`);
+  const summary = document.getElementById(`summary-${slotId}`);
+  const split   = document.getElementById(`split-${slotId}`);
+  if (badge) {
+    badge.textContent = `${pTotal > 250 ? '⚠ ' : ''}${fmt(pTotal)} lbs`;
+    badge.style.borderColor = pTotal > 250 ? 'var(--warn)' : 'var(--border)';
+  }
+  if (gSub)    gSub.textContent = `${fmt(gTotal)} lbs`;
+  if (summary) summary.textContent = `Body ${fmt(bw)} lbs · Gear ${fmt(gTotal)} lbs · Total ${fmt(pTotal)} lbs`;
+  if (split) {
+    const c = SLOT_COLORS[slotId];
+    split.innerHTML = pTotal > 0
+      ? `<div class="split-seg" style="width:${(bw / pTotal) * 100}%;background:${c.main}" title="Body ${fmt(bw)} lbs"></div>` +
+        `<div class="split-seg" style="width:${(gTotal / pTotal) * 100}%;background:${c.tint}" title="Gear ${fmt(gTotal)} lbs"></div>`
+      : '';
+  }
+  renderMeter();
+}
+
 window._saveName = (slotId, val) => {
+  if (members[slotId]) members[slotId].name = val.trim();
   set(ref(db, `alaska-trip/members/${slotId}/name`), val.trim());
+  renderMeter();  // legend shows the name
 };
 
 window._saveBodyWeight = (slotId, val) => {
   const w = parseFloat(val) || 0;
   members[slotId].bodyWeight = w;
   set(ref(db, `alaska-trip/members/${slotId}/bodyWeight`), w);
-  renderMeter();
-  const badge = document.getElementById(`ptotal-${slotId}`);
-  const summary = document.getElementById(`summary-${slotId}`);
-  const pTotal = personTotal(members[slotId]);
-  if (badge) badge.textContent = `${fmt(pTotal)} lbs`;
-  if (summary) {
-    const gTotal = gearTotal(members[slotId]);
-    const bw = Number(members[slotId].bodyWeight) || 0;
-    summary.textContent = `Body ${fmt(bw)} lbs · Gear ${fmt(gTotal)} lbs · Total ${fmt(pTotal)} lbs`;
-  }
+  refreshCardStats(slotId);
 };
 
 window._toggleGear = (slotId, gearId, included) => {
@@ -737,19 +956,7 @@ window._toggleGear = (slotId, gearId, included) => {
   set(ref(db, `alaska-trip/members/${slotId}/gear/${gearId}/included`), included);
   const row = document.getElementById(`grow-${slotId}-${gearId}`);
   if (row) row.classList.toggle('excluded', !included);
-  // Update totals
-  const pTotal = personTotal(members[slotId]);
-  const gTotal = gearTotal(members[slotId]);
-  const badge = document.getElementById(`ptotal-${slotId}`);
-  const gSub  = document.getElementById(`gsub-${slotId}`);
-  const summary = document.getElementById(`summary-${slotId}`);
-  if (badge)   badge.textContent   = `${fmt(pTotal)} lbs`;
-  if (gSub)    gSub.textContent    = `${fmt(gTotal)} lbs`;
-  if (summary) {
-    const bw = Number(members[slotId].bodyWeight) || 0;
-    summary.textContent = `Body ${fmt(bw)} lbs · Gear ${fmt(gTotal)} lbs · Total ${fmt(pTotal)} lbs`;
-  }
-  renderMeter();
+  refreshCardStats(slotId);
 };
 
 window._saveGearName = (slotId, gearId, val) => {
@@ -762,37 +969,14 @@ window._saveGearWeight = (slotId, gearId, val) => {
   const w = Math.max(0, parseFloat(val) || 0);
   if (members[slotId]?.gear?.[gearId]) members[slotId].gear[gearId].weight = w;
   set(ref(db, `alaska-trip/members/${slotId}/gear/${gearId}/weight`), w);
-  // Update totals immediately
-  const pTotal = personTotal(members[slotId]);
-  const gTotal = gearTotal(members[slotId]);
-  const badge   = document.getElementById(`ptotal-${slotId}`);
-  const gSub    = document.getElementById(`gsub-${slotId}`);
-  const summary = document.getElementById(`summary-${slotId}`);
-  if (badge)   badge.textContent = `${fmt(pTotal)} lbs`;
-  if (gSub)    gSub.textContent  = `${fmt(gTotal)} lbs`;
-  if (summary) {
-    const bw = Number(members[slotId].bodyWeight) || 0;
-    summary.textContent = `Body ${fmt(bw)} lbs · Gear ${fmt(gTotal)} lbs · Total ${fmt(pTotal)} lbs`;
-  }
-  renderMeter();
+  refreshCardStats(slotId);
 };
 
 window._deleteGear = (slotId, gearId) => {
   if (members[slotId]?.gear) delete members[slotId].gear[gearId];
   remove(ref(db, `alaska-trip/members/${slotId}/gear/${gearId}`));
   renderGearList(slotId, members[slotId]?.gear || {});
-  const pTotal = personTotal(members[slotId]);
-  const gTotal = gearTotal(members[slotId]);
-  const badge   = document.getElementById(`ptotal-${slotId}`);
-  const gSub    = document.getElementById(`gsub-${slotId}`);
-  const summary = document.getElementById(`summary-${slotId}`);
-  if (badge)   badge.textContent = `${fmt(pTotal)} lbs`;
-  if (gSub)    gSub.textContent  = `${fmt(gTotal)} lbs`;
-  if (summary) {
-    const bw = Number(members[slotId].bodyWeight) || 0;
-    summary.textContent = `Body ${fmt(bw)} lbs · Gear ${fmt(gTotal)} lbs · Total ${fmt(pTotal)} lbs`;
-  }
-  renderMeter();
+  refreshCardStats(slotId);
 };
 
 window._addGear = (slotId) => {
@@ -813,18 +997,7 @@ window._addGear = (slotId) => {
   nameEl.focus();
 
   renderGearList(slotId, members[slotId].gear);
-  const pTotal = personTotal(members[slotId]);
-  const gTotal = gearTotal(members[slotId]);
-  const badge   = document.getElementById(`ptotal-${slotId}`);
-  const gSub    = document.getElementById(`gsub-${slotId}`);
-  const summary = document.getElementById(`summary-${slotId}`);
-  if (badge)   badge.textContent = `${fmt(pTotal)} lbs`;
-  if (gSub)    gSub.textContent  = `${fmt(gTotal)} lbs`;
-  if (summary) {
-    const bw = Number(members[slotId].bodyWeight) || 0;
-    summary.textContent = `Body ${fmt(bw)} lbs · Gear ${fmt(gTotal)} lbs · Total ${fmt(pTotal)} lbs`;
-  }
-  renderMeter();
+  refreshCardStats(slotId);
 };
 
 // ── Utility ──────────────────────────────────────────────────────

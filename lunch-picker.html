@@ -192,6 +192,32 @@
       white-space: nowrap;
     }
 
+    /* ── Name input ── */
+    #name-row {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+    #name-row label { font-size: 0.78rem; color: #64748b; white-space: nowrap; }
+    #voter-name {
+      flex: 1;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 7px;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      padding: 5px 10px;
+      outline: none;
+    }
+    #voter-name:focus { border-color: #fb923c; }
+    #voter-name.voted { border-color: #16a34a; color: #86efac; }
+
     .vote-btn {
       padding: 6px 14px;
       background: #fb923c;
@@ -208,6 +234,16 @@
     .vote-btn:hover  { background: #ea7c28; }
     .vote-btn:active { transform: scale(0.95); }
     .vote-btn:disabled { background: #334155; color: #64748b; cursor: default; }
+    .vote-btn.my-vote { background: #16a34a; cursor: default; }
+    .vote-btn.my-vote:hover { background: #16a34a; }
+
+    /* ── Voter name chips ── */
+    .voter-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+    .voter-chip {
+      font-size: 0.7rem; padding: 2px 8px; border-radius: 10px;
+      background: #0f172a; color: #64748b; border: 1px solid #334155;
+    }
+    .voter-chip.is-me { border-color: #fb923c; color: #fb923c; }
 
     .vote-count {
       font-size: 0.82rem;
@@ -278,6 +314,10 @@
   </div>
 
   <div id="results-panel">
+    <div id="name-row">
+      <label for="voter-name">Your name:</label>
+      <input id="voter-name" type="text" placeholder="Enter your name to vote…" maxlength="30" autocomplete="off">
+    </div>
     <button id="pick-btn">🎲 Pick 3 for Us</button>
     <p id="picks-label" style="display:none">This week's picks</p>
     <p id="picked-at"></p>
@@ -361,6 +401,13 @@
   const pickedAtEl  = document.getElementById('picked-at');
   const resetBtn    = document.getElementById('reset-btn');
   const listEl      = document.getElementById('restaurant-list');
+  const voterNameEl = document.getElementById('voter-name');
+
+  // ── Persist name in localStorage ──
+  voterNameEl.value = localStorage.getItem('lunch-voter-name') || '';
+  voterNameEl.addEventListener('input', () => {
+    localStorage.setItem('lunch-voter-name', voterNameEl.value.trim());
+  });
 
   // ── Render static restaurant list ──
   RESTAURANTS.forEach(name => {
@@ -411,8 +458,8 @@
         return;
       }
 
-      const picks = data.picks;
-      const votes = data.votes || {};
+      const picks  = data.picks;
+      const voters = data.voters || {};
 
       emptyMsg.style.display   = 'none';
       picksLabel.style.display = 'block';
@@ -424,7 +471,7 @@
         pickedAtEl.textContent = `Picked ${d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' })} at ${d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' })}`;
       }
 
-      renderPicks(picks, votes);
+      renderPicks(picks, voters);
     }, (err) => {
       statusBar.className = 'error';
       statusBar.textContent = '⚠ Firebase connection error — check your config and database rules.';
@@ -433,17 +480,43 @@
   }
 
   // ── Render pick cards ──
-  function renderPicks(picks, votes) {
+  function renderPicks(picks, voters) {
     resultsEl.innerHTML = '';
 
-    const totalVotes = picks.reduce((sum, p) => sum + (votes[sanitize(p)] || 0), 0);
-    const maxVotes   = Math.max(...picks.map(p => votes[sanitize(p)] || 0));
+    const myNameKey = sanitize(voterNameEl.value.trim());
+    const myPick    = myNameKey ? (voters[myNameKey] || null) : null;
+    const hasVoted  = myPick !== null;
+
+    // Count votes per pick from voters object
+    function votersFor(key) {
+      return Object.entries(voters).filter(([,v]) => v === key);
+    }
+
+    const allKeys    = [...picks.map(sanitize), 'i_brought'];
+    const totalVotes = allKeys.reduce((sum, k) => sum + votersFor(k).length, 0);
+    const maxVotes   = Math.max(...allKeys.map(k => votersFor(k).length));
+
+    // Update name input styling
+    voterNameEl.classList.toggle('voted', hasVoted);
 
     picks.forEach((name, i) => {
-      const key      = sanitize(name);
-      const count    = votes[key] || 0;
-      const pct      = totalVotes === 0 ? 0 : (count / totalVotes) * 100;
-      const isWinner = totalVotes > 0 && count === maxVotes;
+      const key       = sanitize(name);
+      const whoVoted  = votersFor(key);
+      const count     = whoVoted.length;
+      const pct       = totalVotes === 0 ? 0 : (count / totalVotes) * 100;
+      const isWinner  = totalVotes > 0 && count === maxVotes;
+      const isMyPick  = myPick === key;
+
+      const chipHTML = whoVoted.map(([vKey]) => {
+        const isMe = vKey === myNameKey;
+        return `<span class="voter-chip${isMe?' is-me':''}">${vKey}</span>`;
+      }).join('');
+
+      let btnLabel = 'Vote';
+      let btnClass = 'vote-btn';
+      let btnDisabled = '';
+      if (isMyPick)       { btnLabel = '✓ My vote'; btnClass += ' my-vote'; btnDisabled = 'disabled'; }
+      else if (hasVoted)  { btnDisabled = 'disabled'; }
 
       const card = document.createElement('div');
       card.className = 'result-card' + (isWinner ? ' winner' : '');
@@ -451,31 +524,44 @@
         <div class="card-top">
           <span class="medal">${medals[i]}</span>
           <span class="result-name">${name}</span>
-          <button class="vote-btn" data-key="${key}">Vote</button>
+          <button class="${btnClass}" data-key="${key}" ${btnDisabled}>${btnLabel}</button>
           <span class="vote-count">${count} ${count === 1 ? 'vote' : 'votes'}</span>
         </div>
         <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+        ${chipHTML ? `<div class="voter-chips">${chipHTML}</div>` : ''}
       `;
-      card.querySelector('.vote-btn').addEventListener('click', () => castVote(key));
+      if (!btnDisabled) card.querySelector('.vote-btn').addEventListener('click', () => castVote(key));
       resultsEl.appendChild(card);
     });
 
     // ── "I brought" card ──
-    const broughtCount = votes['i_brought'] || 0;
-    const broughtPct   = totalVotes + broughtCount === 0 ? 0 : (broughtCount / (totalVotes + broughtCount)) * 100;
-    const broughtCard  = document.createElement('div');
+    const broughtVoters = votersFor('i_brought');
+    const broughtCount  = broughtVoters.length;
+    const broughtPct    = totalVotes === 0 ? 0 : (broughtCount / totalVotes) * 100;
+    const isMyBrought   = myPick === 'i_brought';
+    const broughtChips  = broughtVoters.map(([vKey]) =>
+      `<span class="voter-chip${vKey===myNameKey?' is-me':''}">${vKey}</span>`
+    ).join('');
+
+    let broughtBtnLabel = 'Vote';
+    let broughtDisabled = '';
+    if (isMyBrought)    { broughtBtnLabel = '✓ My vote'; broughtDisabled = 'disabled'; }
+    else if (hasVoted)  { broughtDisabled = 'disabled'; }
+
+    const broughtCard = document.createElement('div');
     broughtCard.className = 'result-card';
     broughtCard.style.borderColor = '#334155';
     broughtCard.innerHTML = `
       <div class="card-top">
         <span class="medal">👎👎</span>
         <span class="result-name">I brought</span>
-        <button class="vote-btn" style="background:#475569;">Vote</button>
+        <button class="vote-btn${isMyBrought?' my-vote':''}" style="${isMyBrought?'':'background:#475569;'}" ${broughtDisabled}>${broughtBtnLabel}</button>
         <span class="vote-count">${broughtCount} ${broughtCount === 1 ? 'vote' : 'votes'}</span>
       </div>
       <div class="bar-track"><div class="bar-fill" style="width:${broughtPct}%; background:#475569;"></div></div>
+      ${broughtChips ? `<div class="voter-chips">${broughtChips}</div>` : ''}
     `;
-    broughtCard.querySelector('.vote-btn').addEventListener('click', () => castVote('i_brought'));
+    if (!broughtDisabled) broughtCard.querySelector('.vote-btn').addEventListener('click', () => castVote('i_brought'));
     resultsEl.appendChild(broughtCard);
   }
 
@@ -488,14 +574,10 @@
     const shuffled = [...RESTAURANTS].sort(() => Math.random() - 0.5);
     const picks    = shuffled.slice(0, 3);
 
-    const votes = {};
-    picks.forEach(p => votes[sanitize(p)] = 0);
-    votes['i_brought'] = 0;
-
     try {
       await set(sessionRef, {
         picks,
-        votes,
+        voters:   {},
         pickedAt: Date.now()
       });
     } catch (err) {
@@ -508,22 +590,28 @@
     pickBtn.textContent = '🎲 Pick 3 for Us';
   });
 
-  // ── Vote (atomic increment) ──
+  // ── Vote ──
   async function castVote(key) {
-    const voteRef = ref(db, `lunch-picker/current/votes/${key}`);
-    await runTransaction(voteRef, current => (current || 0) + 1);
+    const name = voterNameEl.value.trim();
+    if (!name) {
+      voterNameEl.focus();
+      voterNameEl.style.borderColor = '#f87171';
+      setTimeout(() => voterNameEl.style.borderColor = '', 1500);
+      return;
+    }
+    const nameKey  = sanitize(name);
+    const voterRef = ref(db, `lunch-picker/current/voters/${nameKey}`);
+    // Only write if they haven't voted yet (checked server-side with transaction)
+    await runTransaction(voterRef, current => {
+      if (current !== null) return; // already voted — abort
+      return key;
+    });
   }
 
   // ── Reset votes ──
   resetBtn.addEventListener('click', async () => {
-    const snapshot = await new Promise(resolve => onValue(sessionRef, resolve, { onlyOnce: true }));
-    const data = snapshot.val();
-    if (!data || !data.picks) return;
-
-    const votes = {};
-    data.picks.forEach(p => votes[sanitize(p)] = 0);
-    votes['i_brought'] = 0;
-    await set(ref(db, 'lunch-picker/current/votes'), votes);
+    if (!confirm('Reset all votes? Everyone will be able to vote again.')) return;
+    await set(ref(db, 'lunch-picker/current/voters'), {});
   });
 
   // Firebase keys can't have . # $ [ ]
