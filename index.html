@@ -18,6 +18,8 @@
       --muted: #888;
     }
 
+    html { scroll-behavior: smooth; }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
@@ -80,24 +82,63 @@
       line-height: 1.6;
     }
 
+    /* ── Jump nav ── */
+    .jump-nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+    .jump-chip {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-decoration: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.45rem 0.95rem;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .jump-chip:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
     /* ── Grid ── */
     .grid-section {
       flex: 1;
       max-width: 1000px;
       width: 100%;
       margin: 0 auto;
-      padding: 1rem 2rem 5rem;
+      padding: 1rem 2rem 4rem;
     }
 
+    .app-section { margin-bottom: 3rem; scroll-margin-top: 1.5rem; }
+    .app-section:last-child { margin-bottom: 0; }
+
     .section-label {
-      font-size: 0.7rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      font-size: 0.72rem;
       font-weight: 600;
       letter-spacing: 0.18em;
       text-transform: uppercase;
-      color: var(--muted);
+      color: var(--text);
       margin-bottom: 1.25rem;
       padding-bottom: 0.6rem;
       border-bottom: 1px solid var(--border);
+    }
+    .section-label .sec-icon { font-size: 1rem; letter-spacing: 0; }
+    .section-label .sec-count {
+      margin-left: auto;
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
     }
 
     .grid {
@@ -195,10 +236,18 @@
     <h1>Razor's Edge</h1>
     <div class="hero-rule"></div>
     <p class="hero-sub">A collection of tools, games, and trackers built for everyday use.</p>
+    <nav class="jump-nav">
+      <a class="jump-chip" href="#outdoors">🏔️ Parks &amp; Outdoors</a>
+      <a class="jump-chip" href="#family">🎈 Family &amp; Fun</a>
+      <a class="jump-chip" href="#games">🏆 Games &amp; Sports</a>
+      <a class="jump-chip" href="#home">🏠 Home, Money &amp; Tools</a>
+    </nav>
   </div>
 
   <div class="grid-section">
-    <p class="section-label">All Projects</p>
+
+    <section class="app-section" id="outdoors">
+    <p class="section-label"><span class="sec-icon">🏔️</span> Parks &amp; Outdoors <span class="sec-count">5 apps</span></p>
     <div class="grid">
 
       <a class="card" href="national-parks.html" style="--card-accent: #7eb8a0;">
@@ -229,12 +278,89 @@
         <span class="card-arrow">↗</span>
       </a>
 
+      <a class="card" href="alaska-packer.html" style="--card-accent: #6abf8a;">
+        <span class="card-icon">🛩️</span>
+        <div class="card-title">Alaska Fly-In Packer</div>
+        <div class="card-desc">4-person bush plane weight tracker. 850 lb limit includes bodies and gear. Enter your weight, check off your gear, and watch the live total in real time.</div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+    </div>
+    </section>
+
+    <section class="app-section" id="family">
+    <p class="section-label"><span class="sec-icon">🎈</span> Family &amp; Fun <span class="sec-count">5 apps</span></p>
+    <div class="grid">
+
+      <a class="card" href="summer-planner.html" style="--card-accent: #FF7043;">
+        <span class="card-icon">☀️</span>
+        <div class="card-title">Summer Plans 2026</div>
+        <div class="card-desc">Shared availability planner for June–August. Add your name, mark the days you're free, and see the top overlap days across the whole group.</div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+      <a class="card" href="screen-time.html" style="--card-accent: #FFB23E;">
+        <span class="card-icon">⏱️</span>
+        <div class="card-title">Road Trip Screen Time</div>
+        <div class="card-desc">Per-kid screen-time timers with reward and penalty minutes and an activity log. Timer or stopwatch style, synced live across every device on the trip.</div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+      <a class="card" href="family-dinner.html" style="--card-accent: #818cf8;">
+        <span class="card-icon">🍽️</span>
+        <div class="card-title">Family Dinner Picker</div>
+        <div class="card-desc">Can't agree on takeout? Spin for 3 options and vote for tonight's dinner.</div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+      <a class="card" href="lunch-picker.html" style="--card-accent: #c87a6e;">
+        <span class="card-icon">🍜</span>
+        <div class="card-title">Friday Lunch Picker</div>
+        <div class="card-desc">Can't decide where to eat? Let the wheel decide. Spin for a random lunch spot.</div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+      <a class="card" href="doll-dressup.html" style="--card-accent: #ff69b4;">
+        <span class="card-icon">🎀</span>
+        <div class="card-title">Doll Designer</div>
+        <div class="card-desc">Dress-up doll studio with outfits, hairstyles, skin tones, scenes, and accessories. Hit Surprise for a random look and save your creation as a picture.</div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+    </div>
+    </section>
+
+    <section class="app-section" id="games">
+    <p class="section-label"><span class="sec-icon">🏆</span> Games &amp; Sports <span class="sec-count">3 apps</span></p>
+    <div class="grid">
+
+      <a class="card" href="worldcup-pool.html" style="--card-accent: #ffd600;">
+        <span class="card-icon">🏆</span>
+        <div class="card-title">World Cup 2026 Pool</div>
+        <div class="card-desc">Pick group finishers, knockout winners, and champion. Live leaderboard updates as results sync in from ESPN.</div>
+        <span class="card-arrow">↗</span>
+      </a>
+
       <a class="card" href="soccer-tracker.html" style="--card-accent: #7fff7f;">
         <span class="card-icon">⚽</span>
         <div class="card-title">Soccer Match Tracker</div>
         <div class="card-desc">Live match clock, player time tracking, substitution log, goals, and season stats. Shared in real time across all coaches via Firebase.</div>
         <span class="card-arrow">↗</span>
       </a>
+
+      <a class="card" href="geography-game.html" style="--card-accent: #60a5fa;">
+        <span class="card-icon">🌍</span>
+        <div class="card-title">Guess the Country</div>
+        <div class="card-desc">Identify the country from just its outline. How many can you get in a row?</div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+    </div>
+    </section>
+
+    <section class="app-section" id="home">
+    <p class="section-label"><span class="sec-icon">🏠</span> Home, Money &amp; Tools <span class="sec-count">5 apps</span></p>
+    <div class="grid">
 
       <a class="card" href="bathroom-designer.html" style="--card-accent: #2dd4bf;">
         <span class="card-icon">🚿</span>
@@ -264,27 +390,6 @@
         <span class="card-arrow">↗</span>
       </a>
 
-      <a class="card" href="summer-planner.html" style="--card-accent: #FF7043;">
-        <span class="card-icon">☀️</span>
-        <div class="card-title">Summer Plans 2026</div>
-        <div class="card-desc">Shared availability planner for June–August. Add your name, mark the days you're free, and see the top overlap days across the whole group.</div>
-        <span class="card-arrow">↗</span>
-      </a>
-
-      <a class="card" href="alaska-packer.html" style="--card-accent: #6abf8a;">
-        <span class="card-icon">🛩️</span>
-        <div class="card-title">Alaska Fly-In Packer</div>
-        <div class="card-desc">4-person bush plane weight tracker. 850 lb limit includes bodies and gear. Enter your weight, check off your gear, and watch the live total in real time.</div>
-        <span class="card-arrow">↗</span>
-      </a>
-
-      <a class="card" href="lunch-picker.html" style="--card-accent: #c87a6e;">
-        <span class="card-icon">🍜</span>
-        <div class="card-title">Friday Lunch Picker</div>
-        <div class="card-desc">Can't decide where to eat? Let the wheel decide. Spin for a random lunch spot.</div>
-        <span class="card-arrow">↗</span>
-      </a>
-
       <a class="card" href="call-recorder.html" style="--card-accent: #667eea;">
         <span class="card-icon">📞</span>
         <div class="card-title">Call Recorder</div>
@@ -292,31 +397,12 @@
         <span class="card-arrow">↗</span>
       </a>
 
-      <a class="card" href="family-dinner.html" style="--card-accent: #818cf8;">
-        <span class="card-icon">🍽️</span>
-        <div class="card-title">Family Dinner Picker</div>
-        <div class="card-desc">Can't agree on takeout? Spin for 3 options and vote for tonight's dinner.</div>
-        <span class="card-arrow">↗</span>
-      </a>
-
-      <a class="card" href="screen-time.html" style="--card-accent: #FFB23E;">
-        <span class="card-icon">⏱️</span>
-        <div class="card-title">Road Trip Screen Time</div>
-        <div class="card-desc">Per-kid screen-time timers with reward and penalty minutes and an activity log. Synced in real time across every device on the trip via Firebase.</div>
-        <span class="card-arrow">↗</span>
-      </a>
-
-      <a class="card" href="worldcup-pool.html" style="--card-accent: #ffd600;">
-        <span class="card-icon">🏆</span>
-        <div class="card-title">World Cup 2026 Pool</div>
-        <div class="card-desc">Pick group finishers, knockout winners, and champion. Live leaderboard updates as the commissioner enters tournament results.</div>
-        <span class="card-arrow">↗</span>
-      </a>
-
     </div>
+    </section>
+
   </div>
 
-  <footer>Razor's Edge</footer>
+  <footer>Razor's Edge · 18 apps and counting</footer>
 
 </body>
 </html>
