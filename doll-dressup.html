@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✨ Dress-Up Doll ✨</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --skin: #F5C2A0;
+  --skin-shade: #E8A882;
+  --skin-line: #C8956C;
+}
+body {
+  font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+  background: linear-gradient(135deg, #ffd6e8 0%, #d6e8ff 50%, #d6ffd6 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 6px;
+}
+h1 {
+  font-size: 1.8em;
+  color: #d63384;
+  text-shadow: 2px 2px 0 #ffb6d9;
+  margin-bottom: 10px;
+  letter-spacing: 2px;
+}
+.game-container {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 820px;
+  width: 100%;
+}
+.doll-panel {
+  background: white;
+  border-radius: 24px;
+  border: 4px solid #ffb6d9;
+  padding: 12px;
+  box-shadow: 0 8px 32px rgba(214,51,132,0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.controls-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 250px;
+  max-width: 270px;
+}
+.category-row {
+  background: white;
+  border-radius: 12px;
+  border: 2.5px solid #e0e0e0;
+  padding: 6px 9px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+}
+.category-row.required { border-color: #ff69b4; }
+.cat-icon { font-size: 1.1em; width: 22px; text-align: center; flex-shrink: 0; }
+.cat-name { font-size: 0.72em; font-weight: bold; color: #999; min-width: 62px; flex-shrink: 0; }
+.required .cat-name { color: #d63384; }
+.option-name {
+  flex: 1; font-size: 0.72em; color: #333;
+  text-align: center; background: #f5f5f5;
+  border-radius: 7px; padding: 3px 5px; min-width: 0;
+}
+.nav-btn {
+  background: #ff69b4; color: white; border: none;
+  border-radius: 50%; width: 24px; height: 24px;
+  font-size: 0.8em; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.1s; font-weight: bold; flex-shrink: 0;
+}
+.nav-btn:hover { background: #e55c9e; transform: scale(1.1); }
+.nav-btn:active { transform: scale(0.9); }
+.section-label {
+  font-size: 0.65em; color: #bbb; text-align: center;
+  text-transform: uppercase; letter-spacing: 1px; padding: 3px 0 1px;
+}
+
+/* Action bar */
+.action-row { display: flex; gap: 6px; }
+.action-btn {
+  flex: 1; border: none; border-radius: 12px; padding: 9px 4px;
+  font-family: inherit; font-size: 0.78em; font-weight: bold; color: white;
+  cursor: pointer; transition: transform 0.1s, filter 0.15s;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+}
+.action-btn:hover { filter: brightness(1.08); }
+.action-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
+.action-btn.surprise { background: #9B59B6; }
+.action-btn.save { background: #36C796; }
+.action-btn.reset-btn { background: #FF9EB5; }
+
+/* Skin swatches */
+.swatch-row {
+  background: white; border-radius: 12px; border: 2.5px solid #e0e0e0;
+  padding: 6px 9px; display: flex; align-items: center; gap: 7px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+}
+.swatch {
+  width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid transparent;
+  cursor: pointer; transition: transform 0.1s, border-color 0.15s; padding: 0;
+}
+.swatch:hover { transform: scale(1.15); }
+.swatch.active { border-color: #d63384; transform: scale(1.12); }
+
+/* Doll name */
+.doll-name {
+  font-family: inherit; font-size: 1em; font-weight: bold; color: #d63384;
+  border: none; border-bottom: 2.5px dashed #ffb6d9; background: transparent;
+  text-align: center; width: 160px; margin-top: 8px; padding: 3px;
+}
+.doll-name:focus { outline: none; border-bottom-style: solid; }
+.doll-name::placeholder { color: #f0a8cc; }
+
+/* Change feedback */
+@keyframes doll-pop { 50% { transform: scale(1.025); } }
+.doll-panel svg.pop { animation: doll-pop 0.25s ease; }
+@keyframes doll-wiggle {
+  25% { transform: rotate(-2deg) scale(1.02); }
+  75% { transform: rotate(2deg) scale(1.02); }
+}
+.doll-panel svg.wiggle { animation: doll-wiggle 0.45s ease; }
+</style>
+</head>
+<body>
+
+<h1>✨ Dress-Up Time! ✨</h1>
+
+<div class="game-container">
+  <div class="doll-panel">
+    <svg id="doll" viewBox="0 0 200 420" width="210" height="420" xmlns="http://www.w3.org/2000/svg">
+
+      <!-- LAYER 0: Scene background -->
+      <g id="layer-bg"></g>
+
+      <!-- LAYER 1: Hair Back -->
+      <g id="layer-hair-back"></g>
+
+      <!-- LAYER 2: Body Base (skin) -->
+      <g id="layer-body">
+        <ellipse cx="57" cy="84" rx="9" ry="11" fill="var(--skin)"/>
+        <ellipse cx="143" cy="84" rx="9" ry="11" fill="var(--skin)"/>
+        <ellipse cx="100" cy="80" rx="40" ry="46" fill="var(--skin)"/>
+        <rect x="88" y="122" width="24" height="24" fill="var(--skin)"/>
+        <path d="M60,143 L140,143 L146,260 L54,260 Z" fill="var(--skin)"/>
+        <path d="M60,147 L28,158 L20,252 L48,258 L58,178 Z" fill="var(--skin)"/>
+        <path d="M140,147 L172,158 L180,252 L152,258 L142,178 Z" fill="var(--skin)"/>
+        <ellipse cx="34" cy="260" rx="14" ry="9" fill="var(--skin)"/>
+        <ellipse cx="166" cy="260" rx="14" ry="9" fill="var(--skin)"/>
+        <rect x="67" y="258" width="30" height="130" rx="10" fill="var(--skin)"/>
+        <rect x="103" y="258" width="30" height="130" rx="10" fill="var(--skin)"/>
+        <path d="M67,385 Q65,400 82,404 Q96,406 97,394 L97,385 Z" fill="var(--skin)"/>
+        <path d="M103,385 Q101,400 118,404 Q132,406 133,394 L133,385 Z" fill="var(--skin)"/>
+      </g>
+
+      <!-- LAYER 3: Pants / Skirt -->
+      <g id="layer-bottom"></g>
+
+      <!-- LAYER 4: Shirt -->
+      <g id="layer-shirt"></g>
+
+      <!-- LAYER 5: Jacket -->
+      <g id="layer-jacket"></g>
+
+      <!-- LAYER 6: Shoes -->
+      <g id="layer-shoes"></g>
+
+      <!-- LAYER 7: Necklace -->
+      <g id="layer-necklace"></g>
+
+      <!-- LAYER 8: Bracelet -->
+      <g id="layer-bracelet"></g>
+
+      <!-- LAYER 9: Face Details -->
+      <g id="layer-face">
+        <ellipse cx="57" cy="84" rx="5" ry="7" fill="var(--skin-shade)" opacity="0.45"/>
+        <ellipse cx="143" cy="84" rx="5" ry="7" fill="var(--skin-shade)" opacity="0.45"/>
+        <ellipse cx="85" cy="76" rx="8" ry="9" fill="white"/>
+        <ellipse cx="115" cy="76" rx="8" ry="9" fill="white"/>
+        <ellipse cx="86" cy="77" rx="5" ry="6" fill="#4A2C10"/>
+        <ellipse cx="116" cy="77" rx="5" ry="6" fill="#4A2C10"/>
+        <ellipse cx="87" cy="76" rx="2" ry="2.5" fill="black"/>
+        <ellipse cx="117" cy="76" rx="2" ry="2.5" fill="black"/>
+        <circle cx="89" cy="74" r="1.5" fill="white"/>
+        <circle cx="119" cy="74" r="1.5" fill="white"/>
+        <line x1="78" y1="70" x2="74" y2="66" stroke="#222" stroke-width="1.2"/>
+        <line x1="83" y1="68" x2="82" y2="64" stroke="#222" stroke-width="1.2"/>
+        <line x1="88" y1="67" x2="89" y2="64" stroke="#222" stroke-width="1.2"/>
+        <line x1="93" y1="68" x2="95" y2="65" stroke="#222" stroke-width="1.2"/>
+        <line x1="107" y1="68" x2="105" y2="65" stroke="#222" stroke-width="1.2"/>
+        <line x1="112" y1="67" x2="111" y2="64" stroke="#222" stroke-width="1.2"/>
+        <line x1="117" y1="68" x2="118" y2="64" stroke="#222" stroke-width="1.2"/>
+        <line x1="122" y1="70" x2="126" y2="66" stroke="#222" stroke-width="1.2"/>
+        <path d="M77,65 Q85,61 93,64" stroke="#6B4C3B" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M107,64 Q115,61 123,65" stroke="#6B4C3B" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M98,90 Q100,95 102,90" stroke="var(--skin-line)" stroke-width="1.5" fill="none"/>
+        <path id="base-mouth" d="M88,106 Q100,117 112,106" stroke="#D4738A" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        <ellipse cx="73" cy="96" rx="12" ry="7" fill="#FFB0C0" opacity="0.3"/>
+        <ellipse cx="127" cy="96" rx="12" ry="7" fill="#FFB0C0" opacity="0.3"/>
+      </g>
+
+      <!-- LAYER 10: Earrings -->
+      <g id="layer-earrings"></g>
+
+      <!-- LAYER 11: Makeup -->
+      <g id="layer-makeup"></g>
+
+      <!-- LAYER 12: Hair Front -->
+      <g id="layer-hair-front"></g>
+
+      <!-- LAYER 12.5: Glasses (over bangs, under hat) -->
+      <g id="layer-glasses"></g>
+
+      <!-- LAYER 13: Hat / Headpiece -->
+      <g id="layer-hat"></g>
+
+    </svg>
+    <input class="doll-name" id="doll-name" placeholder="Name me! ✏️" maxlength="20">
+  </div>
+
+  <div class="controls-panel">
+    <div class="action-row">
+      <button class="action-btn surprise" onclick="surpriseMe()">🎲 Surprise!</button>
+      <button class="action-btn save" onclick="saveLook()">📸 Save</button>
+      <button class="action-btn reset-btn" onclick="resetDoll()">🔄 Reset</button>
+    </div>
+
+    <div class="swatch-row">
+      <span class="cat-icon">🎨</span>
+      <span class="cat-name">Skin</span>
+      <div id="skin-swatches" style="display:flex;gap:7px;flex:1;justify-content:center"></div>
+    </div>
+
+    <div class="category-row">
+      <span class="cat-icon">🏞️</span>
+      <span class="cat-name">Scene</span>
+      <button class="nav-btn" onclick="change('scene',-1)">◀</button>
+      <span class="option-name" id="opt-scene">—</span>
+      <button class="nav-btn" onclick="change('scene',1)">▶</button>
+    </div>
+
+    <div class="section-label">⭐ required ⭐</div>
+
+    <div class="category-row required">
+      <span class="cat-icon">💇</span>
+      <span class="cat-name">Hair</span>
+      <button class="nav-btn" onclick="change('hair',-1)">◀</button>
+      <span class="option-name" id="opt-hair">—</span>
+      <button class="nav-btn" onclick="change('hair',1)">▶</button>
+    </div>
+
+    <div class="category-row required">
+      <span class="cat-icon">👕</span>
+      <span class="cat-name">Shirt</span>
+      <button class="nav-btn" onclick="change('shirt',-1)">◀</button>
+      <span class="option-name" id="opt-shirt">—</span>
+      <button class="nav-btn" onclick="change('shirt',1)">▶</button>
+    </div>
+
+    <div class="category-row required">
+      <span class="cat-icon">👗</span>
+      <span class="cat-name">Pants/Skirt</span>
+      <button class="nav-btn" onclick="change('bottom',-1)">◀</button>
+      <span class="option-name" id="opt-bottom">—</span>
+      <button class="nav-btn" onclick="change('bottom',1)">▶</button>
+    </div>
+
+    <div class="section-label" style="margin-top:4px">✨ optional ✨</div>
+
+    <div class="category-row">
+      <span class="cat-icon">🧥</span>
+      <span class="cat-name">Jacket</span>
+      <button class="nav-btn" onclick="change('jacket',-1)">◀</button>
+      <span class="option-name" id="opt-jacket">—</span>
+      <button class="nav-btn" onclick="change('jacket',1)">▶</button>
+    </div>
+
+    <div class="category-row">
+      <span class="cat-icon">👟</span>
+      <span class="cat-name">Shoes</span>
+      <button class="nav-btn" onclick="change('shoes',-1)">◀</button>
+      <span class="option-name" id="opt-shoes">—</span>
+      <button class="nav-btn" onclick="change('shoes',1)">▶</button>
+    </div>
+
+    <div class="category-row">
+      <span class="cat-icon">🎩</span>
+      <span class="cat-name">Hat</span>
+      <button class="nav-btn" onclick="change('hat',-1)">◀</button>
+      <span class="option-name" id="opt-hat">—</span>
+      <button class="nav-btn" onclick="change('hat',1)">▶</button>
+    </div>
+
+    <div class="category-row">
+      <span class="cat-icon">🕶️</span>
+      <span class="cat-name">Glasses</span>
+      <button class="nav-btn" onclick="change('glasses',-1)">◀</button>
+      <span class="option-name" id="opt-glasses">—</span>
+      <button class="nav-btn" onclick="change('glasses',1)">▶</button>
+    </div>
+
+    <div class="category-row">
+      <span class="cat-icon">💎</span>
+      <span class="cat-name">Earrings</span>
+      <button class="nav-btn" onclick="change('earrings',-1)">◀</button>
+      <span class="option-name" id="opt-earrings">—</span>
+      <button class="nav-btn" onclick="change('earrings',1)">▶</button>
+    </div>
+
+    <div class="category-row">
+      <span class="cat-icon">📿</span>
+      <span class="cat-name">Necklace</span>
+      <button class="nav-btn" onclick="change('necklace',-1)">◀</button>
+      <span class="option-name" id="opt-necklace">—</span>
+      <button class="nav-btn" onclick="change('necklace',1)">▶</button>
+    </div>
+
+    <div class="category-row">
+      <span class="cat-icon">🔮</span>
+      <span class="cat-name">Bracelet</span>
+      <button class="nav-btn" onclick="change('bracelet',-1)">◀</button>
+      <span class="option-name" id="opt-bracelet">—</span>
+      <button class="nav-btn" onclick="change('bracelet',1)">▶</button>
+    </div>
+
+    <div class="category-row">
+      <span class="cat-icon">💄</span>
+      <span class="cat-name">Makeup</span>
+      <button class="nav-btn" onclick="change('makeup',-1)">◀</button>
+      <span class="option-name" id="opt-makeup">—</span>
+      <button class="nav-btn" onclick="change('makeup',1)">▶</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const opts = {
+
+  scene: [
+    { name: "Plain", svg: "" },
+    {
+      name: "Bedroom",
+      svg: `<rect width="200" height="420" fill="#FDF0F5"/>
+            <rect y="330" width="200" height="90" fill="#E8D5C4"/>
+            <line x1="0" y1="330" x2="200" y2="330" stroke="#D4B89A" stroke-width="2"/>
+            <rect x="8" y="55" width="58" height="72" rx="4" fill="#BEE3F7" stroke="white" stroke-width="5"/>
+            <line x1="37" y1="58" x2="37" y2="124" stroke="white" stroke-width="3"/>
+            <line x1="11" y1="91" x2="63" y2="91" stroke="white" stroke-width="3"/>
+            <circle cx="22" cy="72" r="7" fill="#FFF6C9" opacity="0.9"/>
+            <rect x="142" y="70" width="48" height="62" rx="3" fill="#FFD6E8" stroke="white" stroke-width="4"/>
+            <text x="155" y="100" font-size="18">🦄</text>
+            <rect x="150" y="345" width="44" height="30" rx="6" fill="#FF9EB5"/>
+            <rect x="146" y="338" width="52" height="14" rx="7" fill="#FFB6D9"/>
+            <text x="12" y="368" font-size="20">🧸</text>`
+    },
+    {
+      name: "Beach Day",
+      svg: `<rect width="200" height="270" fill="#AEE3F5"/>
+            <circle cx="168" cy="46" r="20" fill="#FFD93D"/>
+            <line x1="168" y1="16" x2="168" y2="8" stroke="#FFD93D" stroke-width="3" stroke-linecap="round"/>
+            <line x1="140" y1="46" x2="132" y2="46" stroke="#FFD93D" stroke-width="3" stroke-linecap="round"/>
+            <line x1="148" y1="26" x2="142" y2="20" stroke="#FFD93D" stroke-width="3" stroke-linecap="round"/>
+            <line x1="188" y1="26" x2="194" y2="20" stroke="#FFD93D" stroke-width="3" stroke-linecap="round"/>
+            <ellipse cx="40" cy="60" rx="22" ry="9" fill="white" opacity="0.9"/>
+            <ellipse cx="58" cy="54" rx="16" ry="7" fill="white" opacity="0.9"/>
+            <rect y="270" width="200" height="55" fill="#4FC3E8"/>
+            <path d="M0,270 Q25,264 50,270 Q75,276 100,270 Q125,264 150,270 Q175,276 200,270 L200,280 L0,280 Z" fill="#7ED6F0"/>
+            <rect y="325" width="200" height="95" fill="#F7E3B0"/>
+            <circle cx="20" cy="360" r="4" fill="#E8CFA0"/>
+            <circle cx="180" cy="380" r="5" fill="#E8CFA0"/>
+            <text x="150" y="368" font-size="18">⭐</text>`
+    },
+    {
+      name: "Superstar Stage",
+      svg: `<rect width="200" height="420" fill="#2A1845"/>
+            <rect y="370" width="200" height="50" fill="#6B4226"/>
+            <line x1="0" y1="370" x2="200" y2="370" stroke="#8B5A2B" stroke-width="3"/>
+            <path d="M0,0 Q10,120 4,260 L0,260 Z" fill="#C0392B"/>
+            <path d="M0,0 L34,0 Q20,90 16,220 Q8,120 0,30 Z" fill="#E74C3C"/>
+            <path d="M200,0 Q190,120 196,260 L200,260 Z" fill="#C0392B"/>
+            <path d="M200,0 L166,0 Q180,90 184,220 Q192,120 200,30 Z" fill="#E74C3C"/>
+            <polygon points="100,0 55,420 145,420" fill="#FFF6C9" opacity="0.16"/>
+            <text x="30" y="60" font-size="13" opacity="0.9">✨</text>
+            <text x="158" y="90" font-size="13" opacity="0.9">✨</text>
+            <text x="42" y="130" font-size="10" opacity="0.7">⭐</text>
+            <text x="150" y="150" font-size="10" opacity="0.7">⭐</text>`
+    },
+    {
+      name: "Sunny Park",
+      svg: `<rect width="200" height="340" fill="#C9EBFA"/>
+            <rect y="340" width="200" height="80" fill="#8BC98B"/>
+            <path d="M0,340 Q50,332 100,340 Q150,348 200,340 L200,420 L0,420 Z" fill="#7ABD7A"/>
+            <ellipse cx="45" cy="42" rx="24" ry="10" fill="white" opacity="0.95"/>
+            <ellipse cx="65" cy="35" rx="17" ry="8" fill="white" opacity="0.95"/>
+            <circle cx="170" cy="38" r="16" fill="#FFD93D"/>
+            <circle cx="26" cy="120" r="26" fill="#5FA85F"/>
+            <circle cx="10" cy="140" r="22" fill="#6FB56F"/>
+            <circle cx="40" cy="145" r="20" fill="#6FB56F"/>
+            <rect x="20" y="158" width="12" height="46" rx="4" fill="#8B5A2B"/>
+            <text x="160" y="368" font-size="14">🌼</text>
+            <text x="10" y="398" font-size="14">🌷</text>
+            <text x="176" y="404" font-size="12">🦋</text>`
+    }
+  ],
+
+  glasses: [
+    { name: "None", svg: "" },
+    {
+      name: "Round Glasses",
+      svg: `<circle cx="85" cy="77" r="12" fill="#BEE3F7" opacity="0.35" stroke="#8B4513" stroke-width="2.5"/>
+            <circle cx="115" cy="77" r="12" fill="#BEE3F7" opacity="0.35" stroke="#8B4513" stroke-width="2.5"/>
+            <path d="M97,75 Q100,72 103,75" stroke="#8B4513" stroke-width="2.5" fill="none"/>
+            <line x1="73" y1="75" x2="60" y2="80" stroke="#8B4513" stroke-width="2.5"/>
+            <line x1="127" y1="75" x2="140" y2="80" stroke="#8B4513" stroke-width="2.5"/>`
+    },
+    {
+      name: "Cool Shades",
+      svg: `<rect x="72" y="68" width="26" height="17" rx="8" fill="#222"/>
+            <rect x="102" y="68" width="26" height="17" rx="8" fill="#222"/>
+            <path d="M98,73 Q100,70 102,73" stroke="#222" stroke-width="3" fill="none"/>
+            <line x1="72" y1="72" x2="59" y2="78" stroke="#222" stroke-width="3"/>
+            <line x1="128" y1="72" x2="141" y2="78" stroke="#222" stroke-width="3"/>
+            <ellipse cx="80" cy="72" rx="4" ry="2" fill="white" opacity="0.35"/>
+            <ellipse cx="110" cy="72" rx="4" ry="2" fill="white" opacity="0.35"/>`
+    },
+    {
+      name: "Heart Sunnies",
+      svg: `<path d="M73,72 Q73,64 80,64 Q85,64 86,69 Q87,64 92,64 Q99,64 99,72 Q99,80 86,88 Q73,80 73,72 Z" fill="#FF5C8A" opacity="0.88"/>
+            <path d="M101,72 Q101,64 108,64 Q113,64 114,69 Q115,64 120,64 Q127,64 127,72 Q127,80 114,88 Q101,80 101,72 Z" fill="#FF5C8A" opacity="0.88"/>
+            <path d="M98,72 Q100,70 102,72" stroke="#FF5C8A" stroke-width="3" fill="none"/>
+            <line x1="74" y1="71" x2="60" y2="79" stroke="#FF5C8A" stroke-width="2.5"/>
+            <line x1="126" y1="71" x2="140" y2="79" stroke="#FF5C8A" stroke-width="2.5"/>
+            <ellipse cx="80" cy="70" rx="3" ry="2" fill="white" opacity="0.5"/>
+            <ellipse cx="108" cy="70" rx="3" ry="2" fill="white" opacity="0.5"/>`
+    }
+  ],
+
+  hair: [
+    {
+      name: "Long Straight (Brown)",
+      back: `<path d="M60,42 Q56,16 100,14 Q144,16 140,42 L148,210 Q128,220 100,222 Q72,220 52,210 Z" fill="#7B3F1E"/>`,
+      front: `<path d="M60,42 Q58,26 62,22 L138,22 Q142,26 140,42 L136,90 Q120,72 100,72 Q80,72 64,90 Z" fill="#7B3F1E"/>`
+    },
+    {
+      name: "Curly (Black)",
+      back: `<path d="M58,44 Q52,14 100,12 Q148,14 142,44 L144,175 Q124,186 100,188 Q76,186 56,175 Z" fill="#1a1a1a"/>
+             <ellipse cx="52" cy="100" rx="12" ry="14" fill="#1a1a1a"/>
+             <ellipse cx="55" cy="130" rx="11" ry="13" fill="#1a1a1a"/>
+             <ellipse cx="58" cy="158" rx="10" ry="12" fill="#1a1a1a"/>
+             <ellipse cx="148" cy="100" rx="12" ry="14" fill="#1a1a1a"/>
+             <ellipse cx="145" cy="130" rx="11" ry="13" fill="#1a1a1a"/>
+             <ellipse cx="142" cy="158" rx="10" ry="12" fill="#1a1a1a"/>`,
+      front: `<path d="M62,40 Q60,18 100,15 Q140,18 138,40 L134,82 Q120,68 100,68 Q80,68 66,82 Z" fill="#1a1a1a"/>
+              <ellipse cx="66" cy="58" rx="10" ry="11" fill="#1a1a1a"/>
+              <ellipse cx="134" cy="58" rx="10" ry="11" fill="#1a1a1a"/>
+              <ellipse cx="74" cy="44" rx="9" ry="10" fill="#1a1a1a"/>
+              <ellipse cx="126" cy="44" rx="9" ry="10" fill="#1a1a1a"/>`
+    },
+    {
+      name: "Short Bob (Blonde)",
+      back: `<path d="M60,44 Q56,16 100,14 Q144,16 140,44 L140,118 Q120,128 100,130 Q80,128 60,118 Z" fill="#F5D060"/>`,
+      front: `<path d="M62,42 Q60,18 100,15 Q140,18 138,42 L136,82 Q118,70 100,70 Q82,70 64,82 Z" fill="#F5D060"/>`
+    },
+    {
+      name: "Ponytail (Red)",
+      back: `<path d="M62,44 Q58,18 100,15 Q142,18 138,44 L136,104 Q118,115 100,117 Q82,115 64,104 Z" fill="#CC3300"/>
+             <path d="M132,98 Q162,105 166,138 Q170,168 156,194 Q148,182 145,160 Q142,138 136,122 Z" fill="#CC3300"/>
+             <ellipse cx="160" cy="196" rx="8" ry="5" fill="#FF69B4"/>`,
+      front: `<path d="M64,42 Q60,20 100,16 Q140,20 136,42 L133,82 Q117,70 100,70 Q83,70 67,82 Z" fill="#CC3300"/>
+              <path d="M118,46 Q128,42 132,50 L128,52 Q124,48 118,50 Z" fill="#AA2200"/>`
+    },
+    {
+      name: "Braids (Dark Brown)",
+      back: `<path d="M64,42 Q60,18 100,15 Q140,18 136,42 L134,108 Q118,118 100,120 Q82,118 66,108 Z" fill="#5C3317"/>
+             <rect x="60" y="110" width="16" height="185" rx="8" fill="#5C3317"/>
+             <rect x="61" y="124" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <rect x="61" y="140" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <rect x="61" y="156" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <rect x="61" y="172" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <rect x="61" y="188" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <rect x="61" y="204" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <rect x="61" y="220" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <rect x="61" y="236" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <ellipse cx="68" cy="296" rx="8" ry="5" fill="#FF69B4"/>
+             <rect x="124" y="110" width="16" height="185" rx="8" fill="#5C3317"/>
+             <rect x="125" y="124" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <rect x="125" y="140" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <rect x="125" y="156" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <rect x="125" y="172" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <rect x="125" y="188" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <rect x="125" y="204" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <rect x="125" y="220" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <rect x="125" y="236" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
+             <ellipse cx="132" cy="296" rx="8" ry="5" fill="#FF69B4"/>`,
+      front: `<path d="M66,42 Q62,20 100,17 Q138,20 134,42 L131,82 Q116,72 100,72 Q84,72 69,82 Z" fill="#5C3317"/>`
+    }
+  ],
+
+  shirt: [
+    {
+      name: "Pink T-Shirt",
+      svg: `<path d="M62,143 L30,156 L24,188 L52,188 L54,258 L146,258 L148,188 L176,188 L170,156 L138,143 Q120,135 100,135 Q80,135 62,143 Z" fill="#FF9EB5"/>
+            <path d="M86,142 Q100,154 114,142" stroke="#E0708A" stroke-width="2" fill="none"/>`
+    },
+    {
+      name: "Blue Striped Top",
+      svg: `<defs>
+              <pattern id="blStripe" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+                <rect width="10" height="10" fill="#4A90D9"/>
+                <rect y="0" width="10" height="5" fill="#6AAFF0"/>
+              </pattern>
+            </defs>
+            <path d="M62,143 L30,156 L24,188 L52,188 L54,258 L146,258 L148,188 L176,188 L170,156 L138,143 Q120,135 100,135 Q80,135 62,143 Z" fill="url(#blStripe)"/>
+            <path d="M86,142 Q100,152 114,142" stroke="#2E6FAD" stroke-width="1.5" fill="none"/>`
+    },
+    {
+      name: "Purple Blouse",
+      svg: `<path d="M62,143 L30,156 L24,188 L52,188 L54,258 L146,258 L148,188 L176,188 L170,156 L138,143 Q120,135 100,135 Q80,135 62,143 Z" fill="#9B59B6"/>
+            <path d="M80,140 Q90,153 100,146 Q110,153 120,140" stroke="#7D3C98" stroke-width="1.8" fill="none"/>
+            <circle cx="100" cy="168" r="2.5" fill="#7D3C98"/>
+            <circle cx="100" cy="183" r="2.5" fill="#7D3C98"/>
+            <circle cx="100" cy="198" r="2.5" fill="#7D3C98"/>
+            <circle cx="100" cy="213" r="2.5" fill="#7D3C98"/>
+            <circle cx="100" cy="228" r="2.5" fill="#7D3C98"/>
+            <circle cx="100" cy="243" r="2.5" fill="#7D3C98"/>`
+    },
+    {
+      name: "Yellow Crop Top",
+      svg: `<path d="M62,143 L30,156 L24,188 L52,188 L54,212 L146,212 L148,188 L176,188 L170,156 L138,143 Q120,135 100,135 Q80,135 62,143 Z" fill="#FFD700"/>
+            <path d="M54,208 Q100,218 146,208" stroke="#E6B800" stroke-width="2.5" fill="none"/>
+            <path d="M86,142 Q100,152 114,142" stroke="#C9A000" stroke-width="1.5" fill="none"/>`
+    },
+    {
+      name: "Red Tank Top",
+      svg: `<path d="M72,143 L54,258 L146,258 L128,143 Q114,132 100,132 Q86,132 72,143 Z" fill="#E63946"/>
+            <rect x="80" y="136" width="10" height="14" rx="4" fill="#C1121F"/>
+            <rect x="110" y="136" width="10" height="14" rx="4" fill="#C1121F"/>
+            <path d="M80,143 Q100,153 120,143" stroke="#C1121F" stroke-width="1.5" fill="none"/>`
+    }
+  ],
+
+  bottom: [
+    {
+      name: "Blue Jeans",
+      svg: `<rect x="54" y="254" width="92" height="14" rx="3" fill="#1A3A6B"/>
+            <rect x="56" y="266" width="37" height="128" rx="8" fill="#2B5BA8"/>
+            <rect x="107" y="266" width="37" height="128" rx="8" fill="#2B5BA8"/>
+            <path d="M93,266 Q100,282 107,266" fill="#1A3A6B"/>
+            <line x1="74" y1="274" x2="74" y2="388" stroke="#1A3A6B" stroke-width="1" opacity="0.5"/>
+            <line x1="126" y1="274" x2="126" y2="388" stroke="#1A3A6B" stroke-width="1" opacity="0.5"/>
+            <path d="M58,268 Q68,270 70,280 L58,280 Z" fill="none" stroke="#1A3A6B" stroke-width="1"/>`
+    },
+    {
+      name: "Pink Ruffle Skirt",
+      svg: `<rect x="54" y="254" width="92" height="12" rx="3" fill="#D4508A"/>
+            <path d="M54,264 Q44,312 36,398 L164,398 Q156,312 146,264 Z" fill="#FF9EC8"/>
+            <path d="M44,318 Q100,330 156,318 L156,326 Q100,338 44,326 Z" fill="#FFB8D8" opacity="0.7"/>
+            <path d="M38,362 Q100,376 162,362 L162,372 Q100,386 38,372 Z" fill="#FFB8D8" opacity="0.7"/>`
+    },
+    {
+      name: "Purple Leggings",
+      svg: `<rect x="56" y="254" width="88" height="12" rx="3" fill="#5B2C8C"/>
+            <rect x="58" y="264" width="36" height="130" rx="6" fill="#8E44AD"/>
+            <rect x="106" y="264" width="36" height="130" rx="6" fill="#8E44AD"/>
+            <path d="M94,264 Q100,278 106,264" fill="#5B2C8C"/>
+            <text x="64" y="296" font-size="10" fill="#D2B4DE" opacity="0.7">⭐</text>
+            <text x="110" y="300" font-size="9" fill="#D2B4DE" opacity="0.7">⭐</text>
+            <text x="62" y="330" font-size="9" fill="#D2B4DE" opacity="0.7">✨</text>
+            <text x="112" y="335" font-size="9" fill="#D2B4DE" opacity="0.7">✨</text>`
+    },
+    {
+      name: "Floral Skirt",
+      svg: `<rect x="54" y="254" width="92" height="12" rx="3" fill="#2E7D32"/>
+            <path d="M54,264 Q44,320 38,398 L162,398 Q156,320 146,264 Z" fill="#4CAF50"/>
+            <circle cx="74" cy="306" r="8" fill="#FF69B4" opacity="0.85"/>
+            <circle cx="74" cy="306" r="4" fill="#FFD700"/>
+            <circle cx="100" cy="292" r="8" fill="#FF6B6B" opacity="0.85"/>
+            <circle cx="100" cy="292" r="4" fill="#FFD700"/>
+            <circle cx="126" cy="306" r="8" fill="#FF69B4" opacity="0.85"/>
+            <circle cx="126" cy="306" r="4" fill="#FFD700"/>
+            <circle cx="84" cy="342" r="7" fill="#FF9933" opacity="0.85"/>
+            <circle cx="84" cy="342" r="3.5" fill="#FFD700"/>
+            <circle cx="116" cy="348" r="7" fill="#FF69B4" opacity="0.85"/>
+            <circle cx="116" cy="348" r="3.5" fill="#FFD700"/>
+            <circle cx="63" cy="362" r="6" fill="#FF6B6B" opacity="0.85"/>
+            <circle cx="63" cy="362" r="3" fill="#FFD700"/>
+            <circle cx="137" cy="362" r="6" fill="#FF9933" opacity="0.85"/>
+            <circle cx="137" cy="362" r="3" fill="#FFD700"/>
+            <circle cx="100" cy="378" r="7" fill="#FF6B6B" opacity="0.85"/>
+            <circle cx="100" cy="378" r="3.5" fill="#FFD700"/>`
+    },
+    {
+      name: "Black Pants",
+      svg: `<rect x="54" y="254" width="92" height="14" rx="3" fill="#111"/>
+            <rect x="56" y="266" width="37" height="128" rx="8" fill="#2D2D2D"/>
+            <rect x="107" y="266" width="37" height="128" rx="8" fill="#2D2D2D"/>
+            <path d="M93,266 Q100,280 107,266" fill="#111"/>
+            <line x1="62" y1="274" x2="62" y2="386" stroke="#444" stroke-width="2" opacity="0.4"/>
+            <line x1="112" y1="274" x2="112" y2="386" stroke="#444" stroke-width="2" opacity="0.4"/>`
+    }
+  ],
+
+  jacket: [
+    { name: "None", svg: "" },
+    {
+      name: "Denim Jacket",
+      svg: `<path d="M62,143 L28,158 L22,222 L52,222 L54,258 L146,258 L148,222 L178,222 L172,158 L138,143 Q120,130 100,130 Q80,130 62,143 Z" fill="#5B7FA6" opacity="0.93"/>
+            <path d="M86,143 L80,178 L100,166 L120,178 L114,143" fill="#4A6B8A"/>
+            <circle cx="100" cy="183" r="3" fill="#4A6B8A"/>
+            <circle cx="100" cy="200" r="3" fill="#4A6B8A"/>
+            <circle cx="100" cy="217" r="3" fill="#4A6B8A"/>
+            <rect x="62" y="197" width="20" height="14" rx="2" fill="#4A6B8A" opacity="0.55"/>
+            <rect x="118" y="197" width="20" height="14" rx="2" fill="#4A6B8A" opacity="0.55"/>`
+    },
+    {
+      name: "Pink Hoodie",
+      svg: `<path d="M62,143 L26,160 L20,228 L52,228 L54,258 L146,258 L148,228 L180,228 L174,160 L138,143 Q120,127 100,127 Q80,127 62,143 Z" fill="#FF9EC8" opacity="0.95"/>
+            <path d="M73,140 Q81,124 100,121 Q119,124 127,140 Q116,150 100,152 Q84,150 73,140 Z" fill="#FF7AAA"/>
+            <path d="M72,222 Q100,216 128,222 L128,242 Q100,248 72,242 Z" fill="#FF7AAA" opacity="0.7"/>
+            <line x1="95" y1="152" x2="90" y2="178" stroke="#E0608E" stroke-width="2"/>
+            <line x1="105" y1="152" x2="110" y2="178" stroke="#E0608E" stroke-width="2"/>`
+    },
+    {
+      name: "Blazer",
+      svg: `<path d="M62,143 L30,156 L24,218 L54,218 L56,258 L144,258 L146,218 L176,218 L170,156 L138,143 Q120,132 100,132 Q80,132 62,143 Z" fill="#2C2C54" opacity="0.93"/>
+            <path d="M86,143 L78,180 L100,168 L122,180 L114,143" fill="#1A1A3E"/>
+            <path d="M130,172 L140,172 L140,180 L135,175 L130,180 Z" fill="#FF69B4"/>
+            <circle cx="100" cy="185" r="2.5" fill="#44449A"/>
+            <circle cx="100" cy="200" r="2.5" fill="#44449A"/>
+            <line x1="25" y1="202" x2="53" y2="202" stroke="#1A1A3E" stroke-width="2"/>
+            <line x1="147" y1="202" x2="175" y2="202" stroke="#1A1A3E" stroke-width="2"/>`
+    },
+    {
+      name: "Floral Kimono",
+      svg: `<path d="M62,143 L26,162 L20,258 L52,258 L54,258 L146,258 L148,258 L180,258 L174,162 L138,143 Q120,132 100,132 Q80,132 62,143 Z" fill="#F8E0F0" opacity="0.92"/>
+            <path d="M80,143 L74,258 L126,258 L120,143 L100,156 Z" fill="#F0C8E0" opacity="0.75"/>
+            <rect x="58" y="196" width="84" height="18" rx="3" fill="#C0392B" opacity="0.82"/>
+            <rect x="88" y="192" width="24" height="26" rx="3" fill="#E74C3C" opacity="0.9"/>
+            <circle cx="100" cy="205" r="5" fill="#C0392B"/>
+            <circle cx="42" cy="178" r="7" fill="#FF69B4" opacity="0.75"/>
+            <circle cx="42" cy="178" r="3.5" fill="#FFD700"/>
+            <circle cx="35" cy="204" r="6" fill="#FF9933" opacity="0.75"/>
+            <circle cx="35" cy="204" r="3" fill="#FFD700"/>
+            <circle cx="158" cy="178" r="7" fill="#FF69B4" opacity="0.75"/>
+            <circle cx="158" cy="178" r="3.5" fill="#FFD700"/>
+            <circle cx="165" cy="204" r="6" fill="#FF9933" opacity="0.75"/>
+            <circle cx="165" cy="204" r="3" fill="#FFD700"/>`
+    }
+  ],
+
+  shoes: [
+    { name: "None", svg: "" },
+    {
+      name: "Pink Sneakers",
+      svg: `<path d="M60,386 Q58,378 68,378 L96,378 L96,392 Q80,396 60,386 Z" fill="#FFB6C8"/>
+            <path d="M60,386 Q60,400 80,404 Q96,406 97,398 L97,386 Z" fill="#FF9EB5"/>
+            <path d="M58,396 Q80,408 98,400 L98,404 Q80,412 58,404 Z" fill="#ddd"/>
+            <line x1="68" y1="381" x2="90" y2="381" stroke="white" stroke-width="1.5"/>
+            <line x1="70" y1="385" x2="88" y2="385" stroke="white" stroke-width="1.5"/>
+            <path d="M103,386 Q101,378 111,378 L139,378 L139,392 Q123,396 103,386 Z" fill="#FFB6C8"/>
+            <path d="M103,386 Q103,400 121,404 Q138,406 140,398 L140,386 Z" fill="#FF9EB5"/>
+            <path d="M101,396 Q123,408 141,400 L141,404 Q123,412 101,404 Z" fill="#ddd"/>
+            <line x1="111" y1="381" x2="133" y2="381" stroke="white" stroke-width="1.5"/>
+            <line x1="113" y1="385" x2="131" y2="385" stroke="white" stroke-width="1.5"/>`
+    },
+    {
+      name: "Red Heels",
+      svg: `<path d="M63,380 Q64,372 74,372 L95,372 L95,386 Q80,392 63,380 Z" fill="#C1121F"/>
+            <path d="M63,380 Q62,395 82,398 Q96,400 97,392 L95,380 Z" fill="#E63946"/>
+            <rect x="63" y="392" width="5" height="14" rx="2" fill="#8B0000"/>
+            <path d="M82,395 Q96,402 98,396 L98,400 Q95,406 80,402 Z" fill="#C1121F"/>
+            <path d="M106,380 Q107,372 117,372 L138,372 L138,386 Q123,392 106,380 Z" fill="#C1121F"/>
+            <path d="M106,380 Q105,395 125,398 Q139,400 140,392 L138,380 Z" fill="#E63946"/>
+            <rect x="106" y="392" width="5" height="14" rx="2" fill="#8B0000"/>
+            <path d="M125,395 Q139,402 141,396 L141,400 Q138,406 123,402 Z" fill="#C1121F"/>`
+    },
+    {
+      name: "Blue Boots",
+      svg: `<rect x="60" y="342" width="36" height="52" rx="5" fill="#2B5BA8"/>
+            <path d="M60,390 Q60,406 80,410 Q96,412 97,402 L97,388 Z" fill="#2B5BA8"/>
+            <path d="M58,400 Q80,412 98,404 L98,408 Q80,418 58,408 Z" fill="#1A3A6B"/>
+            <line x1="63" y1="358" x2="93" y2="358" stroke="#1A3A6B" stroke-width="1.5"/>
+            <line x1="63" y1="366" x2="93" y2="366" stroke="#1A3A6B" stroke-width="1.5"/>
+            <line x1="65" y1="344" x2="65" y2="390" stroke="#6AAFF0" stroke-width="2"/>
+            <rect x="104" y="342" width="36" height="52" rx="5" fill="#2B5BA8"/>
+            <path d="M104,390 Q104,406 122,410 Q138,412 140,402 L140,388 Z" fill="#2B5BA8"/>
+            <path d="M102,400 Q122,412 141,404 L141,408 Q122,418 102,408 Z" fill="#1A3A6B"/>
+            <line x1="107" y1="358" x2="137" y2="358" stroke="#1A3A6B" stroke-width="1.5"/>
+            <line x1="107" y1="366" x2="137" y2="366" stroke="#1A3A6B" stroke-width="1.5"/>
+            <line x1="109" y1="344" x2="109" y2="390" stroke="#6AAFF0" stroke-width="2"/>`
+    },
+    {
+      name: "Gold Sandals",
+      svg: `<path d="M62,386 Q62,400 80,404 Q96,406 97,396 L95,386 Z" fill="#DAA520"/>
+            <path d="M62,388 Q78,384 95,388" stroke="#B8860B" stroke-width="3" fill="none"/>
+            <path d="M65,382 Q78,378 92,382" stroke="#B8860B" stroke-width="2.5" fill="none"/>
+            <line x1="78" y1="376" x2="78" y2="396" stroke="#B8860B" stroke-width="2"/>
+            <line x1="86" y1="374" x2="86" y2="394" stroke="#B8860B" stroke-width="2"/>
+            <path d="M60,397 Q80,408 98,400 L98,404 Q80,414 60,404 Z" fill="#8B6914"/>
+            <path d="M105,386 Q105,400 123,404 Q139,406 140,396 L138,386 Z" fill="#DAA520"/>
+            <path d="M105,388 Q121,384 138,388" stroke="#B8860B" stroke-width="3" fill="none"/>
+            <path d="M108,382 Q121,378 135,382" stroke="#B8860B" stroke-width="2.5" fill="none"/>
+            <line x1="121" y1="376" x2="121" y2="396" stroke="#B8860B" stroke-width="2"/>
+            <line x1="129" y1="374" x2="129" y2="394" stroke="#B8860B" stroke-width="2"/>
+            <path d="M103,397 Q123,408 141,400 L141,404 Q123,414 103,404 Z" fill="#8B6914"/>`
+    },
+    {
+      name: "Purple Flats",
+      svg: `<path d="M62,386 Q62,400 80,404 Q95,406 96,394 L94,386 Z" fill="#9B59B6"/>
+            <path d="M62,386 Q63,378 72,378 L94,378 L94,390 Q78,396 62,386 Z" fill="#8E44AD"/>
+            <path d="M60,396 Q80,406 97,398 L97,402 Q80,412 60,402 Z" fill="#6C3483"/>
+            <path d="M70,381 Q76,375 82,381 Q88,375 94,381 L82,386 Z" fill="#D7BDE2"/>
+            <path d="M105,386 Q105,400 123,404 Q138,406 139,394 L137,386 Z" fill="#9B59B6"/>
+            <path d="M105,386 Q106,378 115,378 L137,378 L137,390 Q121,396 105,386 Z" fill="#8E44AD"/>
+            <path d="M103,396 Q123,406 140,398 L140,402 Q123,412 103,402 Z" fill="#6C3483"/>
+            <path d="M113,381 Q119,375 125,381 Q131,375 137,381 L125,386 Z" fill="#D7BDE2"/>`
+    }
+  ],
+
+  hat: [
+    { name: "None", svg: "" },
+    {
+      name: "Sun Hat",
+      svg: `<ellipse cx="100" cy="50" rx="64" ry="13" fill="#F0C080"/>
+            <ellipse cx="100" cy="48" rx="40" ry="9" fill="#D4915A"/>
+            <path d="M60,48 Q66,12 100,10 Q134,12 140,48 Z" fill="#D4915A"/>
+            <path d="M63,46 Q100,54 137,46 L137,50 Q100,58 63,50 Z" fill="#FF9933" opacity="0.8"/>
+            <circle cx="122" cy="45" r="7" fill="#FF69B4"/>
+            <circle cx="122" cy="45" r="3.5" fill="#FFD700"/>`
+    },
+    {
+      name: "Baseball Cap",
+      svg: `<path d="M62,50 Q100,62 138,50 L150,52 Q150,60 138,58 Q100,70 62,58 Q50,60 50,52 Z" fill="#CC3300"/>
+            <path d="M63,50 Q70,14 100,11 Q130,14 137,50 Z" fill="#E63946"/>
+            <path d="M62,50 Q100,56 138,50" stroke="#C0392B" stroke-width="1"/>
+            <circle cx="100" cy="12" r="3.5" fill="#C0392B"/>
+            <text x="92" y="38" font-size="11" fill="white" font-family="Arial" font-weight="bold">NY</text>`
+    },
+    {
+      name: "Cozy Beanie",
+      svg: `<path d="M58,52 Q62,14 100,11 Q138,14 142,52 Q120,60 100,62 Q80,60 58,52 Z" fill="#3498DB"/>
+            <path d="M57,52 Q100,64 143,52 L143,62 Q100,74 57,62 Z" fill="#2980B9"/>
+            <circle cx="100" cy="10" r="10" fill="#EBF5FB"/>
+            <circle cx="100" cy="10" r="6" fill="#D6EAF8"/>
+            <path d="M58,45 Q100,55 142,45" stroke="#2C3E50" stroke-width="3" opacity="0.35"/>`
+    },
+    {
+      name: "Flower Crown",
+      svg: `<path d="M58,58 Q100,68 142,58 L140,64 Q100,74 60,64 Z" fill="#7B5E3A" opacity="0.55"/>
+            <circle cx="68" cy="56" r="8" fill="#FF69B4"/>
+            <circle cx="68" cy="56" r="4" fill="#FFD700"/>
+            <circle cx="82" cy="50" r="7" fill="#FF6B6B"/>
+            <circle cx="82" cy="50" r="3.5" fill="#FFD700"/>
+            <circle cx="96" cy="47" r="8" fill="#FF9933"/>
+            <circle cx="96" cy="47" r="4" fill="#FFD700"/>
+            <circle cx="110" cy="47" r="7" fill="#FF69B4"/>
+            <circle cx="110" cy="47" r="3.5" fill="#FFD700"/>
+            <circle cx="124" cy="50" r="8" fill="#FF6B6B"/>
+            <circle cx="124" cy="50" r="4" fill="#FFD700"/>
+            <circle cx="136" cy="56" r="7" fill="#FF9933"/>
+            <circle cx="136" cy="56" r="3.5" fill="#FFD700"/>
+            <ellipse cx="75" cy="53" rx="5" ry="2" fill="#27AE60" transform="rotate(-30,75,53)"/>
+            <ellipse cx="89" cy="48" rx="5" ry="2" fill="#27AE60" transform="rotate(-15,89,48)"/>
+            <ellipse cx="117" cy="48" rx="5" ry="2" fill="#27AE60" transform="rotate(15,117,48)"/>
+            <ellipse cx="130" cy="53" rx="5" ry="2" fill="#27AE60" transform="rotate(30,130,53)"/>`
+    },
+    {
+      name: "Bow Headband",
+      svg: `<path d="M58,62 Q100,72 142,62 L142,68 Q100,78 58,68 Z" fill="#FF69B4"/>
+            <path d="M88,57 Q78,43 85,36 Q93,43 100,50 Z" fill="#FF1493"/>
+            <path d="M112,57 Q122,43 115,36 Q107,43 100,50 Z" fill="#FF1493"/>
+            <circle cx="100" cy="51" r="5" fill="#C71585"/>
+            <path d="M95,57 Q90,67 84,72" stroke="#FF1493" stroke-width="2.5" fill="none"/>
+            <path d="M105,57 Q110,67 116,72" stroke="#FF1493" stroke-width="2.5" fill="none"/>`
+    }
+  ],
+
+  earrings: [
+    { name: "None", svg: "" },
+    {
+      name: "Star Studs",
+      svg: `<text x="43" y="92" font-size="12" fill="#FFD700">★</text>
+            <text x="138" y="92" font-size="12" fill="#FFD700">★</text>`
+    },
+    {
+      name: "Hoop Earrings",
+      svg: `<circle cx="52" cy="92" r="10" fill="none" stroke="#DAA520" stroke-width="3"/>
+            <circle cx="148" cy="92" r="10" fill="none" stroke="#DAA520" stroke-width="3"/>`
+    },
+    {
+      name: "Heart Drops",
+      svg: `<circle cx="53" cy="84" r="3" fill="#FF69B4"/>
+            <line x1="53" y1="87" x2="53" y2="95" stroke="#FF69B4" stroke-width="1.5"/>
+            <path d="M48,95 Q48,90 53,94 Q58,90 58,95 Q58,100 53,104 Q48,100 48,95 Z" fill="#FF69B4"/>
+            <circle cx="147" cy="84" r="3" fill="#FF69B4"/>
+            <line x1="147" y1="87" x2="147" y2="95" stroke="#FF69B4" stroke-width="1.5"/>
+            <path d="M142,95 Q142,90 147,94 Q152,90 152,95 Q152,100 147,104 Q142,100 142,95 Z" fill="#FF69B4"/>`
+    },
+    {
+      name: "Pearl Studs",
+      svg: `<circle cx="53" cy="88" r="5" fill="#F0EAD6"/>
+            <circle cx="51" cy="86" r="2" fill="white" opacity="0.7"/>
+            <circle cx="147" cy="88" r="5" fill="#F0EAD6"/>
+            <circle cx="145" cy="86" r="2" fill="white" opacity="0.7"/>`
+    }
+  ],
+
+  necklace: [
+    { name: "None", svg: "" },
+    {
+      name: "Pearl Necklace",
+      svg: `<circle cx="79" cy="132" r="4" fill="#F0EAD6"/>
+            <circle cx="86" cy="136" r="4" fill="#F0EAD6"/>
+            <circle cx="93" cy="139" r="4" fill="#F0EAD6"/>
+            <circle cx="100" cy="140" r="4" fill="#F0EAD6"/>
+            <circle cx="107" cy="139" r="4" fill="#F0EAD6"/>
+            <circle cx="114" cy="136" r="4" fill="#F0EAD6"/>
+            <circle cx="121" cy="132" r="4" fill="#F0EAD6"/>
+            <circle cx="78" cy="131" r="1.5" fill="white" opacity="0.7"/>
+            <circle cx="99" cy="139" r="1.5" fill="white" opacity="0.7"/>
+            <circle cx="120" cy="131" r="1.5" fill="white" opacity="0.7"/>`
+    },
+    {
+      name: "Heart Pendant",
+      svg: `<path d="M80,129 Q100,140 120,129" fill="none" stroke="#DAA520" stroke-width="1.5"/>
+            <line x1="100" y1="140" x2="100" y2="150" stroke="#DAA520" stroke-width="1.5"/>
+            <path d="M95,150 Q95,145 100,149 Q105,145 105,150 Q105,155 100,159 Q95,155 95,150 Z" fill="#E63946"/>
+            <circle cx="97" cy="148" r="1.5" fill="white" opacity="0.55"/>`
+    },
+    {
+      name: "Star Chain",
+      svg: `<path d="M79,130 Q100,142 121,130" fill="none" stroke="#C0C0C0" stroke-width="1.5"/>
+            <text x="74" y="135" font-size="9" fill="#FFD700">★</text>
+            <text x="87" y="140" font-size="8" fill="#FFD700">★</text>
+            <text x="100" y="143" font-size="10" fill="#FFD700">★</text>
+            <text x="113" y="140" font-size="8" fill="#FFD700">★</text>
+            <text x="124" y="135" font-size="9" fill="#FFD700">★</text>`
+    },
+    {
+      name: "Rainbow Beads",
+      svg: `<circle cx="81" cy="130" r="4" fill="#E63946"/>
+            <circle cx="88" cy="135" r="4" fill="#FF9933"/>
+            <circle cx="95" cy="138" r="4" fill="#FFD700"/>
+            <circle cx="100" cy="140" r="4" fill="#27AE60"/>
+            <circle cx="105" cy="138" r="4" fill="#3498DB"/>
+            <circle cx="112" cy="135" r="4" fill="#9B59B6"/>
+            <circle cx="119" cy="130" r="4" fill="#E63946"/>
+            <circle cx="80" cy="129" r="1.5" fill="white" opacity="0.5"/>
+            <circle cx="99" cy="139" r="1.5" fill="white" opacity="0.5"/>
+            <circle cx="118" cy="129" r="1.5" fill="white" opacity="0.5"/>`
+    }
+  ],
+
+  bracelet: [
+    { name: "None", svg: "" },
+    {
+      name: "Gold Bangle",
+      svg: `<ellipse cx="34" cy="251" rx="14" ry="5" fill="none" stroke="#DAA520" stroke-width="3"/>
+            <ellipse cx="166" cy="251" rx="14" ry="5" fill="none" stroke="#DAA520" stroke-width="3"/>`
+    },
+    {
+      name: "Charm Bracelet",
+      svg: `<path d="M21,249 Q34,244 47,249" fill="none" stroke="#C0C0C0" stroke-width="2"/>
+            <text x="23" y="246" font-size="8" fill="#FFD700">★</text>
+            <text x="31" y="258" font-size="8" fill="#FF69B4">♥</text>
+            <text x="40" y="246" font-size="7" fill="#9B59B6">◆</text>
+            <path d="M153,249 Q166,244 179,249" fill="none" stroke="#C0C0C0" stroke-width="2"/>
+            <text x="155" y="246" font-size="8" fill="#FFD700">★</text>
+            <text x="163" y="258" font-size="8" fill="#FF69B4">♥</text>
+            <text x="172" y="246" font-size="7" fill="#9B59B6">◆</text>`
+    },
+    {
+      name: "Rainbow Beads",
+      svg: `<circle cx="22" cy="249" r="3.5" fill="#E63946"/>
+            <circle cx="28" cy="246" r="3.5" fill="#FF9933"/>
+            <circle cx="34" cy="245" r="3.5" fill="#FFD700"/>
+            <circle cx="40" cy="246" r="3.5" fill="#27AE60"/>
+            <circle cx="46" cy="249" r="3.5" fill="#3498DB"/>
+            <circle cx="154" cy="249" r="3.5" fill="#E63946"/>
+            <circle cx="160" cy="246" r="3.5" fill="#FF9933"/>
+            <circle cx="166" cy="245" r="3.5" fill="#FFD700"/>
+            <circle cx="172" cy="246" r="3.5" fill="#27AE60"/>
+            <circle cx="178" cy="249" r="3.5" fill="#3498DB"/>`
+    },
+    {
+      name: "Friendship Bracelet",
+      svg: `<rect x="20" y="245" width="28" height="8" rx="4" fill="#FF69B4"/>
+            <rect x="20" y="245" width="28" height="2.5" rx="1" fill="#FFD700" opacity="0.85"/>
+            <rect x="20" y="250" width="28" height="2.5" rx="1" fill="#27AE60" opacity="0.85"/>
+            <rect x="152" y="245" width="28" height="8" rx="4" fill="#FF69B4"/>
+            <rect x="152" y="245" width="28" height="2.5" rx="1" fill="#FFD700" opacity="0.85"/>
+            <rect x="152" y="250" width="28" height="2.5" rx="1" fill="#27AE60" opacity="0.85"/>`
+    }
+  ],
+
+  makeup: [
+    { name: "None", svg: "" },
+    {
+      name: "Pink & Blush",
+      svg: `<ellipse cx="73" cy="96" rx="14" ry="8" fill="#FFB0C0" opacity="0.55"/>
+            <ellipse cx="127" cy="96" rx="14" ry="8" fill="#FFB0C0" opacity="0.55"/>
+            <ellipse cx="85" cy="73" rx="9" ry="5" fill="#FFB6C1" opacity="0.4"/>
+            <ellipse cx="115" cy="73" rx="9" ry="5" fill="#FFB6C1" opacity="0.4"/>
+            <path d="M88,106 Q100,119 112,106 Q105,113 100,115 Q95,113 88,106 Z" fill="#FF8FAB"/>
+            <path d="M89,106 Q100,109 111,106" stroke="#D4608A" stroke-width="1.2" fill="none"/>`
+    },
+    {
+      name: "Red Lips",
+      svg: `<ellipse cx="72" cy="96" rx="12" ry="6" fill="#FFB0C0" opacity="0.28"/>
+            <ellipse cx="128" cy="96" rx="12" ry="6" fill="#FFB0C0" opacity="0.28"/>
+            <path d="M87,106 Q100,120 113,106 Q105,115 100,117 Q95,115 87,106 Z" fill="#CC0000"/>
+            <path d="M88,106 Q100,108 112,106" stroke="#990000" stroke-width="1.2" fill="none"/>
+            <ellipse cx="97" cy="112" rx="4" ry="2" fill="white" opacity="0.3"/>`
+    },
+    {
+      name: "Glam Look",
+      svg: `<ellipse cx="85" cy="73" rx="10" ry="6" fill="#9B59B6" opacity="0.5"/>
+            <ellipse cx="115" cy="73" rx="10" ry="6" fill="#9B59B6" opacity="0.5"/>
+            <ellipse cx="82" cy="71" rx="5" ry="2.5" fill="#FFD700" opacity="0.3"/>
+            <ellipse cx="112" cy="71" rx="5" ry="2.5" fill="#FFD700" opacity="0.3"/>
+            <ellipse cx="72" cy="95" rx="13" ry="7" fill="#FF69B4" opacity="0.4"/>
+            <ellipse cx="128" cy="95" rx="13" ry="7" fill="#FF69B4" opacity="0.4"/>
+            <path d="M87,106 Q100,120 113,106 Q105,115 100,117 Q95,115 87,106 Z" fill="#E63946"/>
+            <path d="M88,106 Q100,109 112,106" stroke="#C0392B" stroke-width="1.2" fill="none"/>
+            <ellipse cx="97" cy="112" rx="4" ry="2" fill="white" opacity="0.35"/>
+            <path d="M76,70 L72,65" stroke="#222" stroke-width="1.5"/>
+            <path d="M124,70 L128,65" stroke="#222" stroke-width="1.5"/>`
+    },
+    {
+      name: "Natural Gloss",
+      svg: `<ellipse cx="73" cy="97" rx="12" ry="6" fill="#FFCDD2" opacity="0.3"/>
+            <ellipse cx="127" cy="97" rx="12" ry="6" fill="#FFCDD2" opacity="0.3"/>
+            <path d="M88,106 Q100,117 112,106 Q105,113 100,115 Q95,113 88,106 Z" fill="#DEB8A0"/>
+            <path d="M89,106 Q100,108 111,106" stroke="#C0897A" stroke-width="1" fill="none"/>
+            <ellipse cx="97" cy="110" rx="5" ry="2.5" fill="white" opacity="0.4"/>`
+    }
+  ]
+
+};
+
+const SKINS = [
+  { name: "Fair",   base: "#FFDBB4", shade: "#F0C49A", line: "#D9A87E" },
+  { name: "Peach",  base: "#F5C2A0", shade: "#E8A882", line: "#C8956C" },
+  { name: "Tan",    base: "#E0A575", shade: "#C98B5F", line: "#B0774E" },
+  { name: "Brown",  base: "#B07B4F", shade: "#96653C", line: "#7D5330" },
+  { name: "Deep",   base: "#7C4E2A", shade: "#66401F", line: "#523318" },
+];
+
+const SAVE_KEY = "dollDressup.v1";
+const state = {};
+Object.keys(opts).forEach(k => { state[k] = 0; });
+let skinIdx = 1;
+
+/* ---------- persistence ---------- */
+function persist() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      state: state, skin: skinIdx,
+      name: document.getElementById('doll-name').value
+    }));
+  } catch(e) {}
+}
+function restore() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (!d) return;
+    Object.keys(opts).forEach(k => {
+      if (typeof d.state?.[k] === 'number' && d.state[k] < opts[k].length) state[k] = d.state[k];
+    });
+    if (typeof d.skin === 'number' && d.skin < SKINS.length) skinIdx = d.skin;
+    if (d.name) document.getElementById('doll-name').value = d.name;
+  } catch(e) {}
+}
+
+/* ---------- rendering ---------- */
+const layerMap = {
+  scene: 'layer-bg', shirt: 'layer-shirt', bottom: 'layer-bottom',
+  jacket: 'layer-jacket', shoes: 'layer-shoes',
+  hat: 'layer-hat', earrings: 'layer-earrings',
+  necklace: 'layer-necklace', bracelet: 'layer-bracelet',
+  makeup: 'layer-makeup', glasses: 'layer-glasses'
+};
+
+function render(cat) {
+  const o = opts[cat][state[cat]];
+  document.getElementById('opt-' + cat).textContent = o.name;
+
+  if (cat === 'hair') {
+    document.getElementById('layer-hair-back').innerHTML = o.back || '';
+    document.getElementById('layer-hair-front').innerHTML = o.front || '';
+  } else {
+    document.getElementById(layerMap[cat]).innerHTML = o.svg || '';
+  }
+
+  // Hide the base mouth when a makeup option (which draws its own lips) is active
+  const baseMouth = document.getElementById('base-mouth');
+  if (baseMouth) {
+    baseMouth.style.display = (state.makeup === 0) ? '' : 'none';
+  }
+}
+
+function applySkin() {
+  const s = SKINS[skinIdx];
+  const root = document.documentElement.style;
+  root.setProperty('--skin', s.base);
+  root.setProperty('--skin-shade', s.shade);
+  root.setProperty('--skin-line', s.line);
+  document.querySelectorAll('#skin-swatches .swatch').forEach((b, i) => {
+    b.classList.toggle('active', i === skinIdx);
+  });
+}
+
+function buildSwatches() {
+  const wrap = document.getElementById('skin-swatches');
+  wrap.innerHTML = SKINS.map((s, i) =>
+    `<button class="swatch" style="background:${s.base}" title="${s.name}" onclick="setSkin(${i})"></button>`
+  ).join('');
+}
+
+function pop(cls) {
+  const svg = document.getElementById('doll');
+  svg.classList.remove('pop', 'wiggle');
+  void svg.offsetWidth;   // restart the animation
+  svg.classList.add(cls || 'pop');
+}
+
+/* ---------- actions ---------- */
+function change(cat, dir) {
+  state[cat] = (state[cat] + dir + opts[cat].length) % opts[cat].length;
+  render(cat);
+  pop('pop');
+  persist();
+}
+
+function setSkin(i) {
+  skinIdx = i;
+  applySkin();
+  pop('pop');
+  persist();
+}
+
+function surpriseMe() {
+  Object.keys(opts).forEach(cat => {
+    if (cat === 'scene') return;   // keep the chosen backdrop
+    state[cat] = Math.floor(Math.random() * opts[cat].length);
+    render(cat);
+  });
+  pop('wiggle');
+  persist();
+}
+
+function resetDoll() {
+  Object.keys(opts).forEach(cat => { state[cat] = 0; render(cat); });
+  skinIdx = 1;
+  applySkin();
+  pop('wiggle');
+  persist();
+}
+
+function saveLook() {
+  const svg = document.getElementById('doll');
+  const clone = svg.cloneNode(true);
+  const s = SKINS[skinIdx];
+  // Bake the skin vars onto the svg so they survive standalone rendering
+  clone.setAttribute('style', `--skin:${s.base};--skin-shade:${s.shade};--skin-line:${s.line}`);
+  clone.setAttribute('width', '400');
+  clone.setAttribute('height', '840');
+  const xml = new XMLSerializer().serializeToString(clone);
+  const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml' }));
+  const img = new Image();
+  img.onload = function() {
+    const c = document.createElement('canvas');
+    c.width = 400; c.height = 840;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    const nm = (document.getElementById('doll-name').value.trim() || 'my-doll')
+      .replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    a.download = nm + '.png';
+    a.href = c.toDataURL('image/png');
+    a.click();
+  };
+  img.src = url;
+}
+
+document.getElementById('doll-name').addEventListener('change', persist);
+
+// Initialize
+buildSwatches();
+restore();
+Object.keys(opts).forEach(cat => render(cat));
+applySkin();
+</script>
+</body>
+</html>
