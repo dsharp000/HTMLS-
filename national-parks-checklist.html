@@ -18,37 +18,106 @@
             max-width: 860px;
             margin: 0 auto 24px;
             text-align: center;
+            position: relative;
         }
 
-        h1 { font-size: 1.9rem; color: #93c5fd; margin-bottom: 4px; }
-        #tagline { color: #64748b; font-size: 0.9rem; margin-bottom: 18px; }
+        .back-link {
+            position: absolute;
+            top: 0; left: 0;
+            font-size: 0.75rem;
+            color: #64748b;
+            text-decoration: none;
+            letter-spacing: 0.05em;
+            transition: color 0.15s;
+        }
+        .back-link:hover { color: #e2e8f0; }
+
+        .eyebrow {
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: #fb923c;
+            margin: 8px 0 6px;
+        }
+
+        h1 {
+            font-size: 2.1rem;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #e2e8f0 0%, #93c5fd 55%, #e2e8f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        #tagline { color: #64748b; font-size: 0.9rem; margin-bottom: 22px; }
 
         #stats {
-            display: flex;
-            justify-content: center;
-            gap: 28px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 18px;
         }
 
-        .stat { text-align: center; }
-        .stat .val { font-size: 1.6rem; font-weight: bold; color: #fb923c; }
-        .stat .lbl { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat {
+            background: #16213a;
+            border: 1px solid #263352;
+            border-radius: 12px;
+            padding: 14px 10px 12px;
+            text-align: center;
+        }
+        .stat .val { font-size: 1.7rem; font-weight: 700; color: #fb923c; line-height: 1.1; }
+        .stat .val .of { font-size: 0.95rem; font-weight: 500; color: #475569; }
+        .stat .lbl { font-size: 0.68rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; }
+
+        #progress-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        #progress-label {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            white-space: nowrap;
+        }
+        #progress-pct {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #fb923c;
+            min-width: 44px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
 
         #progress-bar-track {
-            height: 6px;
+            flex: 1;
+            height: 10px;
             background: #1e293b;
             border-radius: 99px;
             overflow: hidden;
-            margin-bottom: 20px;
+            border: 1px solid #263352;
         }
 
         #progress-bar-fill {
             height: 100%;
-            background: #fb923c;
+            background: linear-gradient(90deg, #f97316, #fbbf24);
             border-radius: 99px;
             width: 0%;
             transition: width 0.3s;
+        }
+
+        #controls-wrap {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            padding: 12px 0 8px;
+            margin: 0 auto 14px;
+            border-bottom: 1px solid #1e293b;
         }
 
         #controls {
@@ -56,7 +125,8 @@
             gap: 10px;
             flex-wrap: wrap;
             justify-content: center;
-            margin-bottom: 24px;
+            max-width: 860px;
+            margin: 0 auto;
         }
 
         #search {
@@ -85,14 +155,45 @@
         .ctrl-btn:hover { background: #334155; color: #e2e8f0; }
         .ctrl-btn.active { background: #fb923c; color: white; border-color: #fb923c; }
 
+        .seg-group {
+            display: flex;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #1e293b;
+        }
+        .seg-btn {
+            padding: 9px 14px;
+            font-size: 0.85rem;
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .seg-btn + .seg-btn { border-left: 1px solid #334155; }
+        .seg-btn:hover { background: #334155; color: #e2e8f0; }
+        .seg-btn.active { background: #fb923c; color: white; }
+
+        .trail-badge {
+            font-size: 0.65rem;
+            background: rgba(148,163,184,0.12);
+            color: #94a3b8;
+            border: 1px solid rgba(148,163,184,0.3);
+            border-radius: 4px;
+            padding: 1px 5px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
         #legend {
             display: flex;
             align-items: center;
             gap: 8px;
             justify-content: center;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #64748b;
-            margin-bottom: 24px;
+            margin-top: 10px;
         }
         .legend-np {
             display: inline-block;
@@ -120,14 +221,32 @@
             cursor: pointer;
             user-select: none;
             transition: background 0.15s;
+            position: relative;
         }
         .state-header:hover { background: #263349; }
+
+        /* thin progress strip along the bottom of each state header */
+        .state-bar {
+            position: absolute;
+            left: 0; right: 0; bottom: 0;
+            height: 3px;
+            background: transparent;
+        }
+        .state-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: #fb923c;
+            transition: width 0.3s;
+        }
+        .state-section.complete .state-bar-fill { background: #4ade80; }
+        .state-section.complete .state-name { color: #4ade80; }
 
         .state-name {
             font-weight: 600;
             font-size: 1rem;
             color: #cbd5e1;
         }
+        .state-name .state-check { font-size: 0.85rem; }
 
         .state-meta {
             display: flex;
@@ -158,8 +277,8 @@
         .site-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 7px 16px;
+            gap: 12px;
+            padding: 9px 16px;
             transition: background 0.1s;
         }
         .site-item:hover { background: #131f35; }
@@ -171,8 +290,8 @@
         .site-item.np:hover { background: rgba(251, 146, 60, 0.14); }
 
         .site-item input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             cursor: pointer;
             accent-color: #fb923c;
             flex-shrink: 0;
@@ -183,6 +302,7 @@
             color: #cbd5e1;
             cursor: pointer;
             flex: 1;
+            transition: color 0.2s;
         }
 
         .site-item.np .site-name {
@@ -217,22 +337,36 @@
 <body>
 
 <header>
+    <a href="index.html" class="back-link">← Razor's Edge</a>
+    <p class="eyebrow">Collect Them All</p>
     <h1>National Park Sites Checklist</h1>
-    <p id="tagline">All NPS units across the United States, organized by state and territory</p>
+    <p id="tagline">Every NPS site across the United States, organized by state and territory</p>
 
     <div id="stats">
-        <div class="stat"><div class="val" id="stat-checked">0</div><div class="lbl">Visited</div></div>
-        <div class="stat"><div class="val" id="stat-total">0</div><div class="lbl">Total Sites</div></div>
-        <div class="stat"><div class="val" id="stat-np-checked">0</div><div class="lbl">Nat'l Parks Visited</div></div>
-        <div class="stat"><div class="val">63</div><div class="lbl">Nat'l Parks Total</div></div>
+        <div class="stat"><div class="val"><span id="stat-checked">0</span><span class="of"> / <span id="stat-total">0</span></span></div><div class="lbl">Sites Visited</div></div>
+        <div class="stat"><div class="val"><span id="stat-trails-checked">0</span><span class="of"> / <span id="stat-trails-total">0</span></span></div><div class="lbl">Trails Visited</div></div>
+        <div class="stat"><div class="val"><span id="stat-np-checked">0</span><span class="of"> / 63</span></div><div class="lbl">National Parks</div></div>
+        <div class="stat"><div class="val"><span id="stat-states">0</span><span class="of"> / 56</span></div><div class="lbl">States Started</div></div>
+        <div class="stat"><div class="val" id="stat-complete">0</div><div class="lbl">States Completed</div></div>
     </div>
 
-    <div id="progress-bar-track">
-        <div id="progress-bar-fill"></div>
+    <div id="progress-row">
+        <span id="progress-label">Overall</span>
+        <div id="progress-bar-track">
+            <div id="progress-bar-fill"></div>
+        </div>
+        <span id="progress-pct">0%</span>
     </div>
+</header>
 
+<div id="controls-wrap">
     <div id="controls">
         <input type="text" id="search" placeholder="Search sites...">
+        <div class="seg-group" id="trail-filter">
+            <button class="seg-btn active" data-mode="all">All</button>
+            <button class="seg-btn" data-mode="sites">Sites</button>
+            <button class="seg-btn" data-mode="trails">Trails</button>
+        </div>
         <button class="ctrl-btn" id="np-only-btn">National Parks Only</button>
         <button class="ctrl-btn" id="expand-all-btn">Expand All</button>
         <button class="ctrl-btn" id="collapse-all-btn">Collapse All</button>
@@ -243,13 +377,15 @@
         <span class="legend-np"></span>
         <span>Bold orange = one of the 63 official National Parks</span>
     </div>
-</header>
+</div>
 
 <div id="content"></div>
 
 <script>
 const parkData = {
   "Alabama": [
+    {name:"Birmingham Civil Rights National Monument"},
+    {name:"Freedom Riders National Monument"},
     {name:"Horseshoe Bend National Military Park"},
     {name:"Little River Canyon National Preserve"},
     {name:"Natchez Trace National Scenic Trail"},
@@ -262,12 +398,14 @@ const parkData = {
   ],
   "Alaska": [
     {name:"Alagnak Wild River"},
+    {name:"Aleutian Islands World War II National Historic Area"},
     {name:"Aniakchak National Monument and Preserve"},
     {name:"Bering Land Bridge National Preserve"},
     {name:"Cape Krusenstern National Monument"},
     {name:"Denali National Park and Preserve", np:true},
     {name:"Gates of the Arctic National Park and Preserve", np:true},
     {name:"Glacier Bay National Park and Preserve", np:true},
+    {name:"Iñupiat Heritage Center"},
     {name:"Katmai National Park and Preserve", np:true},
     {name:"Kenai Fjords National Park", np:true},
     {name:"Klondike Gold Rush National Historical Park"},
@@ -279,6 +417,7 @@ const parkData = {
     {name:"Yukon-Charley Rivers National Preserve"},
   ],
   "Arizona": [
+    {name:"Butterfield Overland National Historic Trail"},
     {name:"Canyon de Chelly National Monument"},
     {name:"Casa Grande Ruins National Monument"},
     {name:"Chiricahua National Monument"},
@@ -286,11 +425,14 @@ const parkData = {
     {name:"Fort Bowie National Historic Site"},
     {name:"Glen Canyon National Recreation Area"},
     {name:"Grand Canyon National Park", np:true},
+    {name:"Grand Canyon-Parashant National Monument"},
     {name:"Hohokam Pima National Monument"},
     {name:"Hubbell Trading Post National Historic Site"},
+    {name:"Juan Bautista de Anza National Historic Trail"},
     {name:"Lake Mead National Recreation Area"},
     {name:"Montezuma Castle National Monument"},
     {name:"Navajo National Monument"},
+    {name:"Old Spanish National Historic Trail"},
     {name:"Organ Pipe Cactus National Monument"},
     {name:"Petrified Forest National Park", np:true},
     {name:"Pipe Spring National Monument"},
@@ -305,17 +447,22 @@ const parkData = {
   "Arkansas": [
     {name:"Arkansas Post National Memorial"},
     {name:"Buffalo National River"},
+    {name:"Butterfield Overland National Historic Trail"},
     {name:"Fort Smith National Historic Site"},
     {name:"Hot Springs National Park", np:true},
     {name:"Little Rock Central High School National Historic Site"},
     {name:"Pea Ridge National Military Park"},
     {name:"President William Jefferson Clinton Birthplace Home National Historic Site"},
+    {name:"Trail of Tears National Historic Trail"},
   ],
   "California": [
+    {name:"Alcatraz Island"},
+    {name:"Butterfield Overland National Historic Trail"},
     {name:"Cabrillo National Monument"},
     {name:"California National Historic Trail"},
-    {name:"César E. Chávez National Monument"},
+    {name:"Castle Mountains National Monument"},
     {name:"Channel Islands National Park", np:true},
+    {name:"César E. Chávez National Monument"},
     {name:"Death Valley National Park", np:true},
     {name:"Devils Postpile National Monument"},
     {name:"Eugene O'Neill National Historic Site"},
@@ -330,21 +477,26 @@ const parkData = {
     {name:"Manzanar National Historic Site"},
     {name:"Mojave National Preserve"},
     {name:"Muir Woods National Monument"},
-    {name:"Pacific Crest National Scenic Trail"},
+    {name:"Old Spanish National Historic Trail"},
     {name:"Pinnacles National Park", np:true},
     {name:"Point Reyes National Seashore"},
+    {name:"Pony Express National Historic Trail"},
     {name:"Port Chicago Naval Magazine National Memorial"},
+    {name:"Presidio of San Francisco"},
     {name:"Redwood National and State Parks", np:true},
     {name:"Rosie the Riveter WWII Home Front National Historical Park"},
     {name:"San Francisco Maritime National Historical Park"},
     {name:"Santa Monica Mountains National Recreation Area"},
     {name:"Sequoia National Park", np:true},
+    {name:"Tule Lake National Monument"},
     {name:"Whiskeytown National Recreation Area"},
     {name:"Yosemite National Park", np:true},
   ],
   "Colorado": [
+    {name:"Amache National Historic Site"},
     {name:"Bent's Old Fort National Historic Site"},
     {name:"Black Canyon of the Gunnison National Park", np:true},
+    {name:"California National Historic Trail"},
     {name:"Colorado National Monument"},
     {name:"Curecanti National Recreation Area"},
     {name:"Dinosaur National Monument"},
@@ -353,38 +505,59 @@ const parkData = {
     {name:"Hovenweep National Monument"},
     {name:"Mesa Verde National Park", np:true},
     {name:"Old Spanish National Historic Trail"},
+    {name:"Pony Express National Historic Trail"},
     {name:"Rocky Mountain National Park", np:true},
     {name:"Sand Creek Massacre National Historic Site"},
+    {name:"Santa Fe National Historic Trail"},
     {name:"Yucca House National Monument"},
   ],
   "Connecticut": [
     {name:"Appalachian National Scenic Trail"},
+    {name:"Coltsville National Historical Park"},
     {name:"New England National Scenic Trail"},
+    {name:"Washington-Rochambeau Revolutionary Route National Historic Trail"},
     {name:"Weir Farm National Historical Park"},
   ],
   "Delaware": [
+    {name:"Captain John Smith Chesapeake National Historic Trail"},
     {name:"First State National Historical Park"},
+    {name:"Washington-Rochambeau Revolutionary Route National Historic Trail"},
   ],
   "District of Columbia": [
+    {name:"African American Civil War Memorial"},
+    {name:"Anacostia Park"},
     {name:"Belmont-Paul Women's Equality National Monument"},
+    {name:"Capitol Hill Parks"},
+    {name:"Captain John Smith Chesapeake National Historic Trail"},
     {name:"Carter G. Woodson Home National Historic Site"},
+    {name:"Chesapeake and Ohio Canal National Historical Park"},
+    {name:"Civil War Defenses of Washington"},
     {name:"Constitution Gardens"},
+    {name:"Dwight D. Eisenhower Memorial"},
     {name:"Ford's Theatre National Historic Site"},
+    {name:"Fort Dupont Park"},
     {name:"Franklin Delano Roosevelt Memorial"},
     {name:"Frederick Douglass National Historic Site"},
+    {name:"George Washington Memorial Parkway"},
+    {name:"Kenilworth Park and Aquatic Gardens"},
     {name:"Korean War Veterans Memorial"},
     {name:"Lincoln Memorial"},
     {name:"Lyndon Baines Johnson Memorial Grove on the Potomac"},
     {name:"Martin Luther King, Jr. Memorial"},
     {name:"Mary McLeod Bethune Council House National Historic Site"},
+    {name:"National Capital Parks-East"},
     {name:"National Mall and Memorial Parks"},
     {name:"Pennsylvania Avenue National Historic Site"},
     {name:"Potomac Heritage National Scenic Trail"},
     {name:"Rock Creek Park"},
+    {name:"Star-Spangled Banner National Historic Trail"},
+    {name:"The White House and President's Park"},
+    {name:"Theodore Roosevelt Island"},
     {name:"Thomas Jefferson Memorial"},
     {name:"Vietnam Veterans Memorial"},
     {name:"Washington Monument"},
-    {name:"White House"},
+    {name:"Washington-Rochambeau Revolutionary Route National Historic Trail"},
+    {name:"World War I Memorial"},
     {name:"World War II Memorial"},
   ],
   "Florida": [
@@ -421,38 +594,50 @@ const parkData = {
     {name:"Honouliuli National Historic Site"},
     {name:"Kalaupapa National Historical Park"},
     {name:"Kaloko-Honokōhau National Historical Park"},
+    {name:"Pearl Harbor National Memorial"},
     {name:"Puʻuhonua o Hōnaunau National Historical Park"},
     {name:"Puʻukoholā Heiau National Historic Site"},
-    {name:"World War II Valor in the Pacific National Monument"},
   ],
   "Idaho": [
+    {name:"California National Historic Trail"},
     {name:"City of Rocks National Reserve"},
     {name:"Craters of the Moon National Monument and Preserve"},
     {name:"Hagerman Fossil Beds National Monument"},
+    {name:"Ice Age Floods National Geologic Trail"},
+    {name:"Lewis and Clark National Historic Trail"},
     {name:"Minidoka National Historic Site"},
     {name:"Nez Perce National Historical Park"},
-    {name:"Nez Perce National Historic Trail"},
+    {name:"Oregon National Historic Trail"},
+    {name:"Yellowstone National Park", np:true},
   ],
   "Illinois": [
-    {name:"Illinois and Michigan Canal National Heritage Corridor"},
+    {name:"Emmett Till and Mamie Till-Mobley National Monument"},
     {name:"Lewis and Clark National Historic Trail"},
     {name:"Lincoln Home National Historic Site"},
     {name:"Mormon Pioneer National Historic Trail"},
-    {name:"Pullman National Monument"},
+    {name:"New Philadelphia National Historic Site"},
+    {name:"Pullman National Historical Park"},
+    {name:"Springfield 1908 Race Riot National Monument"},
+    {name:"Trail of Tears National Historic Trail"},
   ],
   "Indiana": [
     {name:"George Rogers Clark National Historical Park"},
     {name:"Indiana Dunes National Park", np:true},
+    {name:"Lewis and Clark National Historic Trail"},
     {name:"Lincoln Boyhood National Memorial"},
   ],
   "Iowa": [
     {name:"Effigy Mounds National Monument"},
     {name:"Herbert Hoover National Historic Site"},
+    {name:"Lewis and Clark National Historic Trail"},
+    {name:"Mormon Pioneer National Historic Trail"},
   ],
   "Kansas": [
     {name:"Brown v. Board of Education National Historical Park"},
+    {name:"California National Historic Trail"},
     {name:"Fort Larned National Historic Site"},
     {name:"Fort Scott National Historic Site"},
+    {name:"Lewis and Clark National Historic Trail"},
     {name:"Nicodemus National Historic Site"},
     {name:"Oregon National Historic Trail"},
     {name:"Pony Express National Historic Trail"},
@@ -462,53 +647,78 @@ const parkData = {
   "Kentucky": [
     {name:"Abraham Lincoln Birthplace National Historical Park"},
     {name:"Big South Fork National River and Recreation Area"},
+    {name:"Camp Nelson National Monument"},
     {name:"Cumberland Gap National Historical Park"},
+    {name:"Fort Donelson National Battlefield"},
+    {name:"Lewis and Clark National Historic Trail"},
     {name:"Mammoth Cave National Park", np:true},
+    {name:"Mill Springs Battlefield National Monument"},
+    {name:"Trail of Tears National Historic Trail"},
   ],
   "Louisiana": [
     {name:"Cane River Creole National Historical Park"},
+    {name:"El Camino Real de los Tejas National Historic Trail"},
     {name:"Jean Lafitte National Historical Park and Preserve"},
     {name:"New Orleans Jazz National Historical Park"},
     {name:"Poverty Point National Monument"},
+    {name:"Vicksburg National Military Park"},
   ],
   "Maine": [
     {name:"Acadia National Park", np:true},
     {name:"Appalachian National Scenic Trail"},
+    {name:"Frances Perkins National Monument"},
+    {name:"Katahdin Woods and Waters National Monument"},
+    {name:"Maine Acadian Culture"},
+    {name:"Roosevelt Campobello International Park"},
     {name:"Saint Croix Island International Historic Site"},
   ],
   "Maryland": [
     {name:"Antietam National Battlefield"},
+    {name:"Appalachian National Scenic Trail"},
     {name:"Assateague Island National Seashore"},
+    {name:"Baltimore-Washington Parkway"},
+    {name:"Captain John Smith Chesapeake National Historic Trail"},
     {name:"Catoctin Mountain Park"},
     {name:"Chesapeake and Ohio Canal National Historical Park"},
+    {name:"Civil War Defenses of Washington"},
     {name:"Clara Barton National Historic Site"},
+    {name:"Fort Foote Park"},
     {name:"Fort McHenry National Monument and Historic Shrine"},
     {name:"Fort Washington Park"},
+    {name:"George Washington Memorial Parkway"},
     {name:"Glen Echo Park"},
     {name:"Greenbelt Park"},
     {name:"Hampton National Historic Site"},
-    {name:"Harriet Tubman Underground Railroad National Monument"},
+    {name:"Harmony Hall"},
+    {name:"Harpers Ferry National Historical Park"},
+    {name:"Harriet Tubman Underground Railroad National Historical Park"},
     {name:"Monocacy National Battlefield"},
+    {name:"Oxon Cove Park and Oxon Hill Farm"},
     {name:"Piscataway Park"},
+    {name:"Potomac Heritage National Scenic Trail"},
+    {name:"Star-Spangled Banner National Historic Trail"},
     {name:"Thomas Stone National Historic Site"},
+    {name:"Washington-Rochambeau Revolutionary Route National Historic Trail"},
   ],
   "Massachusetts": [
     {name:"Adams National Historical Park"},
     {name:"Appalachian National Scenic Trail"},
+    {name:"Blackstone River Valley National Historical Park"},
     {name:"Boston African American National Historic Site"},
     {name:"Boston Harbor Islands National Recreation Area"},
     {name:"Boston National Historical Park"},
     {name:"Cape Cod National Seashore"},
     {name:"Frederick Law Olmsted National Historic Site"},
-    {name:"John F. Kennedy National Historic Site"},
-    {name:"Longfellow House–Washington's Headquarters National Historic Site"},
+    {name:"John Fitzgerald Kennedy National Historic Site"},
+    {name:"Longfellow House Washington's Headquarters National Historic Site"},
     {name:"Lowell National Historical Park"},
     {name:"Minute Man National Historical Park"},
     {name:"New Bedford Whaling National Historical Park"},
     {name:"New England National Scenic Trail"},
-    {name:"Salem Maritime National Historic Site"},
+    {name:"Salem Maritime National Historical Park"},
     {name:"Saugus Iron Works National Historic Site"},
     {name:"Springfield Armory National Historic Site"},
+    {name:"Washington-Rochambeau Revolutionary Route National Historic Trail"},
   ],
   "Michigan": [
     {name:"Isle Royale National Park", np:true},
@@ -528,37 +738,63 @@ const parkData = {
   ],
   "Mississippi": [
     {name:"Brices Cross Roads National Battlefield Site"},
+    {name:"Emmett Till and Mamie Till-Mobley National Monument"},
+    {name:"Gulf Islands National Seashore"},
     {name:"Medgar and Myrlie Evers Home National Monument"},
     {name:"Natchez National Historical Park"},
-    {name:"Natchez Trace Parkway"},
     {name:"Natchez Trace National Scenic Trail"},
+    {name:"Natchez Trace Parkway"},
+    {name:"Shiloh National Military Park"},
     {name:"Tupelo National Battlefield"},
     {name:"Vicksburg National Military Park"},
   ],
   "Missouri": [
+    {name:"Butterfield Overland National Historic Trail"},
+    {name:"California National Historic Trail"},
     {name:"Gateway Arch National Park", np:true},
     {name:"George Washington Carver National Monument"},
     {name:"Harry S Truman National Historic Site"},
+    {name:"Lewis and Clark National Historic Trail"},
+    {name:"Oregon National Historic Trail"},
     {name:"Ozark National Scenic Riverways"},
+    {name:"Pony Express National Historic Trail"},
+    {name:"Santa Fe National Historic Trail"},
+    {name:"Ste. Geneviève National Historical Park"},
+    {name:"Trail of Tears National Historic Trail"},
     {name:"Ulysses S. Grant National Historic Site"},
     {name:"Wilson's Creek National Battlefield"},
   ],
   "Montana": [
+    {name:"Big Hole National Battlefield"},
     {name:"Bighorn Canyon National Recreation Area"},
+    {name:"Fort Union Trading Post National Historic Site"},
     {name:"Glacier National Park", np:true},
     {name:"Grant-Kohrs Ranch National Historic Site"},
+    {name:"Ice Age Floods National Geologic Trail"},
+    {name:"Lewis and Clark National Historic Trail"},
     {name:"Little Bighorn Battlefield National Monument"},
     {name:"Nez Perce National Historical Park"},
+    {name:"Yellowstone National Park", np:true},
   ],
   "Nebraska": [
     {name:"Agate Fossil Beds National Monument"},
+    {name:"California National Historic Trail"},
     {name:"Homestead National Historical Park"},
+    {name:"Lewis and Clark National Historic Trail"},
     {name:"Missouri National Recreational River"},
+    {name:"Mormon Pioneer National Historic Trail"},
     {name:"Niobrara National Scenic River"},
+    {name:"Oregon National Historic Trail"},
+    {name:"Pony Express National Historic Trail"},
     {name:"Scotts Bluff National Monument"},
   ],
   "Nevada": [
+    {name:"California National Historic Trail"},
+    {name:"Death Valley National Park", np:true},
     {name:"Great Basin National Park", np:true},
+    {name:"Lake Mead National Recreation Area"},
+    {name:"Old Spanish National Historic Trail"},
+    {name:"Pony Express National Historic Trail"},
     {name:"Tule Springs Fossil Beds National Monument"},
   ],
   "New Hampshire": [
@@ -566,15 +802,21 @@ const parkData = {
     {name:"Saint-Gaudens National Historical Park"},
   ],
   "New Jersey": [
+    {name:"Appalachian National Scenic Trail"},
     {name:"Delaware Water Gap National Recreation Area"},
     {name:"Gateway National Recreation Area"},
+    {name:"Great Egg Harbor River"},
+    {name:"Lower Delaware National Wild and Scenic River"},
     {name:"Morristown National Historical Park"},
+    {name:"New Jersey Pinelands National Reserve"},
     {name:"Paterson Great Falls National Historical Park"},
     {name:"Thomas Edison National Historical Park"},
+    {name:"Washington-Rochambeau Revolutionary Route National Historic Trail"},
   ],
   "New Mexico": [
     {name:"Aztec Ruins National Monument"},
     {name:"Bandelier National Monument"},
+    {name:"Butterfield Overland National Historic Trail"},
     {name:"Capulin Volcano National Monument"},
     {name:"Carlsbad Caverns National Park", np:true},
     {name:"Chaco Culture National Historical Park"},
@@ -583,33 +825,44 @@ const parkData = {
     {name:"El Morro National Monument"},
     {name:"Fort Union National Monument"},
     {name:"Gila Cliff Dwellings National Monument"},
+    {name:"Manhattan Project National Historical Park"},
+    {name:"Old Spanish National Historic Trail"},
     {name:"Pecos National Historical Park"},
     {name:"Petroglyph National Monument"},
     {name:"Salinas Pueblo Missions National Monument"},
+    {name:"Santa Fe National Historic Trail"},
     {name:"Valles Caldera National Preserve"},
     {name:"White Sands National Park", np:true},
   ],
   "New York": [
     {name:"African Burial Ground National Monument"},
+    {name:"Appalachian National Scenic Trail"},
+    {name:"Captain John Smith Chesapeake National Historic Trail"},
     {name:"Castle Clinton National Monument"},
     {name:"Eleanor Roosevelt National Historic Site"},
     {name:"Federal Hall National Memorial"},
     {name:"Fire Island National Seashore"},
     {name:"Fort Stanwix National Monument"},
+    {name:"Gateway National Recreation Area"},
     {name:"General Grant National Memorial"},
+    {name:"Governors Island National Monument"},
     {name:"Hamilton Grange National Memorial"},
     {name:"Harriet Tubman National Historical Park"},
     {name:"Home of Franklin D. Roosevelt National Historic Site"},
+    {name:"Lower East Side Tenement Museum National Historic Site"},
     {name:"Martin Van Buren National Historic Site"},
     {name:"North Country National Scenic Trail"},
     {name:"Sagamore Hill National Historic Site"},
+    {name:"Saint Paul's Church National Historic Site"},
     {name:"Saratoga National Historical Park"},
     {name:"Statue of Liberty National Monument"},
     {name:"Stonewall National Monument"},
     {name:"Theodore Roosevelt Birthplace National Historic Site"},
     {name:"Theodore Roosevelt Inaugural National Historic Site"},
+    {name:"Thomas Cole National Historic Site"},
     {name:"Upper Delaware Scenic and Recreational River"},
     {name:"Vanderbilt Mansion National Historic Site"},
+    {name:"Washington-Rochambeau Revolutionary Route National Historic Trail"},
     {name:"Women's Rights National Historical Park"},
   ],
   "North Carolina": [
@@ -623,59 +876,81 @@ const parkData = {
     {name:"Guilford Courthouse National Military Park"},
     {name:"Moores Creek National Battlefield"},
     {name:"Overmountain Victory National Historic Trail"},
+    {name:"Trail of Tears National Historic Trail"},
     {name:"Wright Brothers National Memorial"},
   ],
   "North Dakota": [
     {name:"Fort Union Trading Post National Historic Site"},
     {name:"Knife River Indian Villages National Historic Site"},
+    {name:"Lewis and Clark National Historic Trail"},
     {name:"North Country National Scenic Trail"},
     {name:"Theodore Roosevelt National Park", np:true},
   ],
   "Ohio": [
+    {name:"Charles Young Buffalo Soldiers National Monument"},
     {name:"Cuyahoga Valley National Park", np:true},
     {name:"Dayton Aviation Heritage National Historical Park"},
     {name:"First Ladies National Historic Site"},
     {name:"Hopewell Culture National Historical Park"},
     {name:"James A. Garfield National Historic Site"},
+    {name:"Lewis and Clark National Historic Trail"},
     {name:"North Country National Scenic Trail"},
     {name:"Perry's Victory and International Peace Memorial"},
     {name:"William Howard Taft National Historic Site"},
   ],
   "Oklahoma": [
+    {name:"Butterfield Overland National Historic Trail"},
     {name:"Chickasaw National Recreation Area"},
+    {name:"Fort Smith National Historic Site"},
     {name:"Oklahoma City National Memorial"},
+    {name:"Santa Fe National Historic Trail"},
     {name:"Trail of Tears National Historic Trail"},
     {name:"Washita Battlefield National Historic Site"},
   ],
   "Oregon": [
+    {name:"California National Historic Trail"},
     {name:"Crater Lake National Park", np:true},
+    {name:"Fort Vancouver National Historic Site"},
+    {name:"Ice Age Floods National Geologic Trail"},
     {name:"John Day Fossil Beds National Monument"},
+    {name:"Lewis and Clark National Historic Trail"},
     {name:"Lewis and Clark National Historical Park"},
+    {name:"Nez Perce National Historical Park"},
     {name:"Oregon Caves National Monument and Preserve"},
     {name:"Oregon National Historic Trail"},
   ],
   "Pennsylvania": [
     {name:"Allegheny Portage Railroad National Historic Site"},
     {name:"Appalachian National Scenic Trail"},
+    {name:"Captain John Smith Chesapeake National Historic Trail"},
+    {name:"Carlisle Federal Indian Boarding School National Monument"},
     {name:"Delaware Water Gap National Recreation Area"},
     {name:"Edgar Allan Poe National Historic Site"},
     {name:"Eisenhower National Historic Site"},
+    {name:"First State National Historical Park"},
     {name:"Flight 93 National Memorial"},
     {name:"Fort Necessity National Battlefield"},
     {name:"Friendship Hill National Historic Site"},
     {name:"Gettysburg National Military Park"},
+    {name:"Gloria Dei Church National Historic Site"},
     {name:"Hopewell Furnace National Historic Site"},
     {name:"Independence National Historical Park"},
     {name:"Johnstown Flood National Memorial"},
+    {name:"Lewis and Clark National Historic Trail"},
+    {name:"Lower Delaware National Wild and Scenic River"},
+    {name:"North Country National Scenic Trail"},
+    {name:"Potomac Heritage National Scenic Trail"},
     {name:"Steamtown National Historic Site"},
     {name:"Thaddeus Kosciuszko National Memorial"},
     {name:"Upper Delaware Scenic and Recreational River"},
     {name:"Valley Forge National Historical Park"},
+    {name:"Washington-Rochambeau Revolutionary Route National Historic Trail"},
   ],
   "Rhode Island": [
     {name:"Blackstone River Valley National Historical Park"},
     {name:"Roger Williams National Memorial"},
     {name:"Touro Synagogue National Historic Site"},
+    {name:"Washington-Rochambeau Revolutionary Route National Historic Trail"},
   ],
   "South Carolina": [
     {name:"Charles Pinckney National Historic Site"},
@@ -690,6 +965,7 @@ const parkData = {
   "South Dakota": [
     {name:"Badlands National Park", np:true},
     {name:"Jewel Cave National Monument"},
+    {name:"Lewis and Clark National Historic Trail"},
     {name:"Minuteman Missile National Historic Site"},
     {name:"Missouri National Recreational River"},
     {name:"Mount Rushmore National Memorial"},
@@ -697,11 +973,14 @@ const parkData = {
   ],
   "Tennessee": [
     {name:"Andrew Johnson National Historic Site"},
+    {name:"Appalachian National Scenic Trail"},
     {name:"Big South Fork National River and Recreation Area"},
     {name:"Chickamauga and Chattanooga National Military Park"},
     {name:"Cumberland Gap National Historical Park"},
     {name:"Fort Donelson National Battlefield"},
     {name:"Great Smoky Mountains National Park", np:true},
+    {name:"Manhattan Project National Historical Park"},
+    {name:"Natchez Trace National Scenic Trail"},
     {name:"Natchez Trace Parkway"},
     {name:"Obed Wild and Scenic River"},
     {name:"Overmountain Victory National Historic Trail"},
@@ -714,7 +993,10 @@ const parkData = {
     {name:"Amistad National Recreation Area"},
     {name:"Big Bend National Park", np:true},
     {name:"Big Thicket National Preserve"},
+    {name:"Blackwell School National Historic Site"},
+    {name:"Butterfield Overland National Historic Trail"},
     {name:"Chamizal National Memorial"},
+    {name:"El Camino Real de Tierra Adentro National Historic Trail"},
     {name:"El Camino Real de los Tejas National Historic Trail"},
     {name:"Fort Davis National Historic Site"},
     {name:"Guadalupe Mountains National Park", np:true},
@@ -724,10 +1006,12 @@ const parkData = {
     {name:"Palo Alto Battlefield National Historical Park"},
     {name:"Rio Grande Wild and Scenic River"},
     {name:"San Antonio Missions National Historical Park"},
+    {name:"Waco Mammoth National Monument"},
   ],
   "Utah": [
     {name:"Arches National Park", np:true},
     {name:"Bryce Canyon National Park", np:true},
+    {name:"California National Historic Trail"},
     {name:"Canyonlands National Park", np:true},
     {name:"Capitol Reef National Park", np:true},
     {name:"Cedar Breaks National Monument"},
@@ -735,7 +1019,10 @@ const parkData = {
     {name:"Glen Canyon National Recreation Area"},
     {name:"Golden Spike National Historical Park"},
     {name:"Hovenweep National Monument"},
+    {name:"Mormon Pioneer National Historic Trail"},
     {name:"Natural Bridges National Monument"},
+    {name:"Old Spanish National Historic Trail"},
+    {name:"Pony Express National Historic Trail"},
     {name:"Rainbow Bridge National Monument"},
     {name:"Timpanogos Cave National Monument"},
     {name:"Zion National Park", np:true},
@@ -743,19 +1030,27 @@ const parkData = {
   "Vermont": [
     {name:"Appalachian National Scenic Trail"},
     {name:"Marsh-Billings-Rockefeller National Historical Park"},
+    {name:"North Country National Scenic Trail"},
   ],
   "Virginia": [
     {name:"Appalachian National Scenic Trail"},
     {name:"Appomattox Court House National Historical Park"},
     {name:"Arlington House, The Robert E. Lee Memorial"},
+    {name:"Assateague Island National Seashore"},
     {name:"Blue Ridge Parkway"},
     {name:"Booker T. Washington National Monument"},
+    {name:"Captain John Smith Chesapeake National Historic Trail"},
     {name:"Cedar Creek and Belle Grove National Historical Park"},
+    {name:"Civil War Defenses of Washington"},
     {name:"Colonial National Historical Park"},
     {name:"Cumberland Gap National Historical Park"},
+    {name:"Fort Monroe National Monument"},
     {name:"Fredericksburg and Spotsylvania National Military Park"},
     {name:"George Washington Birthplace National Monument"},
     {name:"George Washington Memorial Parkway"},
+    {name:"Great Falls Park"},
+    {name:"Green Springs"},
+    {name:"Harpers Ferry National Historical Park"},
     {name:"Maggie L. Walker National Historic Site"},
     {name:"Manassas National Battlefield Park"},
     {name:"Overmountain Victory National Historic Trail"},
@@ -764,18 +1059,26 @@ const parkData = {
     {name:"Prince William Forest Park"},
     {name:"Richmond National Battlefield Park"},
     {name:"Shenandoah National Park", np:true},
+    {name:"Star-Spangled Banner National Historic Trail"},
+    {name:"Washington-Rochambeau Revolutionary Route National Historic Trail"},
     {name:"Wolf Trap National Park for the Performing Arts"},
   ],
   "Washington": [
     {name:"Ebey's Landing National Historical Reserve"},
     {name:"Fort Vancouver National Historic Site"},
+    {name:"Ice Age Floods National Geologic Trail"},
     {name:"Klondike Gold Rush National Historical Park"},
     {name:"Lake Chelan National Recreation Area"},
     {name:"Lake Roosevelt National Recreation Area"},
+    {name:"Lewis and Clark National Historic Trail"},
+    {name:"Lewis and Clark National Historical Park"},
+    {name:"Manhattan Project National Historical Park"},
+    {name:"Minidoka National Historic Site"},
     {name:"Mount Rainier National Park", np:true},
+    {name:"Nez Perce National Historical Park"},
     {name:"North Cascades National Park", np:true},
     {name:"Olympic National Park", np:true},
-    {name:"Pacific Crest National Scenic Trail"},
+    {name:"Oregon National Historic Trail"},
     {name:"Ross Lake National Recreation Area"},
     {name:"San Juan Island National Historical Park"},
     {name:"Whitman Mission National Historic Site"},
@@ -786,8 +1089,8 @@ const parkData = {
     {name:"Chesapeake and Ohio Canal National Historical Park"},
     {name:"Gauley River National Recreation Area"},
     {name:"Harpers Ferry National Historical Park"},
+    {name:"Lewis and Clark National Historic Trail"},
     {name:"New River Gorge National Park and Preserve", np:true},
-    {name:"Potomac Heritage National Scenic Trail"},
   ],
   "Wisconsin": [
     {name:"Apostle Islands National Lakeshore"},
@@ -797,12 +1100,15 @@ const parkData = {
   ],
   "Wyoming": [
     {name:"Bighorn Canyon National Recreation Area"},
-    {name:"Continental Divide National Scenic Trail"},
+    {name:"California National Historic Trail"},
     {name:"Devils Tower National Monument"},
     {name:"Fort Laramie National Historic Site"},
     {name:"Fossil Butte National Monument"},
     {name:"Grand Teton National Park", np:true},
     {name:"John D. Rockefeller, Jr. Memorial Parkway"},
+    {name:"Mormon Pioneer National Historic Trail"},
+    {name:"Oregon National Historic Trail"},
+    {name:"Pony Express National Historic Trail"},
     {name:"Yellowstone National Park", np:true},
   ],
   "American Samoa": [
@@ -813,7 +1119,6 @@ const parkData = {
   ],
   "Northern Mariana Islands": [
     {name:"American Memorial Park"},
-    {name:"Mariana Islands World War II National Monument"},
   ],
   "Puerto Rico": [
     {name:"San Juan National Historic Site"},
@@ -830,7 +1135,26 @@ const parkData = {
 // --- State ---
 const STORAGE_KEY = 'nps-checklist-v1';
 let checked = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+
+// Migrate saved checkmarks for officially renamed sites
+const RENAMES = {
+    'Illinois::Pullman National Monument': 'Illinois::Pullman National Historical Park',
+    'Maryland::Harriet Tubman Underground Railroad National Monument': 'Maryland::Harriet Tubman Underground Railroad National Historical Park',
+    'Hawaii::World War II Valor in the Pacific National Monument': 'Hawaii::Pearl Harbor National Memorial',
+    'Massachusetts::Salem Maritime National Historic Site': 'Massachusetts::Salem Maritime National Historical Park',
+    'Massachusetts::John F. Kennedy National Historic Site': 'Massachusetts::John Fitzgerald Kennedy National Historic Site',
+    "District of Columbia::White House": "District of Columbia::The White House and President's Park",
+};
+(function migrate() {
+    let changed = false;
+    for (const [oldKey, newKey] of Object.entries(RENAMES)) {
+        if (checked[oldKey]) { checked[newKey] = true; delete checked[oldKey]; changed = true; }
+    }
+    if (changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(checked));
+})();
 let npOnlyMode = false;
+let trailMode = 'all';   // 'all' | 'sites' | 'trails'
+const isTrail = name => /\btrail\b/i.test(name);
 
 // --- Build IDs ---
 function siteId(state, name) {
@@ -855,11 +1179,12 @@ function render() {
         const header = document.createElement('div');
         header.className = 'state-header';
         header.innerHTML = `
-            <span class="state-name">${state}</span>
+            <span class="state-name" data-state-name="${state}">${state}</span>
             <div class="state-meta">
                 <span class="state-progress" data-state="${state}"></span>
                 <span class="chevron">▶</span>
             </div>
+            <div class="state-bar"><div class="state-bar-fill" data-state-bar="${state}"></div></div>
         `;
         header.addEventListener('click', () => {
             section.classList.toggle('open');
@@ -874,6 +1199,7 @@ function render() {
             item.className = 'site-item' + (site.np ? ' np' : '');
             item.dataset.name = site.name.toLowerCase();
             item.dataset.np = site.np ? 'true' : 'false';
+            item.dataset.trail = isTrail(site.name) ? 'true' : 'false';
 
             const cb = document.createElement('input');
             cb.type = 'checkbox';
@@ -899,6 +1225,11 @@ function render() {
                 badge.className = 'np-badge';
                 badge.textContent = 'National Park';
                 item.appendChild(badge);
+            } else if (isTrail(site.name)) {
+                const badge = document.createElement('span');
+                badge.className = 'trail-badge';
+                badge.textContent = 'Trail';
+                item.appendChild(badge);
             }
 
             list.appendChild(item);
@@ -909,32 +1240,47 @@ function render() {
         content.appendChild(section);
     }
 
-    document.getElementById('stat-total').textContent = totalSites;
     updateStats();
     applyFilters();
 }
 
 function updateStats() {
-    let checked_count = 0, np_checked = 0;
-    let total = 0, total_np = 0;
+    // Multi-state sites (trails, parkways, parks spanning state lines) are listed
+    // under every state they touch — count each unique site once.
+    // Unique names, split into sites vs trails
+    const allPlain = new Set(), allTrails = new Set();
+    const visPlain = new Set(), visTrails = new Set(), npVisited = new Set();
+    let statesStarted = 0, statesComplete = 0;
 
     for (const [state, sites] of Object.entries(parkData)) {
+        let done = 0;
         for (const site of sites) {
-            total++;
-            if (site.np) total_np++;
+            const trail = isTrail(site.name);
+            (trail ? allTrails : allPlain).add(site.name);
             const id = siteId(state, site.name);
             if (checked[id]) {
-                checked_count++;
-                if (site.np) np_checked++;
+                done++;
+                (trail ? visTrails : visPlain).add(site.name);
+                if (site.np) npVisited.add(site.name);
             }
         }
+        if (done > 0) statesStarted++;
+        if (done === sites.length) statesComplete++;
     }
 
-    document.getElementById('stat-checked').textContent = checked_count;
-    document.getElementById('stat-np-checked').textContent = np_checked;
-    document.getElementById('stat-total').textContent = total;
-    const pct = total > 0 ? (checked_count / total) * 100 : 0;
+    document.getElementById('stat-checked').textContent = visPlain.size;
+    document.getElementById('stat-total').textContent = allPlain.size;
+    document.getElementById('stat-trails-checked').textContent = visTrails.size;
+    document.getElementById('stat-trails-total').textContent = allTrails.size;
+    document.getElementById('stat-np-checked').textContent = npVisited.size;
+    document.getElementById('stat-states').textContent = statesStarted;
+    document.getElementById('stat-complete').textContent = statesComplete;
+
+    const totalAll = allPlain.size + allTrails.size;
+    const visitedAll = visPlain.size + visTrails.size;
+    const pct = totalAll > 0 ? (visitedAll / totalAll) * 100 : 0;
     document.getElementById('progress-bar-fill').style.width = pct + '%';
+    document.getElementById('progress-pct').textContent = (pct > 0 && pct < 1 ? '<1' : Math.round(pct)) + '%';
 
     // Update state progress labels
     for (const state of Object.keys(parkData)) {
@@ -942,14 +1288,32 @@ function updateStats() {
     }
 }
 
+// Sites in a state that match the active toggles (trail filter + NP-only).
+// Search is intentionally excluded — counts reflect the chosen view, not the query.
+function stateFilteredSites(state) {
+    return parkData[state].filter(s =>
+        (!npOnlyMode || s.np) &&
+        (trailMode === 'all' || (trailMode === 'trails') === isTrail(s.name)));
+}
+
 function updateStateProgress(state) {
     const el = document.querySelector(`.state-progress[data-state="${state}"]`);
     if (!el) return;
-    const sites = parkData[state];
+    const sites = stateFilteredSites(state);
     const done = sites.filter(s => checked[siteId(state, s.name)]).length;
+    const word = trailMode === 'trails' ? 'trail' : 'site';
     el.innerHTML = done > 0
         ? `<span class="done">${done}</span>/${sites.length}`
-        : `${sites.length} sites`;
+        : `${sites.length} ${word}${sites.length === 1 ? '' : 's'}`;
+
+    const bar = document.querySelector(`.state-bar-fill[data-state-bar="${state}"]`);
+    if (bar) bar.style.width = (sites.length ? (done / sites.length) * 100 : 0) + '%';
+
+    const section = document.querySelector(`.state-section[data-state="${state}"]`);
+    const nameEl = document.querySelector(`.state-name[data-state-name="${state}"]`);
+    const complete = sites.length > 0 && done === sites.length;
+    if (section) section.classList.toggle('complete', complete);
+    if (nameEl) nameEl.innerHTML = complete ? `${state} <span class="state-check">✓</span>` : state;
 }
 
 function applyFilters() {
@@ -963,10 +1327,12 @@ function applyFilters() {
         section.querySelectorAll('.site-item').forEach(item => {
             const name = item.dataset.name;
             const isNP = item.dataset.np === 'true';
+            const itemIsTrail = item.dataset.trail === 'true';
             const matchesSearch = !query || name.includes(query) || state.toLowerCase().includes(query);
             const matchesNPFilter = !npOnlyMode || isNP;
+            const matchesTrailFilter = trailMode === 'all' || (trailMode === 'trails') === itemIsTrail;
 
-            if (matchesSearch && matchesNPFilter) {
+            if (matchesSearch && matchesNPFilter && matchesTrailFilter) {
                 item.classList.remove('hidden');
                 stateHasVisible = true;
             } else {
@@ -985,6 +1351,9 @@ function applyFilters() {
         }
     });
 
+    // Header counts follow the active toggles
+    for (const state of Object.keys(parkData)) updateStateProgress(state);
+
     let noResults = document.getElementById('no-results');
     if (!anyVisible) {
         if (!noResults) {
@@ -1001,6 +1370,15 @@ function applyFilters() {
 
 // --- Controls ---
 document.getElementById('search').addEventListener('input', applyFilters);
+
+document.querySelectorAll('#trail-filter .seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        trailMode = btn.dataset.mode;
+        document.querySelectorAll('#trail-filter .seg-btn').forEach(b =>
+            b.classList.toggle('active', b === btn));
+        applyFilters();
+    });
+});
 
 document.getElementById('np-only-btn').addEventListener('click', function() {
     npOnlyMode = !npOnlyMode;
