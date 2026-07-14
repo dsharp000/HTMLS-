@@ -271,6 +271,8 @@
       display: flex;
       flex-direction: column;
     }
+    /* Shared/group gear card spans the full row */
+    #card-group { grid-column: 1 / -1; }
 
     .card-header {
       display: flex;
@@ -299,7 +301,17 @@
       min-width: 0;
     }
     .person-name-input::placeholder { color: var(--muted); font-weight: 400; }
-    .person-name-input:focus { color: var(--accent); }
+    .person-name-input:hover {
+      background: var(--surf2);
+      border-radius: 6px;
+      box-shadow: 0 0 0 1px var(--border);
+    }
+    .person-name-input:focus {
+      color: var(--accent);
+      background: var(--surf2);
+      border-radius: 6px;
+      box-shadow: 0 0 0 1px var(--accent);
+    }
 
     .person-total-badge {
       font-size: 0.8rem;
@@ -379,6 +391,20 @@
       color: var(--accent);
       font-variant-numeric: tabular-nums;
     }
+    .gear-bulk-wrap { display: flex; gap: 0.3rem; margin-left: auto; margin-right: 0.6rem; }
+    .gear-bulk {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--muted);
+      font-size: 0.6rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.12rem 0.45rem;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .gear-bulk:hover { color: var(--accent); border-color: var(--accent); }
 
     .gear-list { padding: 0 0.5rem 0.25rem; }
 
@@ -412,7 +438,17 @@
       padding: 0;
     }
     .gear-name-input::placeholder { color: var(--muted); }
-    .gear-name-input:focus { color: var(--accent); }
+    .gear-name-input:hover {
+      background: var(--surf);
+      border-radius: 4px;
+      box-shadow: 0 0 0 1px var(--border);
+    }
+    .gear-name-input:focus {
+      color: var(--accent);
+      background: var(--surf);
+      border-radius: 4px;
+      box-shadow: 0 0 0 1px var(--accent);
+    }
 
     .gear-weight-input {
       width: 54px;
@@ -569,13 +605,14 @@
   <div class="person-card" id="card-slot2"><div style="padding:2rem;color:var(--muted);font-size:.85rem">Connecting…</div></div>
   <div class="person-card" id="card-slot3"><div style="padding:2rem;color:var(--muted);font-size:.85rem">Connecting…</div></div>
   <div class="person-card" id="card-slot4"><div style="padding:2rem;color:var(--muted);font-size:.85rem">Connecting…</div></div>
+  <div class="person-card" id="card-group"><div style="padding:2rem;color:var(--muted);font-size:.85rem">Connecting…</div></div>
 </div>
 
 <footer>Razor's Edge · Alaska Fly-In Packer</footer>
 
 <script type="module">
 import { initializeApp }                              from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getDatabase, ref, set, remove, onValue, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+import { getDatabase, ref, set, update, remove, onValue, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
 // ── Firebase ────────────────────────────────────────────────────
 
@@ -595,8 +632,8 @@ const db  = getDatabase(app);
 // ── Constants ───────────────────────────────────────────────────
 
 const LIMIT = 850;
-const SLOTS = ['slot1','slot2','slot3','slot4'];
-const SLOT_LABELS = ['Traveler 1','Traveler 2','Traveler 3','Traveler 4'];
+const SLOTS = ['slot1','slot2','slot3','slot4','group'];
+const SLOT_LABELS = ['Traveler 1','Traveler 2','Traveler 3','Traveler 4','Group'];
 
 // Per-traveler identity colors (fixed order; contrast-checked against the dark surface).
 // `main` marks the traveler everywhere; `tint` is a lighter step of the same hue for
@@ -606,30 +643,92 @@ const SLOT_COLORS = {
   slot2: { main:'#199e70', tint:'#5fcda2' },  // aqua
   slot3: { main:'#c98500', tint:'#edb84d' },  // yellow
   slot4: { main:'#008300', tint:'#4fae4f' },  // green
+  group: { main:'#9b6dd6', tint:'#c3a6e8' },  // purple — shared/group gear
 };
 
+// Measured weights (lbs) from the crew's gear spreadsheet. Everything starts
+// unchecked — each traveler ticks what he's actually carrying.
 const DEFAULT_GEAR = [
-  { id:'g01', name:'Clothes',            weight:3.0,  included:true },
-  { id:'g02', name:'Food',               weight:6.0,  included:true },
-  { id:'g03', name:'Tent',               weight:4.5,  included:true },
-  { id:'g04', name:'Sleeping Bag',       weight:3.0,  included:true },
-  { id:'g05', name:'Sleeping Mat',       weight:1.5,  included:true },
-  { id:'g06', name:'Pillow',             weight:0.5,  included:true },
-  { id:'g07', name:'Extra Layer',        weight:0.5,  included:true },
-  { id:'g08', name:'Stove',              weight:0.5,  included:true },
-  { id:'g09', name:'Fuel',              weight:1.0,  included:true },
-  { id:'g10', name:'Pots',              weight:0.5,  included:true },
-  { id:'g11', name:'Cup',               weight:0.2,  included:true },
-  { id:'g12', name:'Bowl',              weight:0.2,  included:true },
-  { id:'g13', name:'Toiletries',        weight:0.5,  included:true },
-  { id:'g14', name:'Backup Shoes',      weight:1.5,  included:true },
-  { id:'g15', name:'Mosquito Head Net', weight:0.1,  included:true },
-  { id:'g16', name:'Headlamp',          weight:0.2,  included:true },
+  { id:'k01', name:'Backpack',                weight:4.90, included:false },
+  { id:'k02', name:'Rain cover',              weight:0.34, included:false },
+  { id:'k03', name:'Blue Duffel Bag',         weight:2.14, included:false },
+  { id:'k04', name:'Black Duffel Bag',        weight:2.40, included:false },
+  { id:'k05', name:'Contractor Bag',          weight:0.32, included:false },
+  { id:'k06', name:'Kelty Sleeping bag',      weight:2.09, included:false },
+  { id:'k07', name:'Zenbivy Light bed',       weight:2.04, included:false },
+  { id:'k08', name:'Sleeping bag sack',       weight:0.16, included:false },
+  { id:'k09', name:'Liner + sack',            weight:0.62, included:false },
+  { id:'k10', name:'Air pad',                 weight:1.04, included:false },
+  { id:'k11', name:'Air pad sack',            weight:0.04, included:false },
+  { id:'k12', name:'Repair kit',              weight:0.02, included:false },
+  { id:'k13', name:'2P Nemo Hornet tent',     weight:2.37, included:false },
+  { id:'k14', name:'2P Footprint',            weight:0.36, included:false },
+  { id:'k15', name:'2P Footprint sack',       weight:0.05, included:false },
+  { id:'k16', name:'3P Kelty Trailogic tent', weight:4.58, included:false },
+  { id:'k17', name:'3P Footprint',            weight:0.78, included:false },
+  { id:'k18', name:'3P Footprint sack',       weight:0.03, included:false },
+  { id:'k19', name:'Pillow',                  weight:0.19, included:false },
+  { id:'k20', name:'Camp chair',              weight:1.62, included:false },
+  { id:'k21', name:'Camp chair sack',         weight:0.09, included:false },
+  { id:'k22', name:'Jetboil Fuel',            weight:0.83, included:false },
+  { id:'k23', name:'Fuel stand',              weight:0.06, included:false },
+  { id:'k24', name:'Lighter',                 weight:0.04, included:false },
+  { id:'k25', name:'Matches',                 weight:0.01, included:false },
+  { id:'k26', name:'Pot',                     weight:0.57, included:false },
+  { id:'k27', name:'Cup',                     weight:0.16, included:false },
+  { id:'k28', name:'Spoon',                   weight:0.03, included:false },
+  { id:'k29', name:'Stove',                   weight:0.21, included:false },
+  { id:'k30', name:'Stove case',              weight:0.03, included:false },
+  { id:'k31', name:'Mosquito Net',            weight:0.05, included:false },
+  { id:'k32', name:'Multi-tool',              weight:0.41, included:false },
+  { id:'k33', name:'Rope',                    weight:0.15, included:false },
+  { id:'k34', name:'Compass',                 weight:0.07, included:false },
+  { id:'k35', name:'Extra Carabiner',         weight:0.05, included:false },
+  { id:'k36', name:'Wash cloth',              weight:0.05, included:false },
+  { id:'k37', name:'Travel backpack',         weight:0.37, included:false },
+  { id:'k38', name:'Water Filtration',        weight:0.29, included:false },
+  { id:'k39', name:'1L Nalgene bottle',       weight:0.39, included:false },
+  { id:'k40', name:'1L Foldable bottle',      weight:0.09, included:false },
+  { id:'k41', name:'Ziploc bag',              weight:0.03, included:false },
+  { id:'k42', name:'1L Water',                weight:2.18, included:false },
+  { id:'k43', name:'Flask',                   weight:0.30, included:false },
+  { id:'k44', name:'6 oz whiskey',            weight:0.37, included:false },
+  { id:'k45', name:'Cigar',                   weight:0.03, included:false },
+  { id:'k46', name:'Head lamp',               weight:0.15, included:false },
+  { id:'k47', name:'Battery charger',         weight:0.46, included:false },
+  { id:'k48', name:'Charging cable',          weight:0.02, included:false },
+  { id:'k49', name:'Phone charger',           weight:0.22, included:false },
+  { id:'k50', name:'2 hand warmers',          weight:0.17, included:false },
+  { id:'k51', name:'2 toe warmers',           weight:0.12, included:false },
+  { id:'k52', name:'Keens',                   weight:1.94, included:false },
+  { id:'k53', name:'Pants',                   weight:0.90, included:false },
+  { id:'k54', name:'Fleece vest',             weight:0.92, included:false },
+  { id:'k55', name:'Long sleeve shirt',       weight:0.35, included:false },
+  { id:'k56', name:'Underwear/socks',         weight:0.23, included:false },
+  { id:'k57', name:'Extra Clothes - V1 (2 uw, 4 socks, thermals, 2 LS, tee, shorts)', weight:3.36, included:false },
+  { id:'k58', name:'Extra Clothes - V2 (2 uw, 3 socks, thermals, 2 LS)',              weight:2.45, included:false },
+  { id:'k59', name:'Rain coat',               weight:1.54, included:false },
+  { id:'k60', name:'Rain pants',              weight:0.36, included:false },
+  { id:'k61', name:'Winter coat',             weight:1.14, included:false },
+  { id:'k62', name:'Green full brim hat',     weight:0.17, included:false },
+  { id:'k63', name:'Knit hat',                weight:0.15, included:false },
 ];
 
-function defaultMember(label) {
+// Shared gear carried for the whole crew — lives in the Group card.
+const DEFAULT_GROUP_GEAR = [
+  { id:'gg01', name:'Duffle Bag 1',        weight:3.0, included:true },
+  { id:'gg02', name:'Duffle Bag 2',        weight:3.0, included:true },
+  { id:'gg03', name:'Bear Canister 10L 1', weight:2.5, included:true },
+  { id:'gg04', name:'Bear Canister 10L 2', weight:2.5, included:true },
+];
+
+function slotDefaults(slotId) {
+  return slotId === 'group' ? DEFAULT_GROUP_GEAR : DEFAULT_GEAR;
+}
+
+function defaultMember(slotId, label) {
   const gear = {};
-  DEFAULT_GEAR.forEach(g => { gear[g.id] = { ...g }; });
+  slotDefaults(slotId).forEach(g => { gear[g.id] = { ...g }; });
   return { name: label, bodyWeight: 0, gear };
 }
 
@@ -789,7 +888,9 @@ function renderCard(slotId, member) {
 
   const summary = document.getElementById(`summary-${slotId}`);
   if (summary) {
-    summary.textContent = `Body ${fmt(bw)} lbs · Gear ${fmt(gTotal)} lbs · Total ${fmt(pTotal)} lbs`;
+    summary.textContent = slotId === 'group'
+      ? `Shared gear · ${fmt(gTotal)} lbs — counts against the 850 lb load`
+      : `Body ${fmt(bw)} lbs · Gear ${fmt(gTotal)} lbs · Total ${fmt(pTotal)} lbs`;
   }
 
   // Update inputs without stealing focus
@@ -809,8 +910,14 @@ function renderGearList(slotId, gear) {
   const focusedStart = document.activeElement && document.activeElement.selectionStart !== undefined
                        ? document.activeElement.selectionStart : null;
 
+  const defaults = slotDefaults(slotId);
+  // Defaults keep their list order; anything else (added/imported items) sorts after them by id.
+  const orderOf = item => {
+    const i = defaults.findIndex(d => d.id === item.id);
+    return i === -1 ? Infinity : i;
+  };
   const sorted = Object.values(gear).sort((a, b) => {
-    const di = DEFAULT_GEAR.findIndex(d => d.id === a.id) - DEFAULT_GEAR.findIndex(d => d.id === b.id);
+    const di = orderOf(a) - orderOf(b);
     if (di !== 0) return di;
     return (a.id > b.id ? 1 : -1);
   });
@@ -825,11 +932,11 @@ function renderGearList(slotId, gear) {
                id="gcheck-${slotId}-${item.id}"
                onchange="window._toggleGear('${slotId}','${item.id}',this.checked)">
         <input type="text" class="gear-name-input" value="${esc(item.name)}"
-               id="gname-${slotId}-${item.id}"
+               id="gname-${slotId}-${item.id}" title="Click to edit name"
                onblur="window._saveGearName('${slotId}','${item.id}',this.value)"
                onkeydown="if(event.key==='Enter')this.blur()">
-        <input type="number" class="gear-weight-input" value="${Number(item.weight).toFixed(1)}"
-               id="gweight-${slotId}-${item.id}" min="0" step="0.1"
+        <input type="number" class="gear-weight-input" value="${Number(item.weight).toFixed(2)}"
+               id="gweight-${slotId}-${item.id}" min="0" step="0.01"
                onblur="window._saveGearWeight('${slotId}','${item.id}',this.value)"
                onkeydown="if(event.key==='Enter')this.blur()">
         <span class="gear-lbs">lbs</span>
@@ -854,17 +961,19 @@ function renderGearList(slotId, gear) {
 // ── Build card skeleton (once) ───────────────────────────────────
 
 function buildCard(slotId, label) {
+  const isGroup = slotId === 'group';
   const card = document.getElementById(`card-${slotId}`);
   card.innerHTML = `
     <div class="card-header">
       <span class="person-dot" style="background:${SLOT_COLORS[slotId].main}"></span>
       <input type="text" class="person-name-input" id="name-${slotId}"
-             placeholder="${label}"
+             placeholder="${label}" title="Click to edit name"
              onblur="window._saveName('${slotId}',this.value)"
              onkeydown="if(event.key==='Enter')this.blur()">
       <div class="person-total-badge" id="ptotal-${slotId}">0.0 lbs</div>
     </div>
 
+    ${isGroup ? '' : `
     <div class="split-bar" id="split-${slotId}"></div>
 
     <div class="bw-row">
@@ -876,10 +985,14 @@ function buildCard(slotId, label) {
                onkeydown="if(event.key==='Enter')this.blur()">
         <span class="bw-unit">lbs</span>
       </div>
-    </div>
+    </div>`}
 
     <div class="gear-header">
-      <span class="gear-header-label">Gear</span>
+      <span class="gear-header-label">${isGroup ? 'Shared Gear · duffles, bear cans, crew stuff' : 'Gear'}</span>
+      <span class="gear-bulk-wrap">
+        <button class="gear-bulk" onclick="window._setAllGear('${slotId}',true)" title="Check every item">All</button>
+        <button class="gear-bulk" onclick="window._setAllGear('${slotId}',false)" title="Uncheck every item">None</button>
+      </span>
       <span class="gear-subtotal" id="gsub-${slotId}">0.0 lbs</span>
     </div>
 
@@ -888,7 +1001,7 @@ function buildCard(slotId, label) {
     <div class="add-gear-row">
       <input type="text" class="add-name-input" id="new-name-${slotId}" placeholder="Add item…">
       <input type="number" class="add-weight-input" id="new-weight-${slotId}"
-             placeholder="lbs" min="0" step="0.1">
+             placeholder="lbs" min="0" step="0.01">
       <button class="add-btn" onclick="window._addGear('${slotId}')">+ Add</button>
     </div>
 
@@ -925,7 +1038,9 @@ function refreshCardStats(slotId) {
     badge.style.borderColor = pTotal > 250 ? 'var(--warn)' : 'var(--border)';
   }
   if (gSub)    gSub.textContent = `${fmt(gTotal)} lbs`;
-  if (summary) summary.textContent = `Body ${fmt(bw)} lbs · Gear ${fmt(gTotal)} lbs · Total ${fmt(pTotal)} lbs`;
+  if (summary) summary.textContent = slotId === 'group'
+    ? `Shared gear · ${fmt(gTotal)} lbs — counts against the 850 lb load`
+    : `Body ${fmt(bw)} lbs · Gear ${fmt(gTotal)} lbs · Total ${fmt(pTotal)} lbs`;
   if (split) {
     const c = SLOT_COLORS[slotId];
     split.innerHTML = pTotal > 0
@@ -969,6 +1084,19 @@ window._saveGearWeight = (slotId, gearId, val) => {
   const w = Math.max(0, parseFloat(val) || 0);
   if (members[slotId]?.gear?.[gearId]) members[slotId].gear[gearId].weight = w;
   set(ref(db, `alaska-trip/members/${slotId}/gear/${gearId}/weight`), w);
+  refreshCardStats(slotId);
+};
+
+window._setAllGear = (slotId, included) => {
+  const gear = members[slotId]?.gear;
+  if (!gear) return;
+  const updates = {};
+  Object.keys(gear).forEach(id => {
+    gear[id].included = included;
+    updates[`${id}/included`] = included;
+  });
+  update(ref(db, `alaska-trip/members/${slotId}/gear`), updates);
+  renderGearList(slotId, gear);
   refreshCardStats(slotId);
 };
 
@@ -1049,7 +1177,7 @@ onValue(membersRef, async snap => {
     for (let i = 0; i < SLOTS.length; i++) {
       const slotId = SLOTS[i];
       if (!data[slotId]) {
-        const def = defaultMember(SLOT_LABELS[i]);
+        const def = defaultMember(slotId, SLOT_LABELS[i]);
         data[slotId] = def;
         set(ref(db, `alaska-trip/members/${slotId}`), def);
       }
