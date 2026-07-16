@@ -442,67 +442,123 @@ const opts = {
             <line x1="126" y1="71" x2="140" y2="79" stroke="#FF5C8A" stroke-width="2.5"/>
             <ellipse cx="80" cy="70" rx="3" ry="2" fill="white" opacity="0.5"/>
             <ellipse cx="108" cy="70" rx="3" ry="2" fill="white" opacity="0.5"/>`
+    },
+    {
+      name: "Cat-Eye Glasses",
+      svg: `<path d="M69,63 Q66,84 80,87 Q94,89 97,77 Q98,68 88,67 Q76,66 69,63 Z" fill="#BEE3F7" opacity="0.35" stroke="#D63384" stroke-width="2.5"/>
+            <path d="M131,63 Q134,84 120,87 Q106,89 103,77 Q102,68 112,67 Q124,66 131,63 Z" fill="#BEE3F7" opacity="0.35" stroke="#D63384" stroke-width="2.5"/>
+            <path d="M97,74 Q100,71 103,74" stroke="#D63384" stroke-width="2.5" fill="none"/>
+            <line x1="70" y1="66" x2="59" y2="78" stroke="#D63384" stroke-width="2.5"/>
+            <line x1="130" y1="66" x2="141" y2="78" stroke="#D63384" stroke-width="2.5"/>
+            <circle cx="69" cy="63" r="2" fill="#FFD700"/>
+            <circle cx="131" cy="63" r="2" fill="#FFD700"/>`
+    },
+    {
+      name: "Star Sunnies",
+      svg: `<polygon points="85,62 88.8,71.7 99.3,72.4 91.2,79 93.8,89.1 85,83.5 76.2,89.1 78.8,79 70.7,72.4 81.2,71.7" fill="#FFD93D" opacity="0.92" stroke="#E6A817" stroke-width="1.5" stroke-linejoin="round"/>
+            <polygon points="115,62 118.8,71.7 129.3,72.4 121.2,79 123.8,89.1 115,83.5 106.2,89.1 108.8,79 100.7,72.4 111.2,71.7" fill="#FFD93D" opacity="0.92" stroke="#E6A817" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M96,74 Q100,71 104,74" stroke="#E6A817" stroke-width="2.5" fill="none"/>
+            <line x1="72" y1="72" x2="60" y2="79" stroke="#E6A817" stroke-width="2.5"/>
+            <line x1="128" y1="72" x2="140" y2="79" stroke="#E6A817" stroke-width="2.5"/>
+            <ellipse cx="81" cy="73" rx="3" ry="2" fill="white" opacity="0.5"/>
+            <ellipse cx="111" cy="73" rx="3" ry="2" fill="white" opacity="0.5"/>`
+    },
+    {
+      name: "Square Glasses",
+      svg: `<rect x="71" y="67" width="27" height="19" rx="4" fill="#BEE3F7" opacity="0.35" stroke="#2B5BA8" stroke-width="2.5"/>
+            <rect x="102" y="67" width="27" height="19" rx="4" fill="#BEE3F7" opacity="0.35" stroke="#2B5BA8" stroke-width="2.5"/>
+            <path d="M98,74 Q100,71 102,74" stroke="#2B5BA8" stroke-width="2.5" fill="none"/>
+            <line x1="71" y1="73" x2="60" y2="79" stroke="#2B5BA8" stroke-width="2.5"/>
+            <line x1="129" y1="73" x2="140" y2="79" stroke="#2B5BA8" stroke-width="2.5"/>
+            <line x1="76" y1="83" x2="88" y2="70" stroke="white" stroke-width="2" opacity="0.5"/>
+            <line x1="107" y1="83" x2="119" y2="70" stroke="white" stroke-width="2" opacity="0.5"/>`
     }
   ],
 
   hair: [
     {
       name: "Long Straight (Brown)",
-      back: `<path d="M60,42 Q56,16 100,14 Q144,16 140,42 L148,210 Q128,220 100,222 Q72,220 52,210 Z" fill="#7B3F1E"/>`,
-      front: `<path d="M60,42 Q58,26 62,22 L138,22 Q142,26 140,42 L136,90 Q120,72 100,72 Q80,72 64,90 Z" fill="#7B3F1E"/>`
+      back: `<path d="M60,40 Q55,13 100,11 Q145,13 140,40 L146,120 Q152,180 148,225 Q124,238 100,240 Q76,238 52,225 Q48,180 54,120 Z" fill="#7B3F1E"/>
+             <path d="M60,60 Q52,140 55,215" stroke="#93552B" stroke-width="2.5" opacity="0.6" fill="none"/>
+             <path d="M140,60 Q148,140 145,215" stroke="#93552B" stroke-width="2.5" opacity="0.6" fill="none"/>`,
+      front: `<path d="M60,42 Q56,16 100,13 Q144,16 140,42 L138,92 Q130,62 100,58 Q70,62 62,92 Z" fill="#7B3F1E"/>
+              <path d="M62,74 Q54,130 56,170 Q58,204 70,222 Q76,208 72,168 Q70,120 70,84 Z" fill="#7B3F1E"/>
+              <path d="M138,74 Q146,130 144,170 Q142,204 130,222 Q124,208 128,168 Q130,120 130,84 Z" fill="#7B3F1E"/>
+              <path d="M72,24 Q96,17 122,26" stroke="#A5643A" stroke-width="3.5" fill="none" opacity="0.55" stroke-linecap="round"/>`
     },
     {
       name: "Curly (Black)",
-      back: `<path d="M58,44 Q52,14 100,12 Q148,14 142,44 L144,175 Q124,186 100,188 Q76,186 56,175 Z" fill="#1a1a1a"/>
-             <ellipse cx="52" cy="100" rx="12" ry="14" fill="#1a1a1a"/>
-             <ellipse cx="55" cy="130" rx="11" ry="13" fill="#1a1a1a"/>
-             <ellipse cx="58" cy="158" rx="10" ry="12" fill="#1a1a1a"/>
-             <ellipse cx="148" cy="100" rx="12" ry="14" fill="#1a1a1a"/>
-             <ellipse cx="145" cy="130" rx="11" ry="13" fill="#1a1a1a"/>
-             <ellipse cx="142" cy="158" rx="10" ry="12" fill="#1a1a1a"/>`,
-      front: `<path d="M62,40 Q60,18 100,15 Q140,18 138,40 L134,82 Q120,68 100,68 Q80,68 66,82 Z" fill="#1a1a1a"/>
-              <ellipse cx="66" cy="58" rx="10" ry="11" fill="#1a1a1a"/>
-              <ellipse cx="134" cy="58" rx="10" ry="11" fill="#1a1a1a"/>
-              <ellipse cx="74" cy="44" rx="9" ry="10" fill="#1a1a1a"/>
-              <ellipse cx="126" cy="44" rx="9" ry="10" fill="#1a1a1a"/>`
+      back: `<path d="M46,40 Q60,16 100,14 Q140,16 154,40 L156,140 Q100,170 44,140 Z" fill="#1a1a1a"/>
+             <circle cx="100" cy="26" r="18" fill="#1a1a1a"/><circle cx="72" cy="32" r="16" fill="#1a1a1a"/><circle cx="128" cy="32" r="16" fill="#1a1a1a"/>
+             <circle cx="54" cy="52" r="15" fill="#1a1a1a"/><circle cx="146" cy="52" r="15" fill="#1a1a1a"/>
+             <circle cx="46" cy="78" r="14" fill="#1a1a1a"/><circle cx="154" cy="78" r="14" fill="#1a1a1a"/>
+             <circle cx="44" cy="104" r="13" fill="#1a1a1a"/><circle cx="156" cy="104" r="13" fill="#1a1a1a"/>
+             <circle cx="48" cy="128" r="13" fill="#1a1a1a"/><circle cx="152" cy="128" r="13" fill="#1a1a1a"/>
+             <circle cx="56" cy="148" r="12" fill="#1a1a1a"/><circle cx="144" cy="148" r="12" fill="#1a1a1a"/>
+             <path d="M40,72 Q36,78 40,84" stroke="#4a4a4a" stroke-width="2" fill="none" opacity="0.8"/>
+             <path d="M160,72 Q164,78 160,84" stroke="#4a4a4a" stroke-width="2" fill="none" opacity="0.8"/>`,
+      front: `<path d="M62,42 Q60,18 100,15 Q140,18 138,42 L134,78 Q120,64 100,64 Q80,64 66,78 Z" fill="#1a1a1a"/>
+              <circle cx="70" cy="52" r="11" fill="#1a1a1a"/><circle cx="86" cy="42" r="11" fill="#1a1a1a"/><circle cx="100" cy="38" r="11" fill="#1a1a1a"/><circle cx="114" cy="42" r="11" fill="#1a1a1a"/><circle cx="130" cy="52" r="11" fill="#1a1a1a"/>
+              <circle cx="63" cy="68" r="9" fill="#1a1a1a"/><circle cx="137" cy="68" r="9" fill="#1a1a1a"/>
+              <path d="M64,46 Q68,40 74,41" stroke="#4a4a4a" stroke-width="2" fill="none" opacity="0.8"/>
+              <path d="M94,32 Q100,28 106,32" stroke="#4a4a4a" stroke-width="2" fill="none" opacity="0.8"/>
+              <path d="M126,46 Q132,42 136,48" stroke="#4a4a4a" stroke-width="2" fill="none" opacity="0.8"/>`
     },
     {
       name: "Short Bob (Blonde)",
-      back: `<path d="M60,44 Q56,16 100,14 Q144,16 140,44 L140,118 Q120,128 100,130 Q80,128 60,118 Z" fill="#F5D060"/>`,
-      front: `<path d="M62,42 Q60,18 100,15 Q140,18 138,42 L136,82 Q118,70 100,70 Q82,70 64,82 Z" fill="#F5D060"/>`
+      back: `<path d="M60,42 Q55,15 100,13 Q145,15 140,42 L144,100 Q146,124 132,132 Q118,138 100,139 Q82,138 68,132 Q54,124 56,100 Z" fill="#F5D060"/>
+             <path d="M62,70 Q58,110 68,128" stroke="#D9B23F" stroke-width="2" opacity="0.7" fill="none"/>
+             <path d="M138,70 Q142,110 132,128" stroke="#D9B23F" stroke-width="2" opacity="0.7" fill="none"/>`,
+      front: `<path d="M62,42 Q58,17 100,14 Q142,17 138,42 L137,66 Q100,72 63,66 Z" fill="#F5D060"/>
+              <path d="M63,50 Q56,90 60,116 Q64,132 78,136 Q72,120 72,96 Q72,70 71,54 Z" fill="#F5D060"/>
+              <path d="M137,50 Q144,90 140,116 Q136,132 122,136 Q128,120 128,96 Q128,70 129,54 Z" fill="#F5D060"/>
+              <path d="M74,28 Q98,21 124,29" stroke="#FBE49A" stroke-width="3.5" fill="none" opacity="0.8" stroke-linecap="round"/>`
     },
     {
       name: "Ponytail (Red)",
-      back: `<path d="M62,44 Q58,18 100,15 Q142,18 138,44 L136,104 Q118,115 100,117 Q82,115 64,104 Z" fill="#CC3300"/>
-             <path d="M132,98 Q162,105 166,138 Q170,168 156,194 Q148,182 145,160 Q142,138 136,122 Z" fill="#CC3300"/>
-             <ellipse cx="160" cy="196" rx="8" ry="5" fill="#FF69B4"/>`,
-      front: `<path d="M64,42 Q60,20 100,16 Q140,20 136,42 L133,82 Q117,70 100,70 Q83,70 67,82 Z" fill="#CC3300"/>
-              <path d="M118,46 Q128,42 132,50 L128,52 Q124,48 118,50 Z" fill="#AA2200"/>`
+      back: `<path d="M62,44 Q58,16 100,13 Q142,16 138,44 L136,100 Q118,112 100,114 Q82,112 64,100 Z" fill="#CC3300"/>
+             <path d="M104,17 Q152,20 160,62 Q168,104 156,146 Q150,166 138,178 Q132,172 134,158 Q146,118 142,84 Q138,48 102,30 Z" fill="#CC3300"/>
+             <path d="M146,60 Q154,68 156,80" stroke="#A82800" stroke-width="2" fill="none" opacity="0.7"/>
+             <path d="M152,100 Q152,118 148,136" stroke="#A82800" stroke-width="2" fill="none" opacity="0.7"/>
+             <path d="M120,26 Q144,36 150,58" stroke="#E8552A" stroke-width="2.5" fill="none" opacity="0.7"/>`,
+      front: `<path d="M64,42 Q60,18 100,15 Q140,18 136,42 L134,82 Q118,64 98,65 Q76,67 66,84 Z" fill="#CC3300"/>
+              <path d="M70,30 Q92,20 112,25" stroke="#E8552A" stroke-width="3" fill="none" opacity="0.6" stroke-linecap="round"/>
+              <ellipse cx="119" cy="24" rx="6" ry="9" fill="#FF69B4" transform="rotate(52 119 24)"/>
+              <ellipse cx="119" cy="24" rx="3" ry="5.5" fill="#FF8FC5" transform="rotate(52 119 24)"/>`
     },
     {
       name: "Braids (Dark Brown)",
-      back: `<path d="M64,42 Q60,18 100,15 Q140,18 136,42 L134,108 Q118,118 100,120 Q82,118 66,108 Z" fill="#5C3317"/>
-             <rect x="60" y="110" width="16" height="185" rx="8" fill="#5C3317"/>
-             <rect x="61" y="124" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <rect x="61" y="140" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <rect x="61" y="156" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <rect x="61" y="172" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <rect x="61" y="188" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <rect x="61" y="204" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <rect x="61" y="220" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <rect x="61" y="236" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <ellipse cx="68" cy="296" rx="8" ry="5" fill="#FF69B4"/>
-             <rect x="124" y="110" width="16" height="185" rx="8" fill="#5C3317"/>
-             <rect x="125" y="124" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <rect x="125" y="140" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <rect x="125" y="156" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <rect x="125" y="172" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <rect x="125" y="188" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <rect x="125" y="204" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <rect x="125" y="220" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <rect x="125" y="236" width="14" height="7" rx="2" fill="#7A4526" opacity="0.6"/>
-             <ellipse cx="132" cy="296" rx="8" ry="5" fill="#FF69B4"/>`,
-      front: `<path d="M66,42 Q62,20 100,17 Q138,20 134,42 L131,82 Q116,72 100,72 Q84,72 69,82 Z" fill="#5C3317"/>`
+      back: `<path d="M64,42 Q60,17 100,14 Q140,17 136,42 L134,105 Q118,116 100,118 Q82,116 66,105 Z" fill="#5C3317"/>
+             <ellipse cx="67" cy="112" rx="10" ry="9" fill="#5C3317"/>
+             <ellipse cx="133" cy="112" rx="10" ry="9" fill="#5C3317"/>`,
+      front: `<path d="M66,42 Q62,19 100,16 Q138,19 134,42 L131,80 Q116,70 100,70 Q84,70 69,80 Z" fill="#5C3317"/>
+              <path d="M100,17 L100,36" stroke="#3E2210" stroke-width="1.5"/>
+              <path d="M78,26 Q88,20 98,23" stroke="#7A4526" stroke-width="2.5" fill="none" opacity="0.7" stroke-linecap="round"/>
+              <path d="M102,23 Q112,20 122,26" stroke="#7A4526" stroke-width="2.5" fill="none" opacity="0.7" stroke-linecap="round"/>
+              <ellipse cx="68" cy="120" rx="10" ry="9" fill="#5C3317"/>
+              <ellipse cx="72" cy="135" rx="9.5" ry="9" fill="#6B3D1E"/>
+              <ellipse cx="68" cy="150" rx="9" ry="8.5" fill="#5C3317"/>
+              <ellipse cx="72" cy="164" rx="8.5" ry="8" fill="#6B3D1E"/>
+              <ellipse cx="68" cy="178" rx="8" ry="7.5" fill="#5C3317"/>
+              <ellipse cx="72" cy="191" rx="7.5" ry="7" fill="#6B3D1E"/>
+              <ellipse cx="68" cy="204" rx="7" ry="6.5" fill="#5C3317"/>
+              <ellipse cx="71" cy="216" rx="6.5" ry="6" fill="#6B3D1E"/>
+              <ellipse cx="68" cy="227" rx="6" ry="5.5" fill="#5C3317"/>
+              <ellipse cx="70" cy="238" rx="5" ry="5" fill="#6B3D1E"/>
+              <ellipse cx="69" cy="246" rx="7" ry="4" fill="#FF69B4"/>
+              <path d="M66,250 Q64,260 67,266 M70,250 Q71,259 69,266 M73,249 Q76,258 74,264" stroke="#5C3317" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <ellipse cx="132" cy="120" rx="10" ry="9" fill="#5C3317"/>
+              <ellipse cx="128" cy="135" rx="9.5" ry="9" fill="#6B3D1E"/>
+              <ellipse cx="132" cy="150" rx="9" ry="8.5" fill="#5C3317"/>
+              <ellipse cx="128" cy="164" rx="8.5" ry="8" fill="#6B3D1E"/>
+              <ellipse cx="132" cy="178" rx="8" ry="7.5" fill="#5C3317"/>
+              <ellipse cx="128" cy="191" rx="7.5" ry="7" fill="#6B3D1E"/>
+              <ellipse cx="132" cy="204" rx="7" ry="6.5" fill="#5C3317"/>
+              <ellipse cx="129" cy="216" rx="6.5" ry="6" fill="#6B3D1E"/>
+              <ellipse cx="132" cy="227" rx="6" ry="5.5" fill="#5C3317"/>
+              <ellipse cx="130" cy="238" rx="5" ry="5" fill="#6B3D1E"/>
+              <ellipse cx="131" cy="246" rx="7" ry="4" fill="#FF69B4"/>
+              <path d="M128,250 Q126,260 129,266 M132,250 Q133,259 131,266 M135,249 Q138,258 136,264" stroke="#5C3317" stroke-width="2.5" fill="none" stroke-linecap="round"/>`
     }
   ],
 
@@ -782,6 +838,14 @@ const opts = {
             <circle cx="100" cy="51" r="5" fill="#C71585"/>
             <path d="M95,57 Q90,67 84,72" stroke="#FF1493" stroke-width="2.5" fill="none"/>
             <path d="M105,57 Q110,67 116,72" stroke="#FF1493" stroke-width="2.5" fill="none"/>`
+    },
+    {
+      name: "Cowboy Hat",
+      svg: `<path d="M36,42 Q44,62 100,64 Q156,62 164,42 Q166,37 161,38 Q150,52 100,52 Q50,52 39,38 Q34,37 36,42 Z" fill="#A9713C"/>
+            <path d="M68,52 Q68,24 80,14 Q88,7 100,15 Q112,7 120,14 Q132,24 132,52 Z" fill="#A9713C"/>
+            <path d="M100,15 L100,32" stroke="#5D3A1A" stroke-width="2" opacity="0.45" stroke-linecap="round"/>
+            <path d="M67,46 Q100,54 133,46 L133,54 Q100,62 67,54 Z" fill="#5D3A1A"/>
+            <path d="M56,56 Q100,64 144,56" stroke="#5D3A1A" stroke-width="1.5" fill="none" opacity="0.35"/>`
     }
   ],
 
