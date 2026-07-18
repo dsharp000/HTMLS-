@@ -1328,9 +1328,14 @@ function saveChecked() {
 
 function pushRemote() {
     if (!window._fbSaveOwner || !remoteReady) return;
-    window._fbSaveOwner(ownerKey(owner), { name: owner, checked: prune(checked), updatedAt: Date.now() })
-        .then(() => setSyncDot('synced'))
-        .catch(() => setSyncDot('offline'));
+    // Site names contain "." which Firebase forbids in keys — store as an array of names
+    try {
+        window._fbSaveOwner(ownerKey(owner), { name: owner, checked: Object.keys(prune(checked)), updatedAt: Date.now() })
+            .then(() => setSyncDot('synced'))
+            .catch(() => setSyncDot('offline'));
+    } catch (e) {
+        setSyncDot('offline');
+    }
 }
 
 function onRemote(data) {
@@ -1341,9 +1346,12 @@ function onRemote(data) {
         else setSyncDot('synced');
         return;
     }
-    const remote = prune(data.checked || {});
-    if (JSON.stringify(remote) !== JSON.stringify(prune(checked))) {
-        checked = remote;
+    const remote = {};
+    for (const id of Object.values(data.checked || {})) {
+        if (typeof id === 'string') remote[id] = true;
+    }
+    if (JSON.stringify(prune(remote)) !== JSON.stringify(prune(checked))) {
+        checked = prune(remote);
         saveLocal();
         applyCheckedToDOM();
     }
