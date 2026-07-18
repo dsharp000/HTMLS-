@@ -332,6 +332,105 @@
             padding: 40px;
             font-size: 0.95rem;
         }
+
+        #owner-row {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        #owner-btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #fb923c;
+            padding: 4px 16px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        #owner-btn:hover { border-color: #fb923c; }
+        #sync-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #64748b;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        #sync-label { font-size: 0.72rem; color: #64748b; }
+
+        #owner-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.82);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        #owner-modal.hidden { display: none; }
+        .owner-box {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 24px;
+            width: min(90vw, 380px);
+            text-align: center;
+        }
+        .owner-box h2 { font-size: 1.05rem; margin-bottom: 6px; color: #e2e8f0; }
+        .owner-box p { font-size: 0.8rem; color: #94a3b8; margin-bottom: 16px; }
+        #owner-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        #owner-list button {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            padding: 6px 18px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        #owner-list button:hover { border-color: #fb923c; color: #fb923c; }
+        .owner-hint { color: #64748b; font-size: 0.8rem; }
+        .owner-new { display: flex; gap: 8px; }
+        .owner-new input {
+            flex: 1;
+            min-width: 0;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        .owner-new input:focus { outline: none; border-color: #fb923c; }
+        .owner-new button {
+            background: #fb923c;
+            border: none;
+            color: #0f172a;
+            font-weight: 700;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        #owner-cancel {
+            margin-top: 14px;
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 0.78rem;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -341,6 +440,12 @@
     <p class="eyebrow">Collect Them All</p>
     <h1>National Park Sites Checklist</h1>
     <p id="tagline">Every NPS site across the United States, organized by state and territory</p>
+
+    <div id="owner-row">
+        <span>Checklist for</span>
+        <button id="owner-btn">Choose name…</button>
+        <span id="sync-dot"></span><span id="sync-label"></span>
+    </div>
 
     <div id="stats">
         <div class="stat"><div class="val"><span id="stat-checked">0</span><span class="of"> / <span id="stat-total">0</span></span></div><div class="lbl">Sites Visited</div></div>
@@ -379,7 +484,48 @@
     </div>
 </div>
 
+<div id="owner-modal" class="hidden">
+    <div class="owner-box">
+        <h2>Whose checklist?</h2>
+        <p>Pick a name to open that list — it syncs to every device.</p>
+        <div id="owner-list"><span class="owner-hint">Loading names…</span></div>
+        <div class="owner-new">
+            <input type="text" id="owner-input" placeholder="New name (e.g. Dave)" maxlength="30">
+            <button id="owner-create">Open</button>
+        </div>
+        <button id="owner-cancel">Cancel</button>
+    </div>
+</div>
+
 <div id="content"></div>
+
+<!-- Firebase sync -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue, set, get }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCp2PBbqdj_g6NPR9iYQb7Z6tgXbqLtHIA",
+  authDomain:        "lunch-f7021.firebaseapp.com",
+  databaseURL:       "https://lunch-f7021-default-rtdb.firebaseio.com",
+  projectId:         "lunch-f7021",
+  storageBucket:     "lunch-f7021.firebasestorage.app",
+  messagingSenderId: "1053755216064",
+  appId:             "1:1053755216064:web:14b749200f825a4e9bdd25",
+};
+
+const db   = getDatabase(initializeApp(firebaseConfig));
+const BASE = "parks-checklist";
+let unsub  = null;
+
+window._fbListOwners = () => get(ref(db, BASE)).then(snap => snap.val());
+window._fbWatchOwner = (key, cb, errCb) => {
+    if (unsub) { unsub(); unsub = null; }
+    unsub = onValue(ref(db, BASE + "/" + key), snap => cb(snap.val()), errCb);
+};
+window._fbSaveOwner = (key, data) => set(ref(db, BASE + "/" + key), data);
+</script>
 
 <script>
 const parkData = {
@@ -1133,8 +1279,14 @@ const parkData = {
 };
 
 // --- State ---
-const STORAGE_KEY = 'nps-checklist-v1';
-let checked = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+const LEGACY_KEY   = 'nps-checklist-v1';
+const OWNER_PREF   = 'nps-checklist-owner';
+const MIGRATED_KEY = 'nps-checklist-migrated';
+let owner   = localStorage.getItem(OWNER_PREF) || '';
+let checked = {};
+
+const ownerKey   = name => name.trim().toLowerCase().replace(/[.#$\[\]\/\s]+/g, '-');
+const storageKey = () => LEGACY_KEY + '::' + ownerKey(owner);
 
 // Migrate saved checkmarks for officially renamed sites
 const RENAMES = {
@@ -1145,13 +1297,153 @@ const RENAMES = {
     'Massachusetts::John F. Kennedy National Historic Site': 'Massachusetts::John Fitzgerald Kennedy National Historic Site',
     "District of Columbia::White House": "District of Columbia::The White House and President's Park",
 };
-(function migrate() {
-    let changed = false;
+function applyRenames() {
     for (const [oldKey, newKey] of Object.entries(RENAMES)) {
-        if (checked[oldKey]) { checked[newKey] = true; delete checked[oldKey]; changed = true; }
+        if (checked[oldKey]) { checked[newKey] = true; delete checked[oldKey]; }
     }
-    if (changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(checked));
-})();
+}
+
+// --- Firebase sync ---
+let remoteReady = false;
+let saveTimer   = null;
+
+function prune(obj) {
+    const out = {};
+    for (const k of Object.keys(obj || {}).sort()) if (obj[k]) out[k] = true;
+    return out;
+}
+
+function saveLocal() {
+    checked = prune(checked);
+    localStorage.setItem(owner ? storageKey() : LEGACY_KEY, JSON.stringify(checked));
+}
+
+function saveChecked() {
+    saveLocal();
+    if (!owner) return;
+    setSyncDot('saving');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(pushRemote, 600);
+}
+
+function pushRemote() {
+    if (!window._fbSaveOwner || !remoteReady) return;
+    window._fbSaveOwner(ownerKey(owner), { name: owner, checked: prune(checked), updatedAt: Date.now() })
+        .then(() => setSyncDot('synced'))
+        .catch(() => setSyncDot('offline'));
+}
+
+function onRemote(data) {
+    remoteReady = true;
+    if (!data) {
+        // Brand-new name in Firebase — seed it with whatever this device has
+        if (Object.keys(prune(checked)).length) pushRemote();
+        else setSyncDot('synced');
+        return;
+    }
+    const remote = prune(data.checked || {});
+    if (JSON.stringify(remote) !== JSON.stringify(prune(checked))) {
+        checked = remote;
+        saveLocal();
+        applyCheckedToDOM();
+    }
+    setSyncDot('synced');
+}
+
+let watchTries = 0;
+function startSync() {
+    if (!window._fbWatchOwner) {
+        if (++watchTries > 40) { setSyncDot('offline'); return; }
+        setTimeout(startSync, 250);
+        return;
+    }
+    window._fbWatchOwner(ownerKey(owner), onRemote, () => setSyncDot('offline'));
+}
+
+function setSyncDot(state) {
+    const styles = {
+        saving:  ['#fb923c', 'Saving…'],
+        synced:  ['#4ade80', 'Synced'],
+        offline: ['#64748b', 'Local only'],
+    };
+    const [color, label] = styles[state] || styles.offline;
+    document.getElementById('sync-dot').style.background = color;
+    document.getElementById('sync-label').textContent = label;
+}
+
+function applyCheckedToDOM() {
+    document.querySelectorAll('.site-item input[type="checkbox"]').forEach(cb => {
+        cb.checked = !!checked[cb.id];
+    });
+    updateStats();
+    document.querySelectorAll('.state-section').forEach(s => updateStateProgress(s.dataset.state));
+}
+
+function setOwner(name) {
+    owner = name.trim();
+    localStorage.setItem(OWNER_PREF, owner);
+    remoteReady = false;
+    watchTries  = 0;
+    let data = localStorage.getItem(storageKey());
+    if (data == null && !localStorage.getItem(MIGRATED_KEY)) {
+        // First named list on this device inherits the old un-named checkmarks
+        data = localStorage.getItem(LEGACY_KEY);
+        localStorage.setItem(MIGRATED_KEY, '1');
+    }
+    checked = JSON.parse(data || '{}');
+    applyRenames();
+    saveLocal();
+    applyCheckedToDOM();
+    document.getElementById('owner-btn').textContent = owner;
+    setSyncDot('saving');
+    startSync();
+}
+
+// --- Owner picker modal ---
+function openOwnerModal() {
+    document.getElementById('owner-modal').classList.remove('hidden');
+    document.getElementById('owner-cancel').style.display = owner ? '' : 'none';
+    const list = document.getElementById('owner-list');
+    list.innerHTML = '<span class="owner-hint">Loading names…</span>';
+    const fill = names => {
+        list.innerHTML = '';
+        if (!names.length) {
+            list.innerHTML = '<span class="owner-hint">No lists yet — create one below</span>';
+            return;
+        }
+        names.forEach(n => {
+            const b = document.createElement('button');
+            b.textContent = n;
+            b.addEventListener('click', () => { closeOwnerModal(); setOwner(n); });
+            list.appendChild(b);
+        });
+    };
+    const tryLoad = tries => {
+        if (!window._fbListOwners) {
+            if (tries > 20) { fill([]); return; }
+            setTimeout(() => tryLoad(tries + 1), 250);
+            return;
+        }
+        window._fbListOwners()
+            .then(data => fill(data ? Object.values(data).map(d => d && d.name).filter(Boolean).sort() : []))
+            .catch(() => {
+                list.innerHTML = '<span class="owner-hint">Can’t reach sync — type a name to work locally</span>';
+            });
+    };
+    tryLoad(0);
+}
+
+function closeOwnerModal() {
+    document.getElementById('owner-modal').classList.add('hidden');
+    document.getElementById('owner-input').value = '';
+}
+
+function createOwner() {
+    const name = document.getElementById('owner-input').value.trim();
+    if (!name) return;
+    closeOwnerModal();
+    setOwner(name);
+}
 let npOnlyMode = false;
 let trailMode = 'all';   // 'all' | 'sites' | 'trails'
 const isTrail = name => /\btrail\b/i.test(name);
@@ -1207,7 +1499,7 @@ function render() {
             cb.checked = !!checked[id];
             cb.addEventListener('change', () => {
                 checked[id] = cb.checked;
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(checked));
+                saveChecked();
                 updateStats();
                 updateStateProgress(state);
             });
@@ -1402,14 +1694,30 @@ document.getElementById('collapse-all-btn').addEventListener('click', () => {
 });
 
 document.getElementById('reset-btn').addEventListener('click', () => {
-    if (!confirm('Reset all checkmarks? This cannot be undone.')) return;
+    const who = owner ? ` for ${owner}` : '';
+    if (!confirm(`Reset all checkmarks${who}? This cannot be undone.`)) return;
     checked = {};
-    localStorage.removeItem(STORAGE_KEY);
-    document.querySelectorAll('.site-item input[type="checkbox"]').forEach(cb => cb.checked = false);
-    updateStats();
+    saveChecked();
+    applyCheckedToDOM();
+});
+
+document.getElementById('owner-btn').addEventListener('click', openOwnerModal);
+document.getElementById('owner-cancel').addEventListener('click', closeOwnerModal);
+document.getElementById('owner-create').addEventListener('click', createOwner);
+document.getElementById('owner-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') createOwner();
 });
 
 render();
+
+if (owner) {
+    setOwner(owner);
+} else {
+    checked = JSON.parse(localStorage.getItem(LEGACY_KEY) || '{}');
+    applyRenames();
+    applyCheckedToDOM();
+    openOwnerModal();
+}
 </script>
 </body>
 </html>
