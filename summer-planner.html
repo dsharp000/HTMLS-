@@ -168,6 +168,7 @@
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getDatabase, ref, onValue, set }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
@@ -183,6 +184,7 @@ const firebaseConfig = {
 
 const fbApp  = initializeApp(firebaseConfig);
 const db     = getDatabase(fbApp);
+signInAnonymously(getAuth(fbApp)).catch(e => console.warn('anon auth:', e));
 const kidsRef   = ref(db, "summer-planner-2026");
 const nokidsRef = ref(db, "summer-planner-2026-nokids");
 

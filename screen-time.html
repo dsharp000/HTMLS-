@@ -210,6 +210,7 @@
 <!-- Firebase realtime sync (shared with the other apps in lunch-f7021) -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getDatabase, ref, onValue, set }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
@@ -225,6 +226,7 @@ const firebaseConfig = {
 
 const fbApp = initializeApp(firebaseConfig);
 const db    = getDatabase(fbApp);
+signInAnonymously(getAuth(fbApp)).catch(e => console.warn('anon auth:', e));
 const stRef = ref(db, "screen-time");
 
 window._fbSet = d  => set(stRef, d);

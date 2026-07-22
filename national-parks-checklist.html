@@ -509,6 +509,7 @@
 <!-- Firebase sync -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getDatabase, ref, onValue, set, get }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
@@ -522,7 +523,9 @@ const firebaseConfig = {
   appId:             "1:1053755216064:web:14b749200f825a4e9bdd25",
 };
 
-const db   = getDatabase(initializeApp(firebaseConfig));
+const fbApp = initializeApp(firebaseConfig);
+const db   = getDatabase(fbApp);
+signInAnonymously(getAuth(fbApp)).catch(e => console.warn('anon auth:', e));
 const BASE = "parks-checklist";
 let unsub  = null;
 

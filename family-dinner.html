@@ -337,6 +337,7 @@
 
 <script type="module">
   import { initializeApp }                        from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
   import { getDatabase, ref, set, onValue,
            runTransaction }                       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
@@ -394,6 +395,7 @@
 
   const app        = initializeApp(firebaseConfig);
   const db         = getDatabase(app);
+signInAnonymously(getAuth(app)).catch(e => console.warn('anon auth:', e));
   const sessionRef = ref(db, 'family-dinner/current');
 
   statusBar.className = 'connecting';

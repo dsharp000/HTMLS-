@@ -1094,6 +1094,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getDatabase, ref, set, onValue }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
@@ -1109,6 +1110,7 @@ const firebaseConfig = {
 
 const fbApp    = initializeApp(firebaseConfig);
 const db       = getDatabase(fbApp);
+signInAnonymously(getAuth(fbApp)).catch(e => console.warn('anon auth:', e));
 const parksRef = ref(db, "parks-checklist-audubon");
 
 window._fbSetParks = d => set(parksRef, d);

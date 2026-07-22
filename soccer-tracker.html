@@ -845,6 +845,7 @@
 */
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   getDatabase, ref, set, get, onValue, runTransaction, remove
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
@@ -861,6 +862,7 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
+signInAnonymously(getAuth(app)).catch(e => console.warn('anon auth:', e));
 
 // ── CONSTANTS ──────────────────────────────────────────────────────────────
 const ROSTER_NAMES = ['Abel','Anthony','Blake','Braxton','Graham','Louis','Luis','Maddox','Roman','Sila','Xavier'];
