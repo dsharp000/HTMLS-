@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Razor's Edge</title>
+  <meta name="description" content="Razor's Edge — a personal collection of tools, games, and trackers for parks, family, games, home, and money.">
+  <meta name="theme-color" content="#0d0d0d">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%B0%3C/text%3E%3C/svg%3E">
+  <meta property="og:title" content="Razor's Edge">
+  <meta property="og:description" content="A collection of tools, games, and trackers built for everyday use.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -106,6 +113,35 @@
     .jump-chip:hover {
       color: var(--accent);
       border-color: var(--accent);
+    }
+
+    /* ── Search ── */
+    .search-wrap {
+      max-width: 420px;
+      margin: 1.75rem auto 0;
+      position: relative;
+      z-index: 1;
+    }
+    .search-wrap input {
+      width: 100%;
+      font-size: 0.9rem;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 0.7rem 1.1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-wrap input::placeholder { color: var(--muted); }
+    .search-wrap input:focus { border-color: var(--accent); }
+    .no-results {
+      display: none;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 2rem 0;
     }
 
     /* ── Grid ── */
@@ -242,6 +278,9 @@
       <a class="jump-chip" href="#games">🏆 Games &amp; Sports</a>
       <a class="jump-chip" href="#home">🏠 Home, Money &amp; Tools</a>
     </nav>
+    <div class="search-wrap">
+      <input id="app-search" type="search" placeholder="Search apps…" autocomplete="off" aria-label="Search apps">
+    </div>
   </div>
 
   <div class="grid-section">
@@ -331,7 +370,7 @@
     </section>
 
     <section class="app-section" id="games">
-    <p class="section-label"><span class="sec-icon">🏆</span> Games &amp; Sports <span class="sec-count">4 apps</span></p>
+    <p class="section-label"><span class="sec-icon">🏆</span> Games &amp; Sports <span class="sec-count">3 apps</span></p>
     <div class="grid">
 
       <a class="card" href="https://dsharp000.github.io/castle-quest/" style="--card-accent: #c8a96e;">
@@ -352,13 +391,6 @@
         <span class="card-icon">⚽</span>
         <div class="card-title">Soccer Match Tracker</div>
         <div class="card-desc">Live match clock, player time tracking, substitution log, goals, and season stats. Shared in real time across all coaches via Firebase.</div>
-        <span class="card-arrow">↗</span>
-      </a>
-
-      <a class="card" href="geography-game.html" style="--card-accent: #60a5fa;">
-        <span class="card-icon">🌍</span>
-        <div class="card-title">Guess the Country</div>
-        <div class="card-desc">Identify the country from just its outline. How many can you get in a row?</div>
         <span class="card-arrow">↗</span>
       </a>
 
@@ -410,6 +442,45 @@
   </div>
 
   <footer>Razor's Edge · 18 apps and counting</footer>
+
+  <div class="no-results" id="no-results">No apps match “<span id="nr-term"></span>”.</div>
+
+  <script>
+    // Live client-side filter over the app cards.
+    (function () {
+      const input = document.getElementById('app-search');
+      const sections = Array.from(document.querySelectorAll('.app-section'));
+      const cards = Array.from(document.querySelectorAll('.card'));
+      const jumpNav = document.querySelector('.jump-nav');
+      const noResults = document.getElementById('no-results');
+      const nrTerm = document.getElementById('nr-term');
+
+      // Precompute searchable text per card once.
+      cards.forEach(c => { c.dataset.search = c.textContent.toLowerCase(); });
+
+      input.addEventListener('input', function () {
+        const q = input.value.trim().toLowerCase();
+        let anyVisible = false;
+
+        cards.forEach(c => {
+          const match = q === '' || c.dataset.search.includes(q);
+          c.style.display = match ? '' : 'none';
+          if (match) anyVisible = true;
+        });
+
+        // Hide a section header when all its cards are filtered out.
+        sections.forEach(s => {
+          const visible = s.querySelectorAll('.card:not([style*="display: none"])').length;
+          s.style.display = visible ? '' : 'none';
+        });
+
+        // The jump-nav is meaningless while filtering.
+        jumpNav.style.display = q === '' ? '' : 'none';
+        noResults.style.display = anyVisible ? 'none' : 'block';
+        nrTerm.textContent = input.value;
+      });
+    })();
+  </script>
 
 </body>
 </html>
