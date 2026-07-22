@@ -34,10 +34,14 @@ final, post-tournament stage.
 Firebase console → **Authentication → Sign-in method → Anonymous → Enable**.
 This alone changes no behavior; it just makes `signInAnonymously()` succeed.
 
-### Stage 1 — Add anonymous auth to the clients (deploy, breaks nothing)
-Add the snippet below to each Firebase tool **except `worldcup-pool.html`** (and,
-for now, `alaska-packer.html` — see Stage 3). It is **non-blocking**: if auth fails
-the app still runs, so it is safe to ship before the rules are tightened.
+### Stage 1 — Add anonymous auth to the clients — ✅ DONE (deployed 2026-07)
+**Already applied and live** for all 11 low-stakes tools: soccer-tracker, call-recorder,
+family-dinner, lunch-picker, family-loan, summer-planner, parks-checklist-audubon-pa,
+national-parks-checklist, screen-time, bathroom-designer, kitchen-designer. Each carries
+a non-blocking `signInAnonymously().catch(...)`. `worldcup-pool.html` and
+`alaska-packer.html` are intentionally left for Stage 3.
+
+Nothing else is required here. The snippet used (for reference / for the Stage 3 tools):
 
 **Module tools** (`type="module"`, most tools — they already
 `import { getDatabase } from ".../firebase-database.js"`):
