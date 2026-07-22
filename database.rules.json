@@ -1,0 +1,29 @@
+{
+  "//": "Hardened RTDB rules for lunch-f7021. Paste into Firebase console > Realtime Database > Rules.",
+  "//1": "Default deny at the root. Every path must be listed explicitly.",
+  "//2": "auth != null == request carries a (anonymous) Firebase auth token. Requires Anonymous",
+  "//3": "sign-in enabled in Authentication, AND each client to call signInAnonymously() before",
+  "//4": "reading/writing. Deploy the auth-enabled clients FIRST, then publish these rules.",
+  "//5": "worldcup and alaska-trip are intentionally left OPEN — both are live with active users",
+  "//6": "whose cached pages have no auth. Migrate them last (see SECURITY.md).",
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "worldcup":                 { ".read": true, ".write": true, "//": "LIVE tournament — leave open until it ends, then migrate." },
+    "alaska-trip":              { ".read": true, ".write": true, "//": "LIVE trip — leave open until travelers are home, then migrate." },
+
+    "soccer":                   { ".read": "auth != null", ".write": "auth != null" },
+    "calls":                    { ".read": "auth != null", ".write": "auth != null", "//": "Most sensitive: private call transcripts. Migrate first." },
+    "family-dinner":            { ".read": "auth != null", ".write": "auth != null" },
+    "lunch-picker":             { ".read": "auth != null", ".write": "auth != null" },
+    "family-loan":              { ".read": "auth != null", ".write": "auth != null", "//": "Sensitive: loan financials." },
+    "summer-planner-2026":      { ".read": "auth != null", ".write": "auth != null" },
+    "summer-planner-2026-nokids": { ".read": "auth != null", ".write": "auth != null" },
+    "parks-checklist":          { ".read": "auth != null", ".write": "auth != null" },
+    "parks-checklist-audubon":  { ".read": "auth != null", ".write": "auth != null" },
+    "screen-time":              { ".read": "auth != null", ".write": "auth != null" },
+    "bathroom-designer":        { ".read": "auth != null", ".write": "auth != null" },
+    "kitchen-designer":         { ".read": "auth != null", ".write": "auth != null" }
+  }
+}
