@@ -13,6 +13,7 @@
     "family-loan":                { ".read": "auth != null", ".write": "auth != null" },
     "summer-planner-2026":        { ".read": "auth != null", ".write": "auth != null" },
     "summer-planner-2026-nokids": { ".read": "auth != null", ".write": "auth != null" },
+    "national-parks":             { ".read": "auth != null", ".write": "auth != null" },
     "parks-checklist":            { ".read": "auth != null", ".write": "auth != null" },
     "parks-checklist-audubon":    { ".read": "auth != null", ".write": "auth != null" },
     "screen-time":                { ".read": "auth != null", ".write": "auth != null" },

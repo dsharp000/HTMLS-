@@ -419,8 +419,14 @@ const STORAGE_KEY = 'national-parks-visited';
 let visited = {};
 try { visited = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) {}
 
-function saveVisited() {
+// Visited park ids as an array (ids are clean slugs — safe as RTDB array values).
+function visitedArray() { return Object.keys(visited).filter(id => visited[id]); }
+
+function saveVisited() {          // local cache (also works offline / before sync)
   localStorage.setItem(STORAGE_KEY, JSON.stringify(visited));
+}
+function pushRemote() {           // fire-and-forget cloud sync (no-op if unavailable)
+  if (window._npSet) window._npSet(visitedArray());
 }
 
 // ── STATS ────────────────────────────────────────────────────────────────────
@@ -514,6 +520,7 @@ function initMaps() {
 function togglePark(id) {
   visited[id] = !visited[id];
   saveVisited();
+  pushRemote();
   updateStats();
 
   // Update marker styles
@@ -586,6 +593,29 @@ function renderRemaining() {
   }).join('');
 }
 
+// ── CLOUD SYNC ───────────────────────────────────────────────────────────────
+function refreshAll() {
+  updateStats();
+  renderChecklist();
+  renderRemaining();
+  PARKS.forEach(park => {
+    (allMarkers[park.id] || []).forEach(m => m.setStyle(markerStyle(park)));
+  });
+}
+
+// Called by the Firebase bridge (below) whenever the shared list changes.
+window.npApplyRemote = function(val) {
+  if (val && Array.isArray(val.visited)) {
+    visited = {};
+    val.visited.forEach(id => { visited[id] = true; });
+    saveVisited();               // refresh local cache; do NOT re-push (avoids a loop)
+    refreshAll();
+  } else if (val === null) {
+    // Cloud is empty — seed it once from this device's existing local progress.
+    if (visitedArray().length) pushRemote();
+  }
+};
+
 // ── INIT ─────────────────────────────────────────────────────────────────────
 renderLegend();
 renderChecklist();
@@ -593,5 +623,39 @@ updateStats();
 renderRemaining();
 initMaps();
 </script>
+
+<!-- ── Firebase sync bridge (shared DB lunch-f7021; see SECURITY.md auth model) ── -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCp2PBbqdj_g6NPR9iYQb7Z6tgXbqLtHIA",
+    authDomain:        "lunch-f7021.firebaseapp.com",
+    databaseURL:       "https://lunch-f7021-default-rtdb.firebaseio.com",
+    projectId:         "lunch-f7021",
+    storageBucket:     "lunch-f7021.firebasestorage.app",
+    messagingSenderId: "1053755216064",
+    appId:             "1:1053755216064:web:14b749200f825a4e9bdd25",
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const db    = getDatabase(fbApp);
+  signInAnonymously(getAuth(fbApp)).catch(e => console.warn('anon auth:', e));
+
+  const npRef = ref(db, "national-parks");
+
+  // App -> cloud: store the visited list as { visited: [ids] }.
+  window._npSet = arr => set(npRef, { visited: arr })
+    .catch(e => console.warn('national-parks sync write skipped:', e.message));
+
+  // Cloud -> app: apply remote changes. Silently stays local-only if the read is
+  // denied (e.g. the "national-parks" rule hasn't been published yet).
+  onValue(npRef,
+    snap => { if (window.npApplyRemote) window.npApplyRemote(snap.val()); },
+    err  => console.warn('national-parks sync read skipped:', err.message));
+</script>
+
 </body>
 </html>
