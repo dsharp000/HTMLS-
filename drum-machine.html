@@ -174,9 +174,9 @@
 
   /* ---------- Sequencer grid ---------- */
   .seq-scroll { overflow-x: auto; padding: 20px 0 4px; }
-  .seq { display: flex; flex-direction: column; gap: 9px; min-width: 720px; }
+  .seq { display: flex; flex-direction: column; gap: 9px; min-width: 760px; --labelw: 200px; }
 
-  .beatbar { display:grid; grid-template-columns: 168px repeat(16, 1fr); gap: 6px; padding-left: 0; }
+  .beatbar { display:grid; grid-template-columns: var(--labelw) repeat(16, 1fr); gap: 6px; padding-left: 0; }
   .beatbar .spacer { grid-column: 1; }
   .beatbar .bnum {
     font-family: var(--mono); font-size: 10px; color: var(--ink-faint); text-align:center;
@@ -184,21 +184,42 @@
     border-bottom: 1px solid var(--grid-line); padding-bottom: 4px;
   }
 
-  .track { display:grid; grid-template-columns: 168px repeat(16, 1fr); gap: 6px; align-items:center; }
+  .track { display:grid; grid-template-columns: var(--labelw) repeat(16, 1fr); gap: 6px; align-items:center; }
 
   .tlabel {
-    display:flex; align-items:center; gap:8px; padding-right:6px;
+    display:flex; flex-direction:column; gap:6px; padding-right:10px;
   }
+  .tlabel .top { display:flex; align-items:center; gap:8px; }
   .tlabel .dot { width:10px; height:10px; border-radius:50%; background: var(--hue); box-shadow: 0 0 8px -1px var(--hue); flex:none; }
   .tlabel .name { font-size:12px; font-weight:600; letter-spacing:0.04em; flex:1; white-space:nowrap; }
   .tlabel .ms { display:flex; gap:4px; }
   .tlabel .ms button {
     width:22px; height:20px; border-radius:5px; font-family:var(--mono); font-size:10px; font-weight:700;
     border:1px solid var(--edge); background: var(--panel-lo); color: var(--ink-faint);
-    display:grid; place-items:center;
+    display:grid; place-items:center; cursor:pointer;
   }
   .tlabel .ms button.on[data-k=m] { background: var(--red); color:#fff; border-color:var(--red); }
   .tlabel .ms button.on[data-k=s] { background: var(--amber); color:var(--desk); border-color:var(--amber); }
+
+  /* per-track sound selector */
+  .vsel {
+    position: relative; display:flex; align-items:center;
+    background: linear-gradient(180deg, #0b0a09, #100d0b);
+    border: 1px solid #000; border-radius: 5px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset;
+  }
+  .vsel::after {
+    content:"▾"; position:absolute; right:7px; font-size:9px; color:var(--ink-faint); pointer-events:none;
+  }
+  .vsel select {
+    -webkit-appearance:none; appearance:none; width:100%;
+    font-family: var(--mono); font-size:10px; font-weight:700; letter-spacing:0.04em;
+    color: var(--hue); background:transparent; border:0; outline:none; cursor:pointer;
+    padding: 4px 18px 4px 8px;
+    text-shadow: 0 0 8px color-mix(in srgb, var(--hue) 45%, transparent);
+  }
+  .vsel select option { background:#161311; color:var(--ink); }
+  .vsel select:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; border-radius:5px; }
 
   .step {
     position: relative; aspect-ratio: 1 / 1; min-height: 26px; border-radius: 6px;
@@ -300,6 +321,7 @@
   <div class="hint">
     <span><b>Click</b> a cell to toggle a hit.</span>
     <span><b>Shift-click</b> for an accent (louder).</span>
+    <span><b>Sound menu</b> under each name swaps that voice.</span>
     <span><b>M / S</b> = mute / solo a track.</span>
     <span><b><kbd>Space</kbd></b> play / stop.</span>
     <span id="audioNote" style="color:var(--amber)"></span>
@@ -311,15 +333,52 @@
   "use strict";
 
   // ---------- Track definitions ----------
+  // Each track carries several synthesized sound variants. The synth builders
+  // (mkKick, mkSnare, …) are function declarations defined in the audio section
+  // below, so they're hoisted and safe to reference in these arrow functions.
   const TRACKS = [
-    { id:"kick",  name:"Kick",       hue:"var(--t0)" },
-    { id:"snare", name:"Snare",      hue:"var(--t1)" },
-    { id:"clap",  name:"Clap",       hue:"var(--t2)" },
-    { id:"chat",  name:"Closed Hat", hue:"var(--t3)" },
-    { id:"ohat",  name:"Open Hat",   hue:"var(--t4)" },
-    { id:"tom",   name:"Low Tom",    hue:"var(--t5)" },
-    { id:"cow",   name:"Cowbell",    hue:"var(--t6)" },
-    { id:"rim",   name:"Rim",        hue:"var(--t7)" },
+    { id:"kick", name:"Kick", hue:"var(--t0)", variants:[
+      { name:"808",     play:(t,b)=>mkKick(t,b,{f0:150,f1:45,dur:0.42,pt:0.11,click:0.18}) },
+      { name:"Punch",   play:(t,b)=>mkKick(t,b,{f0:220,f1:60,dur:0.26,pt:0.07,click:0.34}) },
+      { name:"Sub",     play:(t,b)=>mkKick(t,b,{f0:110,f1:33,dur:0.62,pt:0.14,click:0.05}) },
+      { name:"Tight",   play:(t,b)=>mkKick(t,b,{f0:180,f1:55,dur:0.16,pt:0.05,click:0.40}) },
+    ]},
+    { id:"snare", name:"Snare", hue:"var(--t1)", variants:[
+      { name:"Classic", play:(t,b)=>mkSnare(t,b,{bp:1800,q:0.7,noise:0.55,ndur:0.20,tone:0.40,tf0:190,tf1:120,tdur:0.12}) },
+      { name:"Crunch",  play:(t,b)=>mkSnare(t,b,{bp:2600,q:0.6,noise:0.70,ndur:0.28,tone:0.28,tf0:220,tf1:150,tdur:0.10}) },
+      { name:"Rimshot", play:(t,b)=>mkSnare(t,b,{bp:2200,q:1.2,noise:0.30,ndur:0.08,tone:0.55,tf0:330,tf1:180,tdur:0.09}) },
+      { name:"Brush",   play:(t,b)=>mkSnare(t,b,{ftype:"lowpass",bp:3800,q:0.3,noise:0.50,ndur:0.16,tone:0}) },
+    ]},
+    { id:"clap", name:"Clap", hue:"var(--t2)", variants:[
+      { name:"808",   play:(t,b)=>mkClap(t,b,{bursts:4,bp:1100,q:1.1,spread:0.009,tail:0.16}) },
+      { name:"Tight", play:(t,b)=>mkClap(t,b,{bursts:3,bp:1300,q:1.4,spread:0.006,tail:0.08}) },
+      { name:"Wide",  play:(t,b)=>mkClap(t,b,{bursts:4,bp:900,q:0.9,spread:0.013,tail:0.32}) },
+    ]},
+    { id:"chat", name:"Closed Hat", hue:"var(--t3)", variants:[
+      { name:"Tight", play:(t,b)=>mkHat(t,b,{dur:0.05,hp:8000}) },
+      { name:"Crisp", play:(t,b)=>mkHat(t,b,{dur:0.07,hp:10500}) },
+      { name:"Metal", play:(t,b)=>mkHat(t,b,{dur:0.06,metal:true}) },
+    ]},
+    { id:"ohat", name:"Open Hat", hue:"var(--t4)", variants:[
+      { name:"Open",  play:(t,b)=>mkHat(t,b,{dur:0.32,hp:8000}) },
+      { name:"Wash",  play:(t,b)=>mkHat(t,b,{dur:0.60,hp:7000}) },
+      { name:"Metal", play:(t,b)=>mkHat(t,b,{dur:0.42,metal:true}) },
+    ]},
+    { id:"tom", name:"Low Tom", hue:"var(--t5)", variants:[
+      { name:"Low", play:(t,b)=>mkTom(t,b,{f0:180,f1:90,dur:0.30}) },
+      { name:"Mid", play:(t,b)=>mkTom(t,b,{f0:260,f1:130,dur:0.28}) },
+      { name:"Hi",  play:(t,b)=>mkTom(t,b,{f0:380,f1:190,dur:0.24}) },
+    ]},
+    { id:"cow", name:"Cowbell", hue:"var(--t6)", variants:[
+      { name:"808",    play:(t,b)=>mkCow(t,b,{f1:540,f2:800,dur:0.25,q:1.6}) },
+      { name:"Hi",     play:(t,b)=>mkCow(t,b,{f1:680,f2:1000,dur:0.20,q:1.8}) },
+      { name:"Analog", play:(t,b)=>mkCow(t,b,{f1:520,f2:772,dur:0.34,q:1.2}) },
+    ]},
+    { id:"rim", name:"Rim", hue:"var(--t7)", variants:[
+      { name:"Rim",   play:(t,b)=>mkRim(t,b,{type:"triangle",freq:1700,dur:0.05}) },
+      { name:"Click", play:(t,b)=>mkRim(t,b,{type:"square",freq:2500,dur:0.03}) },
+      { name:"Wood",  play:(t,b)=>mkWood(t,b) },
+    ]},
   ];
   const NT = TRACKS.length, NS = 16;
 
@@ -327,6 +386,7 @@
   let state = TRACKS.map(() => new Array(NS).fill(0));
   const muted = new Array(NT).fill(false);
   const soloed = new Array(NT).fill(false);
+  const variantIdx = new Array(NT).fill(0);   // which sound each track uses
 
   // ---------- Presets (x = hit, X = accent) ----------
   const P = (s) => s.split("").map(c => c==="X"?2 : c==="x"?1 : 0);
@@ -402,13 +462,25 @@
     const label = document.createElement("div");
     label.className = "tlabel";
     label.innerHTML =
-      `<span class="dot"></span><span class="name">${tr.name}</span>
-       <span class="ms">
-         <button data-k="m" title="Mute">M</button>
-         <button data-k="s" title="Solo">S</button>
-       </span>`;
+      `<div class="top">
+         <span class="dot"></span><span class="name">${tr.name}</span>
+         <span class="ms">
+           <button data-k="m" title="Mute">M</button>
+           <button data-k="s" title="Solo">S</button>
+         </span>
+       </div>
+       <div class="vsel">
+         <select aria-label="${tr.name} sound">
+           ${tr.variants.map((v,i)=>`<option value="${i}">${v.name}</option>`).join("")}
+         </select>
+       </div>`;
     label.querySelector('[data-k=m]').addEventListener("click", (e)=>{ muted[t]=!muted[t]; e.currentTarget.classList.toggle("on",muted[t]); });
     label.querySelector('[data-k=s]').addEventListener("click", (e)=>{ soloed[t]=!soloed[t]; e.currentTarget.classList.toggle("on",soloed[t]); });
+    const sel = label.querySelector('select');
+    sel.addEventListener("change", () => {
+      variantIdx[t] = +sel.value;
+      ensureAudio(); trigger(t, ctx ? ctx.currentTime : 0, 0.3);  // audition the new sound
+    });
     row.appendChild(label);
 
     cellEls[t] = [];
@@ -488,20 +560,13 @@
   }
   function noiseSrc(){ const s = ctx.createBufferSource(); s.buffer = noiseBuf; s.loop = true; return s; }
 
-  // ---- individual voices ---- (time = ctx time, acc = 0..1 accent boost)
+  // ---- voice dispatch ---- (time = ctx time, acc = 0..1 accent boost)
   function trigger(t, time, acc){
     if (!ctx) return;
     const boost = 1 + acc*0.5;
-    switch (TRACKS[t].id){
-      case "kick":  voiceKick(time, boost); break;
-      case "snare": voiceSnare(time, boost); break;
-      case "clap":  voiceClap(time, boost); break;
-      case "chat":  voiceHat(time, boost, 0.05); break;
-      case "ohat":  voiceHat(time, boost, 0.32); break;
-      case "tom":   voiceTom(time, boost); break;
-      case "cow":   voiceCow(time, boost); break;
-      case "rim":   voiceRim(time, boost); break;
-    }
+    const tr = TRACKS[t];
+    const v = tr.variants[variantIdx[t]] || tr.variants[0];
+    v.play(time, boost);
   }
 
   function env(g, time, peak, dur, attack=0.001){
@@ -510,68 +575,93 @@
     g.gain.exponentialRampToValueAtTime(0.0001, time+dur);
   }
 
-  function voiceKick(time, b){
+  // ---- parameterized synth builders (one per instrument family) ----
+  function mkKick(time, b, {f0=150,f1=45,dur=0.42,pt=0.11,click=0.18}){
     const o = ctx.createOscillator(), g = ctx.createGain();
-    o.frequency.setValueAtTime(150, time);
-    o.frequency.exponentialRampToValueAtTime(45, time+0.11);
-    env(g, time, 0.95*b, 0.42, 0.004);
-    o.connect(g).connect(master); o.start(time); o.stop(time+0.45);
-    // click
-    const c = ctx.createOscillator(), cg = ctx.createGain();
-    c.type="square"; c.frequency.value=1000; env(cg,time,0.18*b,0.02);
-    c.connect(cg).connect(master); c.start(time); c.stop(time+0.03);
+    o.frequency.setValueAtTime(f0, time);
+    o.frequency.exponentialRampToValueAtTime(f1, time+pt);
+    env(g, time, 0.95*b, dur, 0.004);
+    o.connect(g).connect(master); o.start(time); o.stop(time+dur+0.05);
+    if (click > 0){
+      const c = ctx.createOscillator(), cg = ctx.createGain();
+      c.type="square"; c.frequency.value=1000; env(cg, time, click*b, 0.02);
+      c.connect(cg).connect(master); c.start(time); c.stop(time+0.03);
+    }
   }
-  function voiceSnare(time, b){
+  function mkSnare(time, b, {ftype="bandpass",bp=1800,q=0.7,noise=0.55,ndur=0.2,tone=0.4,tf0=190,tf1=120,tdur=0.12}){
     const n = noiseSrc(), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
-    nf.type="bandpass"; nf.frequency.value=1800; nf.Q.value=0.7;
-    env(ng, time, 0.55*b, 0.2); n.connect(nf).connect(ng).connect(master);
-    n.start(time); n.stop(time+0.25);
-    const o = ctx.createOscillator(), og = ctx.createGain();
-    o.type="triangle"; o.frequency.setValueAtTime(190, time);
-    o.frequency.exponentialRampToValueAtTime(120, time+0.1);
-    env(og, time, 0.4*b, 0.12); o.connect(og).connect(master);
-    o.start(time); o.stop(time+0.14);
+    nf.type=ftype; nf.frequency.value=bp; nf.Q.value=q;
+    env(ng, time, noise*b, ndur); n.connect(nf).connect(ng).connect(master);
+    n.start(time); n.stop(time+ndur+0.05);
+    if (tone > 0){
+      const o = ctx.createOscillator(), og = ctx.createGain();
+      o.type="triangle"; o.frequency.setValueAtTime(tf0, time);
+      o.frequency.exponentialRampToValueAtTime(tf1, time+tdur*0.8);
+      env(og, time, tone*b, tdur); o.connect(og).connect(master);
+      o.start(time); o.stop(time+tdur+0.04);
+    }
   }
-  function voiceClap(time, b){
-    const offs = [0, 0.009, 0.018, 0.03];
-    offs.forEach((off,i) => {
+  function mkClap(time, b, {bursts=4,bp=1100,q=1.1,spread=0.009,tail=0.16}){
+    for (let i=0;i<bursts;i++){
+      const off = i*spread, last = i===bursts-1;
       const n = noiseSrc(), f = ctx.createBiquadFilter(), g = ctx.createGain();
-      f.type="bandpass"; f.frequency.value=1100; f.Q.value=1.1;
-      const peak = (i===offs.length-1?0.5:0.32)*b;
-      env(g, time+off, peak, i===offs.length-1?0.16:0.03);
+      f.type="bandpass"; f.frequency.value=bp; f.Q.value=q;
+      env(g, time+off, (last?0.5:0.32)*b, last?tail:0.03);
       n.connect(f).connect(g).connect(master);
-      n.start(time+off); n.stop(time+off+0.2);
-    });
+      n.start(time+off); n.stop(time+off+tail+0.05);
+    }
   }
-  function voiceHat(time, b, dur){
-    const n = noiseSrc(), f = ctx.createBiquadFilter(), g = ctx.createGain();
-    f.type="highpass"; f.frequency.value=8000;
-    env(g, time, 0.3*b, dur, 0.001);
-    n.connect(f).connect(g).connect(master);
-    n.start(time); n.stop(time+dur+0.05);
+  function mkHat(time, b, {dur=0.05,hp=8000,metal=false}){
+    const g = ctx.createGain();
+    env(g, time, 0.3*b, dur, 0.001); g.connect(master);
+    if (metal){
+      // Classic 6-oscillator metallic cymbal recipe: inharmonic squares,
+      // band-passed then high-passed so only the bright, clangy top survives.
+      const bp = ctx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=10000; bp.Q.value=0.8;
+      const hpf = ctx.createBiquadFilter(); hpf.type="highpass"; hpf.frequency.value=7000;
+      bp.connect(hpf).connect(g);
+      const fund = 40, ratios = [2, 3, 4.16, 5.43, 6.79, 8.21];
+      ratios.forEach(r => {
+        const o = ctx.createOscillator(); o.type="square"; o.frequency.value=fund*r;
+        o.connect(bp); o.start(time); o.stop(time+dur+0.02);
+      });
+    } else {
+      const n = noiseSrc(), f = ctx.createBiquadFilter();
+      f.type="highpass"; f.frequency.value=hp;
+      n.connect(f).connect(g);
+      n.start(time); n.stop(time+dur+0.05);
+    }
   }
-  function voiceTom(time, b){
+  function mkTom(time, b, {f0=180,f1=90,dur=0.3}){
     const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type="sine"; o.frequency.setValueAtTime(180, time);
-    o.frequency.exponentialRampToValueAtTime(90, time+0.18);
-    env(g, time, 0.7*b, 0.3, 0.004);
-    o.connect(g).connect(master); o.start(time); o.stop(time+0.34);
+    o.type="sine"; o.frequency.setValueAtTime(f0, time);
+    o.frequency.exponentialRampToValueAtTime(f1, time+dur*0.6);
+    env(g, time, 0.7*b, dur, 0.004);
+    o.connect(g).connect(master); o.start(time); o.stop(time+dur+0.05);
   }
-  function voiceCow(time, b){
+  function mkCow(time, b, {f1=540,f2=800,dur=0.25,q=1.6}){
     const g = ctx.createGain(), f = ctx.createBiquadFilter();
-    f.type="bandpass"; f.frequency.value=650; f.Q.value=1.6;
-    env(g, time, 0.34*b, 0.25, 0.002);
-    [540, 800].forEach(fr => {
+    f.type="bandpass"; f.frequency.value=(f1+f2)/2; f.Q.value=q;
+    env(g, time, 0.34*b, dur, 0.002);
+    [f1, f2].forEach(fr => {
       const o = ctx.createOscillator(); o.type="square"; o.frequency.value=fr;
-      o.connect(f); o.start(time); o.stop(time+0.28);
+      o.connect(f); o.start(time); o.stop(time+dur+0.03);
     });
     f.connect(g).connect(master);
   }
-  function voiceRim(time, b){
+  function mkRim(time, b, {type="triangle",freq=1700,dur=0.05}){
     const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type="triangle"; o.frequency.value=1700;
-    env(g, time, 0.5*b, 0.05, 0.001);
-    o.connect(g).connect(master); o.start(time); o.stop(time+0.06);
+    o.type=type; o.frequency.value=freq;
+    env(g, time, 0.5*b, dur, 0.001);
+    o.connect(g).connect(master); o.start(time); o.stop(time+dur+0.02);
+  }
+  function mkWood(time, b){
+    [1200, 1800].forEach((fr,i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type="triangle"; o.frequency.value=fr;
+      env(g, time, (i?0.3:0.45)*b, 0.045, 0.001);
+      o.connect(g).connect(master); o.start(time); o.stop(time+0.06);
+    });
   }
 
   // ---------- Scheduler (lookahead) ----------
