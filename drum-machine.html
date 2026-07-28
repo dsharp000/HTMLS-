@@ -171,6 +171,32 @@
   .chip.active { color: var(--desk); background: linear-gradient(180deg,var(--amber-soft),var(--amber)); border-color: var(--amber); box-shadow: 0 0 18px -4px var(--amber); }
   .chip.ghost { margin-left:auto; }
   .chip.warn:hover { border-color: var(--red); color: #ffd7d2; }
+  .chip:disabled { opacity:0.55; cursor:progress; }
+
+  /* Songs bank */
+  .field {
+    font-family: var(--sans); font-size:11px; color:var(--ink);
+    background: var(--panel-lo); border:1px solid var(--edge); border-radius:7px;
+    padding:7px 11px; outline:none; width:150px;
+  }
+  .field:focus { border-color: var(--amber); }
+  .field::placeholder { color: var(--ink-faint); }
+  .song-list { display:inline-flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .song-chip { display:inline-flex; align-items:stretch; }
+  .song-chip .load {
+    font-size:11px; font-weight:600; letter-spacing:0.03em;
+    padding:7px 8px 7px 12px; border:1px solid var(--edge); border-right:0;
+    border-radius:7px 0 0 7px; background: linear-gradient(180deg,var(--panel-hi),var(--panel-lo));
+    color:var(--ink-dim); cursor:pointer; max-width:150px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .song-chip .load:hover { color:var(--ink); border-color:var(--amber); }
+  .song-chip .del {
+    padding:0 9px; border:1px solid var(--edge); border-radius:0 7px 7px 0;
+    background: var(--panel-lo); color:var(--ink-faint); cursor:pointer; font-size:13px; line-height:1;
+  }
+  .song-chip .del:hover { color:#ffd7d2; border-color:var(--red); background:rgba(255,81,69,0.12); }
+  .song-empty { font-size:11px; color:var(--ink-faint); font-style:italic; }
 
   /* ---------- Sequencer grid ---------- */
   .seq-scroll { overflow-x: auto; padding: 20px 0 4px; }
@@ -244,6 +270,11 @@
     content:""; position:absolute; top:4px; right:4px; width:4px; height:4px; border-radius:50%;
     background:#fff; opacity:0.9;
   }
+  .step[data-roll]::before {
+    content: attr(data-roll); position:absolute; left:4px; bottom:2px;
+    font-family:var(--mono); font-weight:700; font-size:9px; color:#fff; opacity:0.92;
+    text-shadow:0 0 3px rgba(0,0,0,0.9);
+  }
   .step.playhead {
     outline: 2px solid var(--amber); outline-offset: 1px;
   }
@@ -314,6 +345,14 @@
     <button class="chip warn" id="clearBtn">Clear</button>
   </div>
 
+  <div class="bank" id="songs">
+    <span class="cap">Songs</span>
+    <input id="songName" class="field" type="text" placeholder="Name this beat…" maxlength="24" aria-label="Song name">
+    <button class="chip" id="saveSong">＋ Save</button>
+    <span id="songList" class="song-list"></span>
+    <button class="chip ghost" id="exportWav">⭳ Export WAV</button>
+  </div>
+
   <div class="seq-scroll">
     <div class="seq" id="seq"></div>
   </div>
@@ -321,6 +360,7 @@
   <div class="hint">
     <span><b>Click</b> a cell to toggle a hit.</span>
     <span><b>Shift-click</b> for an accent (louder).</span>
+    <span><b>Right-click</b> a hit to roll it (2 · 3 · 4 sub-hits).</span>
     <span><b>Sound menu</b> under each name swaps that voice.</span>
     <span><b>M / S</b> = mute / solo a track.</span>
     <span><b><kbd>Space</kbd></b> play / stop.</span>
@@ -384,6 +424,7 @@
 
   // state[track][step] = 0 (off) | 1 (on) | 2 (accent)
   let state = TRACKS.map(() => new Array(NS).fill(0));
+  let rolls = TRACKS.map(() => new Array(NS).fill(1));   // sub-hits per step: 1=normal, 2/3/4=roll
   const muted = new Array(NT).fill(false);
   const soloed = new Array(NT).fill(false);
   const variantIdx = new Array(NT).fill(0);   // which sound each track uses
@@ -446,6 +487,7 @@
   // ---------- Build UI ----------
   const seq = document.getElementById("seq");
   const cellEls = []; // cellEls[t][s]
+  const selEls = [];  // per-track sound <select> elements
 
   // beat number bar
   const beatbar = document.createElement("div");
@@ -477,6 +519,7 @@
     label.querySelector('[data-k=m]').addEventListener("click", (e)=>{ muted[t]=!muted[t]; e.currentTarget.classList.toggle("on",muted[t]); });
     label.querySelector('[data-k=s]').addEventListener("click", (e)=>{ soloed[t]=!soloed[t]; e.currentTarget.classList.toggle("on",soloed[t]); });
     const sel = label.querySelector('select');
+    selEls[t] = sel;
     sel.addEventListener("change", () => {
       variantIdx[t] = +sel.value;
       ensureAudio(); trigger(t, ctx ? ctx.currentTime : 0, 0.3);  // audition the new sound
@@ -493,10 +536,20 @@
           state[t][s] = state[t][s]===2 ? 1 : 2; // toggle accent (keeps it on)
         } else {
           state[t][s] = state[t][s] ? 0 : 1;      // toggle on/off
+          if (!state[t][s]) rolls[t][s] = 1;      // clear any roll when the step goes off
         }
         renderCell(t,s);
         // audition
         if (state[t][s]) { ensureAudio(); trigger(t, ctx? ctx.currentTime:0, state[t][s]===2?1:0.7); }
+      });
+      cell.addEventListener("contextmenu", (e) => {   // right-click cycles the roll
+        e.preventDefault();
+        if (!state[t][s]) return;                     // rolls only apply to active hits
+        rolls[t][s] = (rolls[t][s] % 4) + 1;          // 1 → 2 → 3 → 4 → 1
+        renderCell(t,s);
+        ensureAudio();                                // audition the new roll
+        const R = rolls[t][s], d = stepDuration(s), base = ctx ? ctx.currentTime : 0;
+        for (let k=0;k<R;k++) trigger(t, base + k*d/R, 0);
       });
       row.appendChild(cell);
       cellEls[t][s] = cell;
@@ -505,9 +558,10 @@
   });
 
   function renderCell(t,s){
-    const el = cellEls[t][s], v = state[t][s];
+    const el = cellEls[t][s], v = state[t][s], r = rolls[t][s];
     el.classList.toggle("on", v>0);
     el.classList.toggle("accent", v===2);
+    if (v>0 && r>1) el.dataset.roll = r; else el.removeAttribute("data-roll");
   }
   function renderAll(){ for(let t=0;t<NT;t++)for(let s=0;s<NS;s++)renderCell(t,s); }
 
@@ -519,6 +573,7 @@
     chip.className = "chip"; chip.textContent = name;
     chip.addEventListener("click", () => {
       state = PRESETS[name].map(a => a.slice());
+      rolls = TRACKS.map(()=>new Array(NS).fill(1));
       renderAll();
       document.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));
       chip.classList.add("active");
@@ -531,32 +586,114 @@
       const on = Math.random() < densities[t] || (t===0 && s%4===0 && Math.random()<0.85);
       return on ? (Math.random()<0.2?2:1) : 0;
     }));
+    // sprinkle a few hat rolls for movement
+    rolls = TRACKS.map((_,t)=> new Array(NS).fill(0).map((_,s)=>{
+      if ((TRACKS[t].id==="chat"||TRACKS[t].id==="ohat") && state[t][s] && Math.random()<0.18)
+        return Math.random()<0.5 ? 2 : 3;
+      return 1;
+    }));
     renderAll();
     document.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));
   });
   document.getElementById("clearBtn").addEventListener("click", () => {
     state = TRACKS.map(()=>new Array(NS).fill(0));
+    rolls = TRACKS.map(()=>new Array(NS).fill(1));
     renderAll();
     document.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));
   });
+
+  // ---------- Save / load songs (localStorage) ----------
+  const LS_KEY = "pulse16.songs.v1";
+  const songNameEl = document.getElementById("songName");
+  const songListEl = document.getElementById("songList");
+
+  function loadSongs(){
+    try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; }
+    catch(e){ return []; }
+  }
+  function persistSongs(list){
+    try { localStorage.setItem(LS_KEY, JSON.stringify(list)); }
+    catch(e){ alert("Couldn't save — the browser's storage may be full or blocked."); }
+  }
+  function snapshot(name){
+    return {
+      name,
+      state: state.map(a=>a.slice()),
+      rolls: rolls.map(a=>a.slice()),
+      variants: variantIdx.slice(),
+      bpm, swing, vol: Math.round(volume*100)
+    };
+  }
+  function applySong(song){
+    state = song.state.map(a=>a.slice());
+    rolls = (song.rolls || TRACKS.map(()=>new Array(NS).fill(1))).map(a=>a.slice());
+    (song.variants || []).forEach((vi,t)=>{
+      if (t<NT){ variantIdx[t] = vi; if (selEls[t]) selEls[t].value = String(vi); }
+    });
+    setBpm(song.bpm || 120);
+    swing = song.swing || 0; swingEl.value = swing; swingLbl.textContent = swing+"%"; syncFill(swingEl);
+    const vp = song.vol==null ? 80 : song.vol;
+    volume = vp/100; volEl.value = vp; volLbl.textContent = vp; syncFill(volEl);
+    if (master) master.gain.setTargetAtTime(volume, ctx.currentTime, 0.01);
+    renderAll();
+    document.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));
+  }
+  function renderSongList(){
+    const list = loadSongs();
+    songListEl.innerHTML = "";
+    if (!list.length){
+      const em = document.createElement("span");
+      em.className = "song-empty"; em.textContent = "No saved beats yet.";
+      songListEl.appendChild(em); return;
+    }
+    list.forEach((song, i) => {
+      const wrap = document.createElement("span"); wrap.className = "song-chip";
+      const load = document.createElement("button");
+      load.className = "load"; load.textContent = song.name; load.title = "Load “"+song.name+"”";
+      load.addEventListener("click", ()=> applySong(song));
+      const del = document.createElement("button");
+      del.className = "del"; del.textContent = "×"; del.title = "Delete “"+song.name+"”";
+      del.setAttribute("aria-label", "Delete "+song.name);
+      del.addEventListener("click", ()=>{
+        const l = loadSongs(); l.splice(i,1); persistSongs(l); renderSongList();
+      });
+      wrap.appendChild(load); wrap.appendChild(del);
+      songListEl.appendChild(wrap);
+    });
+  }
+  document.getElementById("saveSong").addEventListener("click", ()=>{
+    const name = (songNameEl.value || "").trim() || ("Beat " + (loadSongs().length+1));
+    const list = loadSongs();
+    const existing = list.findIndex(s => s.name.toLowerCase() === name.toLowerCase());
+    if (existing >= 0) list[existing] = snapshot(name);   // overwrite a beat with the same name
+    else list.push(snapshot(name));
+    persistSongs(list); songNameEl.value = ""; renderSongList();
+  });
+  renderSongList();
 
   // ---------- Audio engine ----------
   let ctx = null, master = null, noiseBuf = null;
   let volume = 0.8;
 
+  function makeNoise(context){
+    const len = context.sampleRate * 1.0;
+    const b = context.createBuffer(1, len, context.sampleRate);
+    const d = b.getChannelData(0);
+    for (let i=0;i<len;i++) d[i] = Math.random()*2-1;
+    return b;
+  }
+  function makeMasterChain(context, gainVal){
+    const g = context.createGain(); g.gain.value = gainVal;
+    const comp = context.createDynamicsCompressor();
+    comp.threshold.value = -10; comp.ratio.value = 4; comp.release.value = 0.25;
+    g.connect(comp).connect(context.destination);
+    return g;
+  }
   function ensureAudio(){
     if (ctx) { if (ctx.state === "suspended") ctx.resume(); return; }
     ctx = new (window.AudioContext || window.webkitAudioContext)();
-    master = ctx.createGain();
-    master.gain.value = volume;
-    const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -10; comp.ratio.value = 4; comp.release.value = 0.25;
-    master.connect(comp).connect(ctx.destination);
-    // white noise buffer
-    const len = ctx.sampleRate * 1.0;
-    noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
-    const d = noiseBuf.getChannelData(0);
-    for (let i=0;i<len;i++) d[i] = Math.random()*2-1;
+    master = makeMasterChain(ctx, volume);
+    noiseBuf = makeNoise(ctx);
   }
   function noiseSrc(){ const s = ctx.createBufferSource(); s.buffer = noiseBuf; s.loop = true; return s; }
 
@@ -677,21 +814,32 @@
     return !muted[t];
   }
 
-  function scheduleStep(step, time){
-    for (let t=0;t<NT;t++){
-      const v = state[t][step];
-      if (v && audible(t)) trigger(t, time, v===2?1:0);
-    }
-    drawQueue.push({ step, time });
+  // Symmetric swing: shorten the on-beat 16th, lengthen the off-beat 16th, so each
+  // pair of steps still sums to two straight 16ths (bar length stays constant).
+  function stepDuration(step){
+    const sec16 = 0.25 * (60.0 / bpm);
+    return (step % 2 === 0) ? sec16 * (1 - swing/100) : sec16 * (1 + swing/100);
   }
 
+  // Fire every active track for one step, expanding rolls into evenly-spaced sub-hits.
+  function fireStep(step, time){
+    for (let t=0;t<NT;t++){
+      const v = state[t][step];
+      if (!v || !audible(t)) continue;
+      const acc = v===2 ? 1 : 0;
+      const R = rolls[t][step] || 1;
+      if (R <= 1){ trigger(t, time, acc); }
+      else {
+        const d = stepDuration(step);
+        for (let k=0;k<R;k++) trigger(t, time + k*d/R, k===0 ? acc : 0);
+      }
+    }
+  }
+
+  function scheduleStep(step, time){ fireStep(step, time); drawQueue.push({ step, time }); }
+
   function nextNote(){
-    const sec16 = 0.25 * (60.0 / bpm);
-    // Symmetric swing: shorten the on-beat 16th, lengthen the off-beat 16th
-    // so each pair of steps still sums to two straight 16ths (bar length constant).
-    nextNoteTime += (currentStep % 2 === 0)
-      ? sec16 * (1 - swing/100)
-      : sec16 * (1 + swing/100);
+    nextNoteTime += stepDuration(currentStep);
     currentStep = (currentStep + 1) % NS;
   }
 
@@ -769,12 +917,84 @@
   });
   syncFill(swingEl); syncFill(volEl);
 
+  // ---------- Export the current beat to a WAV file ----------
+  const exportBtn = document.getElementById("exportWav");
+  exportBtn.addEventListener("click", async () => {
+    ensureAudio();                          // guarantees a sample rate + live noise buffer
+    const SR = ctx.sampleRate;
+    const bars = 2;                         // render two bars so the loop is usable
+    const barDur = 4 * (60 / bpm);          // 4 beats per bar
+    const total = bars * barDur + 0.7;      // +tail so final hits ring out
+    const OfflineCtx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    const off = new OfflineCtx(2, Math.ceil(SR * total), SR);
+    const offMaster = makeMasterChain(off, volume);
+    const offNoise = makeNoise(off);
+
+    // swing-aware start time of each step within one bar
+    const offsets = []; let acc = 0;
+    for (let s=0;s<NS;s++){ offsets.push(acc); acc += stepDuration(s); }
+
+    // Point the synth graph at the offline context, schedule everything
+    // synchronously, then restore live refs *before* awaiting the render — so
+    // nothing else can run while the globals are swapped (JS is single-threaded).
+    const _ctx=ctx, _master=master, _noise=noiseBuf;
+    ctx = off; master = offMaster; noiseBuf = offNoise;
+    try {
+      for (let bar=0; bar<bars; bar++)
+        for (let s=0;s<NS;s++)
+          fireStep(s, bar*barDur + offsets[s]);
+    } finally {
+      ctx=_ctx; master=_master; noiseBuf=_noise;
+    }
+
+    exportBtn.textContent = "⏳ Rendering…"; exportBtn.disabled = true;
+    try {
+      const rendered = await off.startRendering();
+      const blob = encodeWav(rendered);
+      const base = (songNameEl.value || "pulse16-beat").trim().replace(/[^\w\-]+/g,"_") || "pulse16-beat";
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = base + ".wav";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+    } catch(err){
+      alert("Export failed: " + err.message);
+    } finally {
+      exportBtn.textContent = "⭳ Export WAV"; exportBtn.disabled = false;
+    }
+  });
+
+  // Encode an AudioBuffer as a 16-bit PCM WAV Blob.
+  function encodeWav(buffer){
+    const nCh = buffer.numberOfChannels, len = buffer.length;
+    const chans = []; for (let c=0;c<nCh;c++) chans.push(buffer.getChannelData(c));
+    const bytesPerSample = 2, blockAlign = nCh*bytesPerSample, dataLen = len*blockAlign;
+    const ab = new ArrayBuffer(44 + dataLen), view = new DataView(ab);
+    const wr = (o,str)=>{ for (let i=0;i<str.length;i++) view.setUint8(o+i, str.charCodeAt(i)); };
+    wr(0,"RIFF"); view.setUint32(4, 36+dataLen, true); wr(8,"WAVE");
+    wr(12,"fmt "); view.setUint32(16,16,true); view.setUint16(20,1,true);
+    view.setUint16(22,nCh,true); view.setUint32(24,buffer.sampleRate,true);
+    view.setUint32(28, buffer.sampleRate*blockAlign, true);
+    view.setUint16(32, blockAlign, true); view.setUint16(34, 8*bytesPerSample, true);
+    wr(36,"data"); view.setUint32(40, dataLen, true);
+    let o = 44;
+    for (let i=0;i<len;i++){
+      for (let c=0;c<nCh;c++){
+        let smp = Math.max(-1, Math.min(1, chans[c][i]));
+        smp = smp<0 ? smp*0x8000 : smp*0x7FFF;
+        view.setInt16(o, smp, true); o += 2;
+      }
+    }
+    return new Blob([ab], { type: "audio/wav" });
+  }
+
   // keyboard
   window.addEventListener("keydown", (e) => {
-    if (e.code === "Space" && e.target.tagName !== "INPUT"){
+    const typing = e.target.tagName === "INPUT" || e.target.tagName === "SELECT";
+    if (e.code === "Space" && !typing){
       e.preventDefault(); setPlaying(!playing);
-    } else if (e.key === "ArrowUp"){ setBpm(bpm+1); }
-    else if (e.key === "ArrowDown"){ setBpm(bpm-1); }
+    } else if (e.key === "ArrowUp" && !typing){ setBpm(bpm+1); }
+    else if (e.key === "ArrowDown" && !typing){ setBpm(bpm-1); }
   });
 
   // start on a groove so it's alive on load
