@@ -147,211 +147,756 @@ h1 {
   <div class="doll-panel">
     <svg id="doll" viewBox="0 0 200 420" width="210" height="420" xmlns="http://www.w3.org/2000/svg">
 
-      <!-- LAYER 0: Scene background -->
-      <g id="layer-bg"></g>
+      <defs>
+        <!-- Shared shading. Both gradients use the default objectBoundingBox
+             units, so ANY shape painted with them gets shading that fits its
+             own outline - that is what makes new clothes look 3D for free. -->
+        <linearGradient id="gEdge" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0"    stop-color="#000" stop-opacity="0.30"/>
+          <stop offset="0.16" stop-color="#000" stop-opacity="0.07"/>
+          <stop offset="0.38" stop-color="#fff" stop-opacity="0.14"/>
+          <stop offset="0.62" stop-color="#fff" stop-opacity="0.03"/>
+          <stop offset="0.84" stop-color="#000" stop-opacity="0.08"/>
+          <stop offset="1"    stop-color="#000" stop-opacity="0.26"/>
+        </linearGradient>
+        <linearGradient id="gTop" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0"    stop-color="#fff" stop-opacity="0.15"/>
+          <stop offset="0.4"  stop-color="#fff" stop-opacity="0"/>
+          <stop offset="1"    stop-color="#000" stop-opacity="0.12"/>
+        </linearGradient>
+        <radialGradient id="gCheek" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#FF8FA8" stop-opacity="0.42"/>
+          <stop offset="1" stop-color="#FF8FA8" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <!-- fabric patterns are generated here at runtime -->
+      <defs id="dyn-defs"></defs>
 
-      <!-- LAYER 1: Hair Back -->
-      <g id="layer-hair-back"></g>
-
-      <!-- LAYER 2: Body Base (skin) -->
-      <g id="layer-body">
-        <ellipse cx="57" cy="84" rx="9" ry="11" fill="var(--skin)"/>
-        <ellipse cx="143" cy="84" rx="9" ry="11" fill="var(--skin)"/>
-        <ellipse cx="100" cy="80" rx="40" ry="46" fill="var(--skin)"/>
-        <rect x="88" y="122" width="24" height="24" fill="var(--skin)"/>
-        <path d="M60,143 L140,143 L146,260 L54,260 Z" fill="var(--skin)"/>
-        <path d="M60,147 L28,158 L20,252 L48,258 L58,178 Z" fill="var(--skin)"/>
-        <path d="M140,147 L172,158 L180,252 L152,258 L142,178 Z" fill="var(--skin)"/>
-        <ellipse cx="34" cy="260" rx="14" ry="9" fill="var(--skin)"/>
-        <ellipse cx="166" cy="260" rx="14" ry="9" fill="var(--skin)"/>
-        <rect x="67" y="258" width="30" height="130" rx="10" fill="var(--skin)"/>
-        <rect x="103" y="258" width="30" height="130" rx="10" fill="var(--skin)"/>
-        <path d="M67,385 Q65,400 82,404 Q96,406 97,394 L97,385 Z" fill="var(--skin)"/>
-        <path d="M103,385 Q101,400 118,404 Q132,406 133,394 L133,385 Z" fill="var(--skin)"/>
-      </g>
-
-      <!-- LAYER 3: Pants / Skirt -->
-      <g id="layer-bottom"></g>
-
-      <!-- LAYER 4: Shirt -->
-      <g id="layer-shirt"></g>
-
-      <!-- LAYER 5: Jacket -->
-      <g id="layer-jacket"></g>
-
-      <!-- LAYER 6: Shoes -->
+      <g id="layer-scene"></g>       <!-- backdrop            -->
+      <g id="layer-hair-back"></g>   <!-- hair behind the body -->
+      <g id="layer-body"></g>        <!-- skin (built in JS)   -->
+      <g id="layer-bottom"></g>      <!-- pants / skirt        -->
+      <g id="layer-shirt"></g>       <!-- top + its sleeves    -->
+      <g id="layer-jacket"></g>      <!-- outerwear            -->
       <g id="layer-shoes"></g>
-
-      <!-- LAYER 7: Necklace -->
       <g id="layer-necklace"></g>
-
-      <!-- LAYER 8: Bracelet -->
       <g id="layer-bracelet"></g>
-
-      <!-- LAYER 9: Face Details -->
-      <g id="layer-face">
-        <ellipse cx="57" cy="84" rx="5" ry="7" fill="var(--skin-shade)" opacity="0.45"/>
-        <ellipse cx="143" cy="84" rx="5" ry="7" fill="var(--skin-shade)" opacity="0.45"/>
-        <ellipse cx="85" cy="76" rx="8" ry="9" fill="white"/>
-        <ellipse cx="115" cy="76" rx="8" ry="9" fill="white"/>
-        <ellipse cx="86" cy="77" rx="5" ry="6" fill="#4A2C10"/>
-        <ellipse cx="116" cy="77" rx="5" ry="6" fill="#4A2C10"/>
-        <ellipse cx="87" cy="76" rx="2" ry="2.5" fill="black"/>
-        <ellipse cx="117" cy="76" rx="2" ry="2.5" fill="black"/>
-        <circle cx="89" cy="74" r="1.5" fill="white"/>
-        <circle cx="119" cy="74" r="1.5" fill="white"/>
-        <line x1="78" y1="70" x2="74" y2="66" stroke="#222" stroke-width="1.2"/>
-        <line x1="83" y1="68" x2="82" y2="64" stroke="#222" stroke-width="1.2"/>
-        <line x1="88" y1="67" x2="89" y2="64" stroke="#222" stroke-width="1.2"/>
-        <line x1="93" y1="68" x2="95" y2="65" stroke="#222" stroke-width="1.2"/>
-        <line x1="107" y1="68" x2="105" y2="65" stroke="#222" stroke-width="1.2"/>
-        <line x1="112" y1="67" x2="111" y2="64" stroke="#222" stroke-width="1.2"/>
-        <line x1="117" y1="68" x2="118" y2="64" stroke="#222" stroke-width="1.2"/>
-        <line x1="122" y1="70" x2="126" y2="66" stroke="#222" stroke-width="1.2"/>
-        <path d="M77,65 Q85,61 93,64" stroke="#6B4C3B" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-        <path d="M107,64 Q115,61 123,65" stroke="#6B4C3B" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-        <path d="M98,90 Q100,95 102,90" stroke="var(--skin-line)" stroke-width="1.5" fill="none"/>
-        <path id="base-mouth" d="M88,106 Q100,117 112,106" stroke="#D4738A" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-        <ellipse cx="73" cy="96" rx="12" ry="7" fill="#FFB0C0" opacity="0.3"/>
-        <ellipse cx="127" cy="96" rx="12" ry="7" fill="#FFB0C0" opacity="0.3"/>
-      </g>
-
-      <!-- LAYER 10: Earrings -->
+      <g id="layer-face"></g>        <!-- eyes / nose / mouth  -->
       <g id="layer-earrings"></g>
-
-      <!-- LAYER 11: Makeup -->
       <g id="layer-makeup"></g>
-
-      <!-- LAYER 12: Hair Front -->
       <g id="layer-hair-front"></g>
-
-      <!-- LAYER 12.5: Glasses (over bangs, under hat) -->
       <g id="layer-glasses"></g>
-
-      <!-- LAYER 13: Hat / Headpiece -->
       <g id="layer-hat"></g>
 
     </svg>
     <input class="doll-name" id="doll-name" placeholder="Name me! ✏️" maxlength="20">
   </div>
 
-  <div class="controls-panel">
-    <div class="action-row">
-      <button class="action-btn surprise" onclick="surpriseMe()">🎲 Surprise!</button>
-      <button class="action-btn save" onclick="saveLook()">📸 Save</button>
-      <button class="action-btn reset-btn" onclick="resetDoll()">🔄 Reset</button>
-    </div>
-
-    <div class="swatch-row">
-      <span class="cat-icon">🎨</span>
-      <span class="cat-name">Skin</span>
-      <div id="skin-swatches" style="display:flex;gap:7px;flex:1;justify-content:center"></div>
-    </div>
-
-    <div class="category-row">
-      <span class="cat-icon">🏞️</span>
-      <span class="cat-name">Scene</span>
-      <button class="nav-btn" onclick="change('scene',-1)">◀</button>
-      <span class="option-name" id="opt-scene">—</span>
-      <button class="nav-btn" onclick="change('scene',1)">▶</button>
-    </div>
-
-    <div class="section-label">⭐ required ⭐</div>
-
-    <div class="category-row required">
-      <span class="cat-icon">💇</span>
-      <span class="cat-name">Hair</span>
-      <button class="nav-btn" onclick="change('hair',-1)">◀</button>
-      <span class="option-name" id="opt-hair">—</span>
-      <button class="nav-btn" onclick="change('hair',1)">▶</button>
-    </div>
-
-    <div class="category-row required">
-      <span class="cat-icon">👕</span>
-      <span class="cat-name">Shirt</span>
-      <button class="nav-btn" onclick="change('shirt',-1)">◀</button>
-      <span class="option-name" id="opt-shirt">—</span>
-      <button class="nav-btn" onclick="change('shirt',1)">▶</button>
-    </div>
-
-    <div class="category-row required">
-      <span class="cat-icon">👗</span>
-      <span class="cat-name">Pants/Skirt</span>
-      <button class="nav-btn" onclick="change('bottom',-1)">◀</button>
-      <span class="option-name" id="opt-bottom">—</span>
-      <button class="nav-btn" onclick="change('bottom',1)">▶</button>
-    </div>
-
-    <div class="section-label" style="margin-top:4px">✨ optional ✨</div>
-
-    <div class="category-row">
-      <span class="cat-icon">🧥</span>
-      <span class="cat-name">Jacket</span>
-      <button class="nav-btn" onclick="change('jacket',-1)">◀</button>
-      <span class="option-name" id="opt-jacket">—</span>
-      <button class="nav-btn" onclick="change('jacket',1)">▶</button>
-    </div>
-
-    <div class="category-row">
-      <span class="cat-icon">👟</span>
-      <span class="cat-name">Shoes</span>
-      <button class="nav-btn" onclick="change('shoes',-1)">◀</button>
-      <span class="option-name" id="opt-shoes">—</span>
-      <button class="nav-btn" onclick="change('shoes',1)">▶</button>
-    </div>
-
-    <div class="category-row">
-      <span class="cat-icon">🎩</span>
-      <span class="cat-name">Hat</span>
-      <button class="nav-btn" onclick="change('hat',-1)">◀</button>
-      <span class="option-name" id="opt-hat">—</span>
-      <button class="nav-btn" onclick="change('hat',1)">▶</button>
-    </div>
-
-    <div class="category-row">
-      <span class="cat-icon">🕶️</span>
-      <span class="cat-name">Glasses</span>
-      <button class="nav-btn" onclick="change('glasses',-1)">◀</button>
-      <span class="option-name" id="opt-glasses">—</span>
-      <button class="nav-btn" onclick="change('glasses',1)">▶</button>
-    </div>
-
-    <div class="category-row">
-      <span class="cat-icon">💎</span>
-      <span class="cat-name">Earrings</span>
-      <button class="nav-btn" onclick="change('earrings',-1)">◀</button>
-      <span class="option-name" id="opt-earrings">—</span>
-      <button class="nav-btn" onclick="change('earrings',1)">▶</button>
-    </div>
-
-    <div class="category-row">
-      <span class="cat-icon">📿</span>
-      <span class="cat-name">Necklace</span>
-      <button class="nav-btn" onclick="change('necklace',-1)">◀</button>
-      <span class="option-name" id="opt-necklace">—</span>
-      <button class="nav-btn" onclick="change('necklace',1)">▶</button>
-    </div>
-
-    <div class="category-row">
-      <span class="cat-icon">🔮</span>
-      <span class="cat-name">Bracelet</span>
-      <button class="nav-btn" onclick="change('bracelet',-1)">◀</button>
-      <span class="option-name" id="opt-bracelet">—</span>
-      <button class="nav-btn" onclick="change('bracelet',1)">▶</button>
-    </div>
-
-    <div class="category-row">
-      <span class="cat-icon">💄</span>
-      <span class="cat-name">Makeup</span>
-      <button class="nav-btn" onclick="change('makeup',-1)">◀</button>
-      <span class="option-name" id="opt-makeup">—</span>
-      <button class="nav-btn" onclick="change('makeup',1)">▶</button>
-    </div>
-  </div>
+  <div class="controls-panel" id="controls"></div>
 </div>
 
 <script>
-const opts = {
+/* ==========================================================================
+   DRESS-UP DOLL  ·  modular build
+   --------------------------------------------------------------------------
+   §1 GEO       the body's measurements. Everything is fitted to these, so
+                changing a number here restyles the doll AND all her clothes.
+   §2 UTIL      colour + path maths (mirror, smooth ring, tapered tube...)
+   §3 FIT       bodice() / sleeve() / trouser() / skirt() / boot()
+                -> shapes that automatically hug the body in §1
+   §4 STYLES    garment factories: top(), bottom(), outer(), shoes(), jewels
+   §5 WARDROBE  >>> THE CLOTHES. Plain data. Edit / add lines here. <<<
+   §6 LOOKS     hand-drawn art that isn't fitted to the body (hair, hats,
+                glasses, makeup, scenes)
+   §7 ENGINE    state, rendering, controls, save/restore
+   ========================================================================== */
+
+
+/* ===== §1 GEO — body measurements ======================================== */
+const GEO = {
+  head: { cx: 100, cy: 80, rx: 40, ry: 46 },
+  ear:  { cx: 57,  cy: 84, rx: 9,  ry: 11 },
+  neck: { top: 110, bottom: 156, w: 13 },
+
+  /* torso half-width at a given y (left side; right side is mirrored) */
+  torso: [[146,31],[153,35],[164,35.5],[178,33],[196,30],[212,28.5],
+          [230,31],[248,34.5],[262,36],[270,34]],
+  shoulderY: 148,
+  waistY:    212,
+  hipY:      266,
+
+  /* limbs are drawn as tapered tubes along a centre line */
+  arm:  { line: [[71,150],[65,170],[56,206],[49,236],[47,258]],
+          w:    [11.5, 12.6, 10.4, 8.6, 7.2],
+          wrist: [47, 258], hand: [46, 270] },
+  leg:  { line: [[81,262],[79,300],[77,340],[76,378]],
+          w:    [18, 13.5, 10.6, 8.6] },
+
+  /* left foot outline, toes pointing outward */
+  foot: [[68,372],[63,384],[58,395],[57,403],[62,408],
+         [76,409],[86,407],[88,398],[85,384],[84,372]],
+  ankleY: 376,
+  groundY: 409
+};
+
+
+/* ===== §2 UTIL — colour + path maths ===================================== */
+
+/* -- colour -- */
+function _hx(c){
+  c = c.replace('#','');
+  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  return [parseInt(c.slice(0,2),16), parseInt(c.slice(2,4),16), parseInt(c.slice(4,6),16)];
+}
+function _rgb(a){
+  return '#' + a.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2,'0')).join('');
+}
+function mix(a, b, t){ const A = _hx(a), B = _hx(b); return _rgb(A.map((v,i) => v + (B[i]-v)*t)); }
+const dark = (c, t = 0.22) => mix(c, '#000000', t);
+const lite = (c, t = 0.22) => mix(c, '#ffffff', t);
+
+/* -- points & paths -- */
+const F = n => Math.round(n * 10) / 10;
+const XY = p => F(p[0]) + ',' + F(p[1]);
+const mid = (a, b) => [(a[0]+b[0])/2, (a[1]+b[1])/2];
+
+/** closed, smooth outline through a ring of points (corners come out soft;
+    repeat a point to sharpen it) */
+function ringPath(pts){
+  if (pts.length < 3) return '';
+  let d = 'M' + XY(mid(pts[pts.length-1], pts[0]));
+  for (let i = 0; i < pts.length; i++){
+    const c = pts[i], n = pts[(i+1) % pts.length];
+    d += ' Q' + XY(c) + ' ' + XY(mid(c, n));
+  }
+  return d + 'Z';
+}
+/** open smooth curve through a list of points (seams, hems, folds) */
+function curvePath(pts){
+  let d = 'M' + XY(pts[0]);
+  for (let i = 1; i < pts.length - 1; i++) d += ' Q' + XY(pts[i]) + ' ' + XY(mid(pts[i], pts[i+1]));
+  d += ' L' + XY(pts[pts.length-1]);
+  return d;
+}
+/** everything is drawn on the LEFT half, then mirrored — always symmetric */
+const flip = s => '<g transform="translate(200,0) scale(-1,1)">' + s + '</g>';
+const pair = s => s + flip(s);
+
+/** paint a shape: flat colour + the shared 3D shading */
+function paint(d, fill, o = {}){
+  let s = '<path d="' + d + '" fill="' + fill + '"/>';
+  if (o.shade !== false) s += '<path d="' + d + '" fill="url(#gEdge)"/>';
+  if (o.sheen)          s += '<path d="' + d + '" fill="url(#gTop)"/>';
+  if (o.line) s += '<path d="' + d + '" fill="none" stroke="' + o.line +
+                   '" stroke-width="' + (o.lw || 1.4) + '" opacity="' + (o.lo || 0.55) + '"/>';
+  return s;
+}
+const stroke = (d, c, w, op) =>
+  '<path d="' + d + '" fill="none" stroke="' + c + '" stroke-width="' + w +
+  '" opacity="' + (op === undefined ? 1 : op) + '" stroke-linecap="round"/>';
+
+/* -- interpolation & tapered tubes -- */
+function interp(tbl, y){
+  if (y <= tbl[0][0]) return tbl[0][1];
+  for (let i = 1; i < tbl.length; i++){
+    if (y <= tbl[i][0]){
+      const [y0,w0] = tbl[i-1], [y1,w1] = tbl[i];
+      return w0 + (w1 - w0) * (y - y0) / (y1 - y0);
+    }
+  }
+  return tbl[tbl.length-1][1];
+}
+const halfW = y => interp(GEO.torso, y);
+
+function _cr(p0,p1,p2,p3,t){
+  const t2 = t*t, t3 = t2*t;
+  const f = (a,b,c,d) => 0.5*((2*b) + (-a+c)*t + (2*a-5*b+4*c-d)*t2 + (-a+3*b-3*c+d)*t3);
+  return [f(p0[0],p1[0],p2[0],p3[0]), f(p0[1],p1[1],p2[1],p3[1])];
+}
+function spline(pts, per = 5){
+  const P = [pts[0], ...pts, pts[pts.length-1]], out = [];
+  for (let i = 0; i < P.length - 3; i++)
+    for (let j = 0; j < per; j++) out.push(_cr(P[i],P[i+1],P[i+2],P[i+3], j/per));
+  out.push(pts[pts.length-1].slice());
+  return out;
+}
+function widthAt(ws, u){
+  const n = ws.length - 1;
+  const f = Math.max(0, Math.min(0.9999, u)) * n, i = Math.floor(f);
+  return ws[i] + (ws[i+1] - ws[i]) * (f - i);
+}
+/** a limb (or a sleeve / trouser leg / boot shaft) as a tapered tube.
+    t0/t1 slice it (0 = shoulder or hip, 1 = wrist or ankle);
+    pad grows it so clothing sits on top of the skin. */
+function tube(line, ws, o = {}){
+  const S = spline(line), n = S.length, pad = o.pad || 0;
+  const i0 = Math.round((o.t0 !== undefined ? o.t0 : 0) * (n-1));
+  const i1 = Math.round((o.t1 !== undefined ? o.t1 : 1) * (n-1));
+  const L = [], R = [];
+  for (let i = i0; i <= i1; i++){
+    const a = S[Math.max(i0, i-1)], b = S[Math.min(i1, i+1)];
+    let tx = b[0]-a[0], ty = b[1]-a[1];
+    const m = Math.hypot(tx, ty) || 1; tx /= m; ty /= m;
+    const w = widthAt(ws, i/(n-1)) + pad;
+    L.push([S[i][0] - ty*w, S[i][1] + tx*w]);
+    R.push([S[i][0] + ty*w, S[i][1] - tx*w]);
+  }
+  return ringPath(L.concat(R.reverse()));
+}
+/** point on a centre line at 0..1 — for cuffs, bracelets, hems */
+function pointAt(line, t){
+  const S = spline(line);
+  return S[Math.max(0, Math.min(S.length-1, Math.round(t * (S.length-1))))];
+}
+/* ring helpers used by shoes */
+const centroid = r => r.reduce((a,p) => [a[0]+p[0]/r.length, a[1]+p[1]/r.length], [0,0]);
+function growRing(ring, pad, c){
+  c = c || centroid(ring);
+  return ring.map(([x,y]) => {
+    const dx = x-c[0], dy = y-c[1], m = Math.hypot(dx,dy) || 1;
+    return [x + dx/m*pad, y + dy/m*pad];
+  });
+}
+function rotRing(ring, deg, o){
+  const r = deg*Math.PI/180, c = Math.cos(r), s = Math.sin(r);
+  return ring.map(([x,y]) => {
+    const dx = x-o[0], dy = y-o[1];
+    return [o[0] + dx*c - dy*s, o[1] + dx*s + dy*c];
+  });
+}
+
+/* -- fabric patterns (built once, reused, and saved into the PNG) --
+   NOTE: they are added with innerHTML on the <defs>, which parses in the SVG
+   namespace. insertAdjacentHTML does NOT, and would give inert patterns. */
+const _pats = new Map();
+const _patDefs = [];
+function fabric(kind, c, accent){
+  const key = kind + '|' + c + '|' + (accent || '');
+  if (_pats.has(key)) return _pats.get(key);
+  const id = 'pat' + _pats.size;
+  const a = accent || lite(c, 0.3);
+  let size = 12, body = '';
+  if (kind === 'stripes'){
+    size = 11;
+    body = `<rect width="11" height="11" fill="${c}"/><rect width="11" height="5.5" fill="${a}"/>`;
+  } else if (kind === 'dots'){
+    size = 14;
+    body = `<rect width="14" height="14" fill="${c}"/>
+            <circle cx="4" cy="4" r="2.4" fill="${a}"/><circle cx="11" cy="11" r="2.4" fill="${a}"/>`;
+  } else if (kind === 'plaid'){
+    size = 18;
+    body = `<rect width="18" height="18" fill="${c}"/>
+            <rect width="18" height="7" fill="${a}" opacity="0.5"/>
+            <rect width="7" height="18" fill="${a}" opacity="0.5"/>
+            <rect x="11" width="2" height="18" fill="#fff" opacity="0.35"/>
+            <rect y="11" width="18" height="2" fill="#fff" opacity="0.35"/>`;
+  } else if (kind === 'floral'){
+    size = 16;
+    const petal = (x,y,r,col) =>
+      `<circle cx="${x}" cy="${y-r}" r="${r*0.62}" fill="${col}"/>
+       <circle cx="${x+r*0.95}" cy="${y-r*0.3}" r="${r*0.62}" fill="${col}"/>
+       <circle cx="${x+r*0.6}" cy="${y+r*0.8}" r="${r*0.62}" fill="${col}"/>
+       <circle cx="${x-r*0.6}" cy="${y+r*0.8}" r="${r*0.62}" fill="${col}"/>
+       <circle cx="${x-r*0.95}" cy="${y-r*0.3}" r="${r*0.62}" fill="${col}"/>
+       <circle cx="${x}" cy="${y}" r="${r*0.42}" fill="#FFD86B"/>`;
+    body = `<rect width="16" height="16" fill="${c}"/>` +
+           petal(4.5, 4.5, 2.5, a) + petal(12, 11.5, 2.2, lite(a, 0.35)) +
+           `<ellipse cx="12" cy="3" rx="2.4" ry="1.1" fill="${lite(c,0.2)}" transform="rotate(-25 12 3)"/>
+            <ellipse cx="4" cy="12.5" rx="2.4" ry="1.1" fill="${lite(c,0.2)}" transform="rotate(20 4 12.5)"/>`;
+  } else if (kind === 'denim'){
+    size = 5;
+    body = `<rect width="5" height="5" fill="${c}"/>
+            <path d="M0,5 L5,0" stroke="${lite(c,0.16)}" stroke-width="1.1"/>
+            <path d="M0,2.5 L2.5,0 M2.5,5 L5,2.5" stroke="${dark(c,0.1)}" stroke-width="0.7"/>`;
+  } else if (kind === 'knit'){
+    size = 9;
+    body = `<rect width="9" height="9" fill="${c}"/>
+            <path d="M0,4.5 Q2.25,0 4.5,4.5 Q6.75,9 9,4.5" fill="none"
+                  stroke="${dark(c,0.14)}" stroke-width="1.5"/>
+            <path d="M0,9 Q2.25,4.5 4.5,9" fill="none" stroke="${lite(c,0.12)}" stroke-width="1"/>`;
+  } else {
+    body = `<rect width="12" height="12" fill="${c}"/>`;
+  }
+  _patDefs.push(`<pattern id="${id}" width="${size}" height="${size}" patternUnits="userSpaceOnUse">${body}</pattern>`);
+  document.getElementById('dyn-defs').innerHTML = _patDefs.join('');
+  const url = 'url(#' + id + ')';
+  _pats.set(key, url);
+  return url;
+}
+
+
+/* ===== §3 FIT — shapes that hug the body ================================= */
+
+/** The torso piece of any top / dress / jacket.
+    pad may be a number or a function of y (used for tank armholes). */
+function bodice(o = {}){
+  const top    = o.top    !== undefined ? o.top : GEO.shoulderY;
+  const bottom = o.bottom !== undefined ? o.bottom : GEO.hipY;
+  const padFn  = typeof o.pad === 'function' ? o.pad : () => (o.pad !== undefined ? o.pad : 2.6);
+  const neckW  = o.neckW !== undefined ? o.neckW : 15;
+  const neckD  = o.neckD !== undefined ? o.neckD : 13;
+  const dip    = o.hemDip !== undefined ? o.hemDip : 3;
+
+  const left = [];
+  for (let y = top; y < bottom; y += 7) left.push([100 - halfW(y) - padFn(y), y]);
+  left.push([100 - halfW(bottom) - padFn(bottom), bottom]);
+  const right = left.map(p => [200 - p[0], p[1]]).reverse();
+
+  const ring = [
+    ...left,
+    [100, bottom + dip],
+    ...right,
+    [100 + neckW, top + 2],
+    [100, top + neckD], [100, top + neckD],   // doubled = a deeper neckline
+    [100 - neckW, top + 2]
+  ];
+  return ringPath(ring);
+}
+/** the collar line that matches a bodice's neckline */
+const necklineCurve = (neckW, neckD, top = GEO.shoulderY) =>
+  curvePath([[100-neckW, top+3], [100, top+neckD+2.5], [100+neckW, top+3]]);
+
+/* sleeves / trousers / boot shafts are all just slices of a limb tube */
+const sleeve  = (t1, pad = 3.2, t0 = 0) => tube(GEO.arm.line, GEO.arm.w, {t0, t1, pad});
+const trouser = (t1, pad = 2.6, t0 = 0) => tube(GEO.leg.line, GEO.leg.w, {t0, t1, pad});
+
+/** a skirt: flares out from the waist. Returns the path plus the widths so
+    the caller can add pleats/ruffles that follow the flare. */
+function skirt(o = {}){
+  const top    = o.top !== undefined ? o.top : 250;
+  const bottom = o.bottom !== undefined ? o.bottom : 340;
+  const wTop   = halfW(top) + (o.pad !== undefined ? o.pad : 2.5);
+  const wBot   = wTop + (o.flare !== undefined ? o.flare : 24);
+  const at = t => wTop + (wBot - wTop) * Math.pow(t, o.curve || 1.4);
+  const left = [];
+  for (let i = 0; i <= 7; i++){
+    const t = i/7;
+    left.push([100 - at(t), top + (bottom - top) * t]);
+  }
+  const right = left.map(p => [200 - p[0], p[1]]).reverse();
+  const ring = [...left, [100, bottom + (o.hemDip !== undefined ? o.hemDip : 7)], ...right,
+                [100, top - 2]];
+  return { d: ringPath(ring), wTop, wBot, top, bottom, at };
+}
+
+/** the bare foot outline, optionally padded (shoes) or tilted (heels) */
+function footShape(o = {}){
+  let ring = GEO.foot;
+  if (o.tilt) ring = rotRing(ring, o.tilt, o.pivot || [59, 405]);
+  if (o.pad)  ring = growRing(ring, o.pad);
+  return ringPath(ring);
+}
+
+
+/* ===== §4 STYLES — garment factories ====================================
+   Every maker takes one plain options object and returns SVG.
+   To invent a new garment: add a maker here, then use its name as
+   `style:` in the WARDROBE below.                                          */
+
+const SLEEVE_T = { none: 0, cap: 0.16, short: 0.34, elbow: 0.55, three: 0.7, long: 0.93 };
+const NECK     = { crew:{w:15,d:12}, high:{w:12,d:6},  scoop:{w:19,d:19},
+                   v:{w:16,d:27},    boat:{w:22,d:8},  square:{w:17,d:16} };
+const HEM      = { crop: 214, waist: 244, hip: 264, tunic: 292 };
+
+/* soft creases so fabric doesn't look like flat vinyl */
+function creases(c, y0, y1){
+  const d = dark(c, 0.3);
+  return pair(
+    stroke(curvePath([[78,y0+6],[83,y0+18],[79,y1-6]]), d, 2, 0.16) +
+    stroke(curvePath([[90,y0+22],[93,y0+34],[90,y1-4]]), d, 1.6, 0.11)
+  );
+}
+
+const STYLES = {
+
+  /* ---------- TOPS ---------- */
+  shirt: {
+    top(o){
+      const c    = o.color;
+      const fill = o.pattern ? fabric(o.pattern, c, o.accent) : c;
+      const dk   = dark(c, 0.26);
+      const bot  = HEM[o.length || 'hip'] || o.length;
+      const nk   = NECK[o.neck || 'crew'];
+      const slv  = o.sleeve || 'short';
+      const t1   = SLEEVE_T[slv];
+
+      /* sleeveless tops pull in at the shoulder so the arm stays free */
+      const pad = slv === 'none'
+        ? y => (y < 182 ? -7 + (y - GEO.shoulderY) * 0.28 : 2.6)
+        : 2.8;
+
+      let s = '';
+      if (t1) s += pair(paint(sleeve(t1, 3.2), fill, {sheen: true}));
+      s += paint(bodice({bottom: bot, pad, neckW: nk.w, neckD: nk.d, hemDip: o.hemDip}), fill, {sheen: true});
+
+      /* collar + shoulder seams */
+      s += stroke(necklineCurve(nk.w, nk.d), dk, 2.2, 0.75);
+      if (o.collarBand) s += stroke(necklineCurve(nk.w + 1.5, nk.d + 3.5), dk, 3.5, 0.55);
+      if (t1) s += pair(stroke(curvePath([[100 - halfW(154) - 2, 154],
+                                          [100 - halfW(168) - 4, 172]]), dk, 1.6, 0.3));
+      /* cuffs, hem band, buttons, motif */
+      if (t1 >= SLEEVE_T.long) s += pair(paint(sleeve(0.97, 3.6, 0.86), dk, {shade: false}));
+      if (o.ribbed){
+        s += paint(bodice({top: bot - 12, bottom: bot, pad: 2.9, neckW: 0, neckD: 0, hemDip: 3}), dk, {shade: false});
+      }
+      if (o.buttons){
+        for (let i = 0; i < o.buttons; i++){
+          const y = GEO.shoulderY + nk.d + 12 + i * ((bot - GEO.shoulderY - nk.d - 18) / o.buttons);
+          s += `<circle cx="100" cy="${F(y)}" r="2.4" fill="${dk}"/>
+                <circle cx="99.3" cy="${F(y-0.7)}" r="0.9" fill="#fff" opacity="0.45"/>`;
+        }
+        s += stroke('M100,' + F(GEO.shoulderY + nk.d) + ' L100,' + F(bot - 4), dk, 1, 0.4);
+      }
+      if (o.motif) s += `<text x="100" y="205" font-size="26" text-anchor="middle">${o.motif}</text>`;
+      s += creases(c, GEO.shoulderY + nk.d, bot);
+      /* the shadow the top casts on whatever is underneath */
+      s += stroke(curvePath([[100 - halfW(bot) - 2, bot], [100, bot + 4], [100 + halfW(bot) + 2, bot]]),
+                  '#000', 3.5, 0.14);
+      return s;
+    }
+  },
+
+  /* ---------- BOTTOMS ---------- */
+  bottom: {
+    pants(o){
+      const c    = o.color;
+      const fill = o.pattern ? fabric(o.pattern, c, o.accent) : c;
+      const dk   = dark(c, 0.3);
+      const len  = o.length !== undefined ? o.length : 1;
+      const pad  = o.slim ? 1.6 : 2.8;
+      let s = pair(paint(trouser(len, pad), fill, {sheen: true}));
+      /* waistband */
+      s += paint(bodice({top: 250, bottom: 268, pad: pad + 0.4, neckW: 0, neckD: 0, hemDip: 0}), dk, {shade: false});
+      s += stroke('M' + (100 - halfW(258) - pad) + ',258 L' + (100 + halfW(258) + pad) + ',258', lite(c, 0.25), 1, 0.3);
+      /* seams and creases, trimmed to wherever this leg actually ends
+         (so shorts and capris don't leave stitching on bare skin) */
+      const yHem = pointAt(GEO.leg.line, len)[1] - 5;
+      const upto = pts => pts.filter(p => p[1] < yHem);
+      const seam = (pts, col, w, op) => (upto(pts).length > 1 ? pair(stroke(curvePath(upto(pts)), col, w, op)) : '');
+      s += seam([[99, 272], [95, 292], [96, 330]], dk, 1.6, 0.4);          // inseam
+      s += seam([[68, 318], [78, 322], [87, 317]], dk, 1.6, 0.16);         // knee
+      if (o.stitch){
+        s += seam([[70, 274], [68, 320], [67, 360]], o.stitch, 1, 0.55);
+        s += seam([[92, 274], [89, 320], [87, 360]], o.stitch, 1, 0.4);
+        s += pair(stroke('M62,270 Q72,272 74,282 L62,282', o.stitch, 1, 0.5));   // pocket
+      }
+      if (o.cuff) s += pair(paint(trouser(len, pad + 1.1, len - 0.07), dk, {shade: false}));
+      if (o.sparkle) s += pair(`<text x="66" y="300" font-size="9" opacity="0.75">✨</text>
+                                <text x="74" y="338" font-size="8" opacity="0.6">⭐</text>`);
+      return s;
+    },
+    skirt(o){
+      const c    = o.color;
+      const fill = o.pattern ? fabric(o.pattern, c, o.accent) : c;
+      const dk   = dark(c, 0.3);
+      const sk   = skirt({top: 250, bottom: o.hem || 344, flare: o.flare !== undefined ? o.flare : 26});
+      let s = paint(sk.d, fill, {sheen: true});
+      /* waistband */
+      s += paint(bodice({top: 250, bottom: 266, pad: 2.6, neckW: 0, neckD: 0, hemDip: 0}), dk, {shade: false});
+      /* pleats follow the flare, so they stay right if the skirt changes */
+      if (o.pleats){
+        for (let f = -0.78; f < 0.9; f += 0.26){
+          if (Math.abs(f) < 0.05) continue;
+          s += stroke('M' + F(100 + f*sk.wTop) + ',' + (sk.top + 14) +
+                      ' L' + F(100 + f*sk.wBot) + ',' + F(sk.bottom + 5 - Math.abs(f)*4),
+                      f < 0 ? dk : lite(c, 0.22), 2, 0.3);
+        }
+      }
+      /* ruffle tiers: a wave drawn across the (already flared) skirt */
+      if (o.ruffles){
+        for (let k = 1; k <= o.ruffles; k++){
+          const t = k / (o.ruffles + 0.5);
+          const y = sk.top + (sk.bottom - sk.top) * t, w = sk.at(t);
+          const pts = [];
+          for (let i = 0; i <= 10; i++){
+            const x = 100 - w + (2*w) * (i/10);
+            pts.push([x, y + (i % 2 ? 5.5 : 0)]);
+          }
+          s += paint(ringPath([...pts, [100 + w, y - 7], [100 - w, y - 7]]), lite(c, 0.3), {shade: false});
+          s += stroke(curvePath(pts), dk, 1.4, 0.22);
+        }
+      }
+      if (o.motifs){
+        const m = o.motifs;
+        [[72,300,9],[100,288,10],[128,302,9],[84,332,8],[116,338,8],[100,364,9]].forEach(([x,y,r]) => {
+          s += `<circle cx="${x}" cy="${y}" r="${r}" fill="${m}" opacity="0.9"/>
+                <circle cx="${x}" cy="${y}" r="${r*0.45}" fill="#FFD86B"/>`;
+        });
+      }
+      s += stroke(curvePath([[100 - sk.wBot + 3, sk.bottom + 1], [100, sk.bottom + 8],
+                             [100 + sk.wBot - 3, sk.bottom + 1]]), dk, 2, 0.35);
+      return s;
+    }
+  },
+
+  /* ---------- OUTERWEAR ---------- */
+  jacket: {
+    none(){ return ''; },
+    /** open jacket: two front panels with a gap, so the top shows through */
+    coat(o){
+      const c    = o.color;
+      const fill = o.pattern ? fabric(o.pattern, c, o.accent) : c;
+      const dk   = dark(c, 0.28);
+      const bot  = o.length || 262;
+      const gap  = o.gap !== undefined ? o.gap : 6;
+      const pad  = o.pad !== undefined ? o.pad : 6;
+
+      /* one front panel, built from the same silhouette as everything else */
+      const side = [];
+      for (let y = GEO.shoulderY; y < bot; y += 7) side.push([100 - halfW(y) - pad, y]);
+      side.push([100 - halfW(bot) - pad, bot]);
+      const panel = ringPath([
+        ...side,
+        [100 - gap - 3, bot + 2],
+        [100 - gap, 196],
+        [100 - (o.lapel ? 3 : gap + 1), GEO.shoulderY + 16],
+        [100 - 15, GEO.shoulderY + 2]
+      ]);
+
+      let s = pair(paint(sleeve(o.sleeve || 0.92, pad - 0.4), fill, {sheen: true}));
+      s += pair(paint(panel, fill, {sheen: true}));
+      if (o.lapel){
+        const lap = ringPath([[100-15, GEO.shoulderY+3], [100-24, GEO.shoulderY+8],
+                              [100-gap-2, 192], [100-gap, 196], [100-3, GEO.shoulderY+18]]);
+        s += pair(paint(lap, dark(c, 0.14), {shade: false, line: dk, lw: 1, lo: 0.5}));
+      }
+      if (o.hood){
+        /* the hood is folded down behind the neck, not pulled over the face */
+        const hood = ringPath([[68,160],[64,146],[72,137],[86,134],[100,133],[114,134],[128,137],
+                               [136,146],[132,160],[116,166],[100,167],[84,166]]);
+        s += paint(hood, dark(c, 0.12), {sheen: true});
+        s += stroke(curvePath([[78,152],[100,161],[122,152]]), dk, 2, 0.5);
+        s += pair(stroke('M95,156 L91,182', lite(c, 0.55), 2.2, 0.95)) +
+             `<circle cx="91" cy="183" r="2.2" fill="${lite(c,0.55)}"/>
+              <circle cx="109" cy="183" r="2.2" fill="${lite(c,0.55)}"/>`;
+      }
+      if (o.zip) s += stroke('M100,' + (GEO.shoulderY + 18) + ' L100,' + (bot - 2), dk, 2, 0.7);
+      if (o.buttons){
+        for (let i = 0; i < o.buttons; i++)
+          s += `<circle cx="${100 - gap - 1}" cy="${186 + i*17}" r="2.3" fill="${lite(c,0.3)}"/>`;
+      }
+      if (o.pockets){   // patch pocket with a flap (a 4-point ring would smooth into an oval)
+        s += pair(`<path d="M63,213 L81,213 L80,229 Q72,232 64,229 Z" fill="${dark(c,0.15)}"/>` +
+                  stroke('M62.5,213 L81.5,213', dk, 1.6, 0.65));
+      }
+      if (o.belt){
+        s += paint(bodice({top: 200, bottom: 218, pad: pad + 0.6, neckW: 0, neckD: 0, hemDip: 0}),
+                   o.belt, {sheen: true});
+        s += `<rect x="90" y="199" width="20" height="20" rx="3" fill="${lite(o.belt,0.2)}"/>`;
+      }
+      if (o.cuffs) s += pair(paint(sleeve(0.96, pad + 0.4, 0.84), dk, {shade: false}));
+      return s;
+    }
+  },
+
+  /* ---------- SHOES ---------- */
+  shoes: {
+    none(){ return ''; },
+    sneaker(o){
+      const c = o.color, dk = dark(c, 0.25), sole = o.sole || '#F2F2F2';
+      let s = paint(footShape({pad: 3}), c, {sheen: true});
+      s += paint(ringPath(growRing(GEO.foot, 3).filter(p => p[1] > 396)
+                  .concat([[88,404],[57,404]])), sole, {shade: false});
+      s += stroke(curvePath([[62,382],[72,378],[84,378]]), '#fff', 1.6, 0.75);
+      s += stroke(curvePath([[63,388],[74,384],[85,385]]), '#fff', 1.6, 0.6);
+      s += stroke(curvePath([[60,398],[74,401],[89,399]]), dk, 1.6, 0.5);
+      s += `<path d="M84,374 Q78,388 63,392" fill="none" stroke="${dk}" stroke-width="2.4" opacity="0.55"/>`;
+      return pair(s);
+    },
+    boot(o){
+      const c = o.color, dk = dark(c, 0.3);
+      let s = paint(tube(GEO.leg.line, GEO.leg.w, {t0: o.shaft || 0.55, t1: 1, pad: 3.2}), c, {sheen: true});
+      s += paint(footShape({pad: 3.4}), c, {sheen: true});
+      s += paint(ringPath(growRing(GEO.foot, 3.4).filter(p => p[1] > 398)
+                  .concat([[89,406],[56,406]])), dk, {shade: false});
+      const top = pointAt(GEO.leg.line, o.shaft || 0.55);
+      s += stroke('M' + F(top[0]-12) + ',' + F(top[1]) + ' L' + F(top[0]+12) + ',' + F(top[1]), lite(c, 0.35), 3, 0.8);
+      s += stroke(curvePath([[66,358],[76,361],[87,358]]), dk, 1.6, 0.5);
+      if (o.laces) s += stroke('M69,346 L69,388', lite(c, 0.45), 2, 0.85);
+      return pair(s);
+    },
+    heel(o){
+      const c = o.color, dk = dark(c, 0.3);
+      const tilt = -11, pivot = [58, 404];
+      let s = paint(footShape({pad: 2.2, tilt, pivot}), c, {sheen: true});
+      const heelPt = rotRing(growRing(GEO.foot, 2.2), tilt, pivot).slice(6, 8);
+      s += paint(ringPath([[heelPt[0][0]-3, heelPt[0][1]-2], [heelPt[0][0]+1, heelPt[0][1]-1],
+                           [heelPt[0][0]+1, 409], [heelPt[0][0]-3.5, 409]]), dk, {shade: false});
+      s += stroke(curvePath([[62,378],[72,372],[83,371]]), lite(c, 0.35), 2, 0.55);
+      if (o.strap) s += stroke(curvePath([[60,384],[73,379],[85,381]]), lite(c, 0.5), 2.4, 0.9);
+      return pair(s);
+    },
+    sandal(o){
+      const c = o.color, dk = dark(c, 0.3);
+      let s = paint(ringPath(growRing(GEO.foot, 1.5).filter(p => p[1] > 396)
+                    .concat([[88,404],[57,404]])), c, {sheen: true});
+      s += stroke(curvePath([[59,396],[72,390],[86,394]]), c, 3, 0.95);
+      s += stroke(curvePath([[62,388],[73,383],[84,387]]), c, 2.4, 0.9);
+      s += stroke('M70,384 L69,400', c, 2, 0.9) + stroke('M78,382 L79,400', c, 2, 0.9);
+      s += stroke(curvePath([[58,404],[74,407],[88,404]]), dk, 2, 0.5);
+      return pair(s);
+    },
+    flat(o){
+      const c = o.color, dk = dark(c, 0.3);
+      let s = paint(footShape({pad: 2}), c, {sheen: true});
+      s += paint(ringPath(growRing(GEO.foot, 2).filter(p => p[1] > 400)
+                  .concat([[88,405],[57,405]])), dk, {shade: false});
+      s += stroke(curvePath([[66,375],[75,371],[85,373]]), lite(c, 0.4), 2, 0.6);
+      if (o.bow) s += `<path d="M68,381 Q62,375 68,372 Q73,376 76,380 Z" fill="${lite(c,0.45)}"/>
+                       <path d="M76,380 Q80,372 86,375 Q84,380 79,383 Z" fill="${lite(c,0.45)}"/>
+                       <circle cx="76.5" cy="380" r="2.1" fill="${dk}"/>`;
+      return pair(s);
+    }
+  },
+
+  /* ---------- JEWELLERY (anchored to the body, so it always fits) -------- */
+  necklace: {
+    none(){ return ''; },
+    beads(o){
+      const drop = o.drop || 16, n = o.count || 9;
+      const a = [100 - 20, 152], b = [100, 152 + drop*1.6], c = [100 + 20, 152];
+      let s = '';
+      for (let i = 0; i < n; i++){
+        const t = i/(n-1), u = 1-t;
+        const x = u*u*a[0] + 2*u*t*b[0] + t*t*c[0];
+        const y = u*u*a[1] + 2*u*t*b[1] + t*t*c[1];
+        const col = Array.isArray(o.color) ? o.color[i % o.color.length] : o.color;
+        s += `<circle cx="${F(x)}" cy="${F(y)}" r="${o.r || 3.8}" fill="${col}"/>
+              <circle cx="${F(x-1)}" cy="${F(y-1.2)}" r="${(o.r||3.8)*0.34}" fill="#fff" opacity="0.65"/>`;
+      }
+      return s;
+    },
+    pendant(o){
+      const chain = o.chain || '#DAA520';
+      const drop = o.drop || 18;
+      let s = stroke(curvePath([[80,151],[100,151+drop],[120,151]]), chain, 1.4, 0.95);
+      const y = 151 + drop + 2;
+      if (o.charm === 'heart')
+        s += `<path d="M94,${y+3} Q94,${y-2} 100,${y+2} Q106,${y-2} 106,${y+3} Q106,${y+9} 100,${y+13} Q94,${y+9} 94,${y+3} Z" fill="${o.color}"/>`;
+      else if (o.charm === 'star')
+        s += `<text x="100" y="${y+12}" font-size="15" text-anchor="middle" fill="${o.color}">★</text>`;
+      else
+        s += `<circle cx="100" cy="${y+6}" r="5.5" fill="${o.color}"/>`;
+      s += `<circle cx="97.5" cy="${y+3}" r="1.4" fill="#fff" opacity="0.6"/>`;
+      return s;
+    }
+  },
+  bracelet: {
+    none(){ return ''; },
+    band(o){
+      const w = pointAt(GEO.arm.line, 0.9);
+      let s = paint(tube(GEO.arm.line, GEO.arm.w, {t0: 0.86, t1: 0.95, pad: 1.8}), o.color, {sheen: true});
+      if (o.stripes){
+        s += stroke('M' + F(w[0]-8) + ',' + F(w[1]-1) + ' L' + F(w[0]+8) + ',' + F(w[1]-1), o.stripes[0], 1.8, 0.9);
+        s += stroke('M' + F(w[0]-8) + ',' + F(w[1]+3) + ' L' + F(w[0]+8) + ',' + F(w[1]+3), o.stripes[1], 1.8, 0.9);
+      }
+      return pair(s);
+    },
+    beads(o){
+      const w = pointAt(GEO.arm.line, 0.9);
+      let s = '';
+      const n = o.count || 5;
+      for (let i = 0; i < n; i++){
+        const t = i/(n-1);
+        const x = w[0] - 9 + 18*t, y = w[1] + Math.sin(t*Math.PI)*-2.5;
+        const col = Array.isArray(o.color) ? o.color[i % o.color.length] : o.color;
+        s += `<circle cx="${F(x)}" cy="${F(y)}" r="3.4" fill="${col}"/>
+              <circle cx="${F(x-0.8)}" cy="${F(y-1)}" r="1.1" fill="#fff" opacity="0.55"/>`;
+      }
+      return pair(s);
+    },
+    charms(o){
+      const w = pointAt(GEO.arm.line, 0.9);
+      let s = stroke(curvePath([[w[0]-10,w[1]-1],[w[0],w[1]-4],[w[0]+10,w[1]-1]]), '#C0C0C0', 2, 0.95);
+      s += `<text x="${F(w[0]-9)}" y="${F(w[1]+6)}" font-size="8" fill="#FFD700">★</text>
+            <text x="${F(w[0]-1)}" y="${F(w[1]+9)}" font-size="8" fill="#FF69B4">♥</text>
+            <text x="${F(w[0]+7)}" y="${F(w[1]+6)}" font-size="7" fill="#9B59B6">◆</text>`;
+      return pair(s);
+    }
+  }
+};
+
+
+/* ===== §5 WARDROBE — the clothes ========================================
+   Each entry is just data: a name, which factory to use (`style`) and its
+   options. Add a line = add a garment. Nothing else needs to change.
+   ------------------------------------------------------------------------
+   TOPS     style:'top'    color, pattern(stripes|dots|plaid|floral|knit|denim),
+                           accent, sleeve(none|cap|short|elbow|three|long),
+                           neck(crew|high|scoop|v|boat|square),
+                           length(crop|waist|hip|tunic), buttons, ribbed,
+                           collarBand, motif('🌈')
+   BOTTOMS  style:'pants'  color, pattern, length(1=ankle .72=capri .35=shorts),
+                           slim, cuff, stitch, sparkle
+            style:'skirt'  color, pattern, hem(y), flare, pleats, ruffles(n), motifs
+   JACKETS  style:'coat'   color, pattern, length(y), gap, pad, lapel, hood,
+                           zip, buttons, pockets, belt, cuffs, sleeve(0..1)
+   SHOES    style:'sneaker'|'boot'|'heel'|'sandal'|'flat'  color, plus
+                           sole / laces / strap / bow / shaft
+   ======================================================================== */
+const WARDROBE = {
+
+  shirt: [
+    { name: "Pink T-Shirt",     style: 'top', color: "#FF9EB5", sleeve: 'short', neck: 'crew' },
+    { name: "Blue Striped Top", style: 'top', color: "#3F84D2", pattern: 'stripes', accent: "#7FB6EE", sleeve: 'short', neck: 'boat' },
+    { name: "Purple Blouse",    style: 'top', color: "#9B59B6", sleeve: 'long', neck: 'v', buttons: 5, collarBand: true },
+    { name: "Yellow Crop Top",  style: 'top', color: "#FFD24D", sleeve: 'cap', neck: 'square', length: 'crop', ribbed: true },
+    { name: "Red Tank Top",     style: 'top', color: "#E63946", sleeve: 'none', neck: 'scoop' },
+    { name: "Cozy Knit Sweater",style: 'top', color: "#4E9E7A", pattern: 'knit', sleeve: 'long', neck: 'high', ribbed: true, length: 'hip' },
+    { name: "Polka Dot Tee",    style: 'top', color: "#F5F1EC", pattern: 'dots', accent: "#FF7FA8", sleeve: 'short', neck: 'crew' },
+    { name: "Rainbow Tee",      style: 'top', color: "#6C63FF", sleeve: 'short', neck: 'crew', motif: "🌈" }
+  ],
+
+  bottom: [
+    { name: "Blue Jeans",       style: 'pants', color: "#3A6EB5", pattern: 'denim', stitch: "#E8C87A" },
+    { name: "Pink Ruffle Skirt",style: 'skirt', color: "#FF9EC8", hem: 348, flare: 30, ruffles: 2 },
+    { name: "Purple Leggings",  style: 'pants', color: "#8E44AD", slim: true, sparkle: true },
+    { name: "Floral Skirt",     style: 'skirt', color: "#4CAF50", pattern: 'floral', accent: "#FF7FB0", hem: 344, flare: 27 },
+    { name: "Black Pants",      style: 'pants', color: "#33343A", cuff: true },
+    { name: "Denim Shorts",     style: 'pants', color: "#4E7FC0", pattern: 'denim', length: 0.36, cuff: true, stitch: "#E8C87A" },
+    { name: "Plaid Skirt",      style: 'skirt', color: "#C0392B", pattern: 'plaid', accent: "#7B241C", hem: 330, flare: 22, pleats: true },
+    { name: "Mint Capris",      style: 'pants', color: "#6FCFAF", length: 0.74, slim: true, cuff: true }
+  ],
+
+  jacket: [
+    { name: "None",           style: 'none' },
+    { name: "Denim Jacket",   style: 'coat', color: "#5B87BE", pattern: 'denim', length: 250, buttons: 3, pockets: true, cuffs: true },
+    { name: "Pink Hoodie",    style: 'coat', color: "#FF8FBE", length: 262, gap: 4, hood: true, zip: true, cuffs: true },
+    { name: "Navy Blazer",    style: 'coat', color: "#2C3555", length: 268, gap: 8, lapel: true, buttons: 2 },
+    { name: "Floral Kimono",  style: 'coat', color: "#F6E2F0", pattern: 'floral', accent: "#E86FA8", length: 292, gap: 9, pad: 7, belt: "#C0392B", sleeve: 0.62 },
+    { name: "Yellow Raincoat",style: 'coat', color: "#FFC93C", length: 280, gap: 5, hood: true, buttons: 4, pockets: true, cuffs: true }
+  ],
+
+  shoes: [
+    { name: "None",           style: 'none' },
+    { name: "Pink Sneakers",  style: 'sneaker', color: "#FF9EB5", sole: "#FFFFFF" },
+    { name: "Red Heels",      style: 'heel',    color: "#D62839", strap: true },
+    { name: "Blue Boots",     style: 'boot',    color: "#2B5BA8", shaft: 0.5, laces: true },
+    { name: "Gold Sandals",   style: 'sandal',  color: "#D9A441" },
+    { name: "Purple Flats",   style: 'flat',    color: "#8E44AD", bow: true },
+    { name: "White Sneakers", style: 'sneaker', color: "#F0F0F0", sole: "#DADADA" }
+  ],
+
+  necklace: [
+    { name: "None",             style: 'none' },
+    { name: "Pearl Necklace",   style: 'beads',   color: "#F2ECDC", count: 11, r: 3.6 },
+    { name: "Heart Pendant",    style: 'pendant', color: "#E63946", charm: 'heart' },
+    { name: "Star Chain",       style: 'pendant', color: "#FFD700", charm: 'star', chain: "#C0C0C0" },
+    { name: "Rainbow Beads",    style: 'beads',   color: ["#E63946","#FF9933","#FFD700","#27AE60","#3498DB","#9B59B6"], count: 11 }
+  ],
+
+  bracelet: [
+    { name: "None",                style: 'none' },
+    { name: "Gold Bangle",         style: 'band',   color: "#DAA520" },
+    { name: "Charm Bracelet",      style: 'charms' },
+    { name: "Rainbow Beads",       style: 'beads',  color: ["#E63946","#FF9933","#FFD700","#27AE60","#3498DB"] },
+    { name: "Friendship Bracelet", style: 'band',   color: "#FF69B4", stripes: ["#FFD700","#27AE60"] }
+  ]
+};
+
+
+/* ===== §6 LOOKS — hand-drawn art (not fitted to the body) ================ */
+const LOOKS = {
 
   scene: [
     { name: "Plain", svg: "" },
@@ -420,68 +965,6 @@ const opts = {
     }
   ],
 
-  glasses: [
-    { name: "None", svg: "" },
-    {
-      name: "Round Glasses",
-      svg: `<circle cx="85" cy="77" r="12" fill="#BEE3F7" opacity="0.35" stroke="#8B4513" stroke-width="2.5"/>
-            <circle cx="115" cy="77" r="12" fill="#BEE3F7" opacity="0.35" stroke="#8B4513" stroke-width="2.5"/>
-            <path d="M97,75 Q100,72 103,75" stroke="#8B4513" stroke-width="2.5" fill="none"/>
-            <line x1="73" y1="75" x2="60" y2="80" stroke="#8B4513" stroke-width="2.5"/>
-            <line x1="127" y1="75" x2="140" y2="80" stroke="#8B4513" stroke-width="2.5"/>`
-    },
-    {
-      name: "Cool Shades",
-      svg: `<rect x="72" y="68" width="26" height="17" rx="8" fill="#222"/>
-            <rect x="102" y="68" width="26" height="17" rx="8" fill="#222"/>
-            <path d="M98,73 Q100,70 102,73" stroke="#222" stroke-width="3" fill="none"/>
-            <line x1="72" y1="72" x2="59" y2="78" stroke="#222" stroke-width="3"/>
-            <line x1="128" y1="72" x2="141" y2="78" stroke="#222" stroke-width="3"/>
-            <ellipse cx="80" cy="72" rx="4" ry="2" fill="white" opacity="0.35"/>
-            <ellipse cx="110" cy="72" rx="4" ry="2" fill="white" opacity="0.35"/>`
-    },
-    {
-      name: "Heart Sunnies",
-      svg: `<path d="M73,72 Q73,64 80,64 Q85,64 86,69 Q87,64 92,64 Q99,64 99,72 Q99,80 86,88 Q73,80 73,72 Z" fill="#FF5C8A" opacity="0.88"/>
-            <path d="M101,72 Q101,64 108,64 Q113,64 114,69 Q115,64 120,64 Q127,64 127,72 Q127,80 114,88 Q101,80 101,72 Z" fill="#FF5C8A" opacity="0.88"/>
-            <path d="M98,72 Q100,70 102,72" stroke="#FF5C8A" stroke-width="3" fill="none"/>
-            <line x1="74" y1="71" x2="60" y2="79" stroke="#FF5C8A" stroke-width="2.5"/>
-            <line x1="126" y1="71" x2="140" y2="79" stroke="#FF5C8A" stroke-width="2.5"/>
-            <ellipse cx="80" cy="70" rx="3" ry="2" fill="white" opacity="0.5"/>
-            <ellipse cx="108" cy="70" rx="3" ry="2" fill="white" opacity="0.5"/>`
-    },
-    {
-      name: "Cat-Eye Glasses",
-      svg: `<path d="M69,63 Q66,84 80,87 Q94,89 97,77 Q98,68 88,67 Q76,66 69,63 Z" fill="#BEE3F7" opacity="0.35" stroke="#D63384" stroke-width="2.5"/>
-            <path d="M131,63 Q134,84 120,87 Q106,89 103,77 Q102,68 112,67 Q124,66 131,63 Z" fill="#BEE3F7" opacity="0.35" stroke="#D63384" stroke-width="2.5"/>
-            <path d="M97,74 Q100,71 103,74" stroke="#D63384" stroke-width="2.5" fill="none"/>
-            <line x1="70" y1="66" x2="59" y2="78" stroke="#D63384" stroke-width="2.5"/>
-            <line x1="130" y1="66" x2="141" y2="78" stroke="#D63384" stroke-width="2.5"/>
-            <circle cx="69" cy="63" r="2" fill="#FFD700"/>
-            <circle cx="131" cy="63" r="2" fill="#FFD700"/>`
-    },
-    {
-      name: "Star Sunnies",
-      svg: `<polygon points="85,62 88.8,71.7 99.3,72.4 91.2,79 93.8,89.1 85,83.5 76.2,89.1 78.8,79 70.7,72.4 81.2,71.7" fill="#FFD93D" opacity="0.92" stroke="#E6A817" stroke-width="1.5" stroke-linejoin="round"/>
-            <polygon points="115,62 118.8,71.7 129.3,72.4 121.2,79 123.8,89.1 115,83.5 106.2,89.1 108.8,79 100.7,72.4 111.2,71.7" fill="#FFD93D" opacity="0.92" stroke="#E6A817" stroke-width="1.5" stroke-linejoin="round"/>
-            <path d="M96,74 Q100,71 104,74" stroke="#E6A817" stroke-width="2.5" fill="none"/>
-            <line x1="72" y1="72" x2="60" y2="79" stroke="#E6A817" stroke-width="2.5"/>
-            <line x1="128" y1="72" x2="140" y2="79" stroke="#E6A817" stroke-width="2.5"/>
-            <ellipse cx="81" cy="73" rx="3" ry="2" fill="white" opacity="0.5"/>
-            <ellipse cx="111" cy="73" rx="3" ry="2" fill="white" opacity="0.5"/>`
-    },
-    {
-      name: "Square Glasses",
-      svg: `<rect x="71" y="67" width="27" height="19" rx="4" fill="#BEE3F7" opacity="0.35" stroke="#2B5BA8" stroke-width="2.5"/>
-            <rect x="102" y="67" width="27" height="19" rx="4" fill="#BEE3F7" opacity="0.35" stroke="#2B5BA8" stroke-width="2.5"/>
-            <path d="M98,74 Q100,71 102,74" stroke="#2B5BA8" stroke-width="2.5" fill="none"/>
-            <line x1="71" y1="73" x2="60" y2="79" stroke="#2B5BA8" stroke-width="2.5"/>
-            <line x1="129" y1="73" x2="140" y2="79" stroke="#2B5BA8" stroke-width="2.5"/>
-            <line x1="76" y1="83" x2="88" y2="70" stroke="white" stroke-width="2" opacity="0.5"/>
-            <line x1="107" y1="83" x2="119" y2="70" stroke="white" stroke-width="2" opacity="0.5"/>`
-    }
-  ],
-
   hair: [
     {
       name: "Long Straight (Brown)",
@@ -544,249 +1027,20 @@ const opts = {
               <path d="M102,23 Q112,20 122,26" stroke="#7A4526" stroke-width="2.5" fill="none" opacity="0.7" stroke-linecap="round"/>
               <ellipse cx="68" cy="120" rx="10" ry="9" fill="#5C3317"/>
               <ellipse cx="72" cy="135" rx="9.5" ry="9" fill="#6B3D1E"/>
-              <ellipse cx="68" cy="150" rx="9" ry="8.5" fill="#5C3317"/>
-              <ellipse cx="72" cy="164" rx="8.5" ry="8" fill="#6B3D1E"/>
-              <ellipse cx="68" cy="178" rx="8" ry="7.5" fill="#5C3317"/>
-              <ellipse cx="72" cy="191" rx="7.5" ry="7" fill="#6B3D1E"/>
-              <ellipse cx="68" cy="204" rx="7" ry="6.5" fill="#5C3317"/>
-              <ellipse cx="71" cy="216" rx="6.5" ry="6" fill="#6B3D1E"/>
-              <ellipse cx="68" cy="227" rx="6" ry="5.5" fill="#5C3317"/>
-              <ellipse cx="70" cy="238" rx="5" ry="5" fill="#6B3D1E"/>
-              <ellipse cx="69" cy="246" rx="7" ry="4" fill="#FF69B4"/>
-              <path d="M66,250 Q64,260 67,266 M70,250 Q71,259 69,266 M73,249 Q76,258 74,264" stroke="#5C3317" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <ellipse cx="69" cy="150" rx="9" ry="8.5" fill="#5C3317"/>
+              <ellipse cx="73" cy="164" rx="8.5" ry="8" fill="#6B3D1E"/>
+              <ellipse cx="70" cy="177" rx="8" ry="7.5" fill="#5C3317"/>
+              <ellipse cx="69" cy="188" rx="7" ry="6" fill="#6B3D1E"/>
+              <ellipse cx="69" cy="196" rx="7" ry="4" fill="#FF69B4"/>
+              <path d="M66,200 Q64,210 67,216 M70,200 Q71,209 69,216 M73,199 Q76,208 74,214" stroke="#5C3317" stroke-width="2.5" fill="none" stroke-linecap="round"/>
               <ellipse cx="132" cy="120" rx="10" ry="9" fill="#5C3317"/>
               <ellipse cx="128" cy="135" rx="9.5" ry="9" fill="#6B3D1E"/>
-              <ellipse cx="132" cy="150" rx="9" ry="8.5" fill="#5C3317"/>
-              <ellipse cx="128" cy="164" rx="8.5" ry="8" fill="#6B3D1E"/>
-              <ellipse cx="132" cy="178" rx="8" ry="7.5" fill="#5C3317"/>
-              <ellipse cx="128" cy="191" rx="7.5" ry="7" fill="#6B3D1E"/>
-              <ellipse cx="132" cy="204" rx="7" ry="6.5" fill="#5C3317"/>
-              <ellipse cx="129" cy="216" rx="6.5" ry="6" fill="#6B3D1E"/>
-              <ellipse cx="132" cy="227" rx="6" ry="5.5" fill="#5C3317"/>
-              <ellipse cx="130" cy="238" rx="5" ry="5" fill="#6B3D1E"/>
-              <ellipse cx="131" cy="246" rx="7" ry="4" fill="#FF69B4"/>
-              <path d="M128,250 Q126,260 129,266 M132,250 Q133,259 131,266 M135,249 Q138,258 136,264" stroke="#5C3317" stroke-width="2.5" fill="none" stroke-linecap="round"/>`
-    }
-  ],
-
-  shirt: [
-    {
-      name: "Pink T-Shirt",
-      svg: `<path d="M62,143 L30,156 L24,188 L52,188 L54,258 L146,258 L148,188 L176,188 L170,156 L138,143 Q120,135 100,135 Q80,135 62,143 Z" fill="#FF9EB5"/>
-            <path d="M86,142 Q100,154 114,142" stroke="#E0708A" stroke-width="2" fill="none"/>`
-    },
-    {
-      name: "Blue Striped Top",
-      svg: `<defs>
-              <pattern id="blStripe" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-                <rect width="10" height="10" fill="#4A90D9"/>
-                <rect y="0" width="10" height="5" fill="#6AAFF0"/>
-              </pattern>
-            </defs>
-            <path d="M62,143 L30,156 L24,188 L52,188 L54,258 L146,258 L148,188 L176,188 L170,156 L138,143 Q120,135 100,135 Q80,135 62,143 Z" fill="url(#blStripe)"/>
-            <path d="M86,142 Q100,152 114,142" stroke="#2E6FAD" stroke-width="1.5" fill="none"/>`
-    },
-    {
-      name: "Purple Blouse",
-      svg: `<path d="M62,143 L30,156 L24,188 L52,188 L54,258 L146,258 L148,188 L176,188 L170,156 L138,143 Q120,135 100,135 Q80,135 62,143 Z" fill="#9B59B6"/>
-            <path d="M80,140 Q90,153 100,146 Q110,153 120,140" stroke="#7D3C98" stroke-width="1.8" fill="none"/>
-            <circle cx="100" cy="168" r="2.5" fill="#7D3C98"/>
-            <circle cx="100" cy="183" r="2.5" fill="#7D3C98"/>
-            <circle cx="100" cy="198" r="2.5" fill="#7D3C98"/>
-            <circle cx="100" cy="213" r="2.5" fill="#7D3C98"/>
-            <circle cx="100" cy="228" r="2.5" fill="#7D3C98"/>
-            <circle cx="100" cy="243" r="2.5" fill="#7D3C98"/>`
-    },
-    {
-      name: "Yellow Crop Top",
-      svg: `<path d="M62,143 L30,156 L24,188 L52,188 L54,212 L146,212 L148,188 L176,188 L170,156 L138,143 Q120,135 100,135 Q80,135 62,143 Z" fill="#FFD700"/>
-            <path d="M54,208 Q100,218 146,208" stroke="#E6B800" stroke-width="2.5" fill="none"/>
-            <path d="M86,142 Q100,152 114,142" stroke="#C9A000" stroke-width="1.5" fill="none"/>`
-    },
-    {
-      name: "Red Tank Top",
-      svg: `<path d="M72,143 L54,258 L146,258 L128,143 Q114,132 100,132 Q86,132 72,143 Z" fill="#E63946"/>
-            <rect x="80" y="136" width="10" height="14" rx="4" fill="#C1121F"/>
-            <rect x="110" y="136" width="10" height="14" rx="4" fill="#C1121F"/>
-            <path d="M80,143 Q100,153 120,143" stroke="#C1121F" stroke-width="1.5" fill="none"/>`
-    }
-  ],
-
-  bottom: [
-    {
-      name: "Blue Jeans",
-      svg: `<rect x="54" y="254" width="92" height="14" rx="3" fill="#1A3A6B"/>
-            <rect x="56" y="266" width="37" height="128" rx="8" fill="#2B5BA8"/>
-            <rect x="107" y="266" width="37" height="128" rx="8" fill="#2B5BA8"/>
-            <path d="M93,266 Q100,282 107,266" fill="#1A3A6B"/>
-            <line x1="74" y1="274" x2="74" y2="388" stroke="#1A3A6B" stroke-width="1" opacity="0.5"/>
-            <line x1="126" y1="274" x2="126" y2="388" stroke="#1A3A6B" stroke-width="1" opacity="0.5"/>
-            <path d="M58,268 Q68,270 70,280 L58,280 Z" fill="none" stroke="#1A3A6B" stroke-width="1"/>`
-    },
-    {
-      name: "Pink Ruffle Skirt",
-      svg: `<rect x="54" y="254" width="92" height="12" rx="3" fill="#D4508A"/>
-            <path d="M54,264 Q44,312 36,398 L164,398 Q156,312 146,264 Z" fill="#FF9EC8"/>
-            <path d="M44,318 Q100,330 156,318 L156,326 Q100,338 44,326 Z" fill="#FFB8D8" opacity="0.7"/>
-            <path d="M38,362 Q100,376 162,362 L162,372 Q100,386 38,372 Z" fill="#FFB8D8" opacity="0.7"/>`
-    },
-    {
-      name: "Purple Leggings",
-      svg: `<rect x="56" y="254" width="88" height="12" rx="3" fill="#5B2C8C"/>
-            <rect x="58" y="264" width="36" height="130" rx="6" fill="#8E44AD"/>
-            <rect x="106" y="264" width="36" height="130" rx="6" fill="#8E44AD"/>
-            <path d="M94,264 Q100,278 106,264" fill="#5B2C8C"/>
-            <text x="64" y="296" font-size="10" fill="#D2B4DE" opacity="0.7">⭐</text>
-            <text x="110" y="300" font-size="9" fill="#D2B4DE" opacity="0.7">⭐</text>
-            <text x="62" y="330" font-size="9" fill="#D2B4DE" opacity="0.7">✨</text>
-            <text x="112" y="335" font-size="9" fill="#D2B4DE" opacity="0.7">✨</text>`
-    },
-    {
-      name: "Floral Skirt",
-      svg: `<rect x="54" y="254" width="92" height="12" rx="3" fill="#2E7D32"/>
-            <path d="M54,264 Q44,320 38,398 L162,398 Q156,320 146,264 Z" fill="#4CAF50"/>
-            <circle cx="74" cy="306" r="8" fill="#FF69B4" opacity="0.85"/>
-            <circle cx="74" cy="306" r="4" fill="#FFD700"/>
-            <circle cx="100" cy="292" r="8" fill="#FF6B6B" opacity="0.85"/>
-            <circle cx="100" cy="292" r="4" fill="#FFD700"/>
-            <circle cx="126" cy="306" r="8" fill="#FF69B4" opacity="0.85"/>
-            <circle cx="126" cy="306" r="4" fill="#FFD700"/>
-            <circle cx="84" cy="342" r="7" fill="#FF9933" opacity="0.85"/>
-            <circle cx="84" cy="342" r="3.5" fill="#FFD700"/>
-            <circle cx="116" cy="348" r="7" fill="#FF69B4" opacity="0.85"/>
-            <circle cx="116" cy="348" r="3.5" fill="#FFD700"/>
-            <circle cx="63" cy="362" r="6" fill="#FF6B6B" opacity="0.85"/>
-            <circle cx="63" cy="362" r="3" fill="#FFD700"/>
-            <circle cx="137" cy="362" r="6" fill="#FF9933" opacity="0.85"/>
-            <circle cx="137" cy="362" r="3" fill="#FFD700"/>
-            <circle cx="100" cy="378" r="7" fill="#FF6B6B" opacity="0.85"/>
-            <circle cx="100" cy="378" r="3.5" fill="#FFD700"/>`
-    },
-    {
-      name: "Black Pants",
-      svg: `<rect x="54" y="254" width="92" height="14" rx="3" fill="#111"/>
-            <rect x="56" y="266" width="37" height="128" rx="8" fill="#2D2D2D"/>
-            <rect x="107" y="266" width="37" height="128" rx="8" fill="#2D2D2D"/>
-            <path d="M93,266 Q100,280 107,266" fill="#111"/>
-            <line x1="62" y1="274" x2="62" y2="386" stroke="#444" stroke-width="2" opacity="0.4"/>
-            <line x1="112" y1="274" x2="112" y2="386" stroke="#444" stroke-width="2" opacity="0.4"/>`
-    }
-  ],
-
-  jacket: [
-    { name: "None", svg: "" },
-    {
-      name: "Denim Jacket",
-      svg: `<path d="M62,143 L28,158 L22,222 L52,222 L54,258 L146,258 L148,222 L178,222 L172,158 L138,143 Q120,130 100,130 Q80,130 62,143 Z" fill="#5B7FA6" opacity="0.93"/>
-            <path d="M86,143 L80,178 L100,166 L120,178 L114,143" fill="#4A6B8A"/>
-            <circle cx="100" cy="183" r="3" fill="#4A6B8A"/>
-            <circle cx="100" cy="200" r="3" fill="#4A6B8A"/>
-            <circle cx="100" cy="217" r="3" fill="#4A6B8A"/>
-            <rect x="62" y="197" width="20" height="14" rx="2" fill="#4A6B8A" opacity="0.55"/>
-            <rect x="118" y="197" width="20" height="14" rx="2" fill="#4A6B8A" opacity="0.55"/>`
-    },
-    {
-      name: "Pink Hoodie",
-      svg: `<path d="M62,143 L26,160 L20,228 L52,228 L54,258 L146,258 L148,228 L180,228 L174,160 L138,143 Q120,127 100,127 Q80,127 62,143 Z" fill="#FF9EC8" opacity="0.95"/>
-            <path d="M73,140 Q81,124 100,121 Q119,124 127,140 Q116,150 100,152 Q84,150 73,140 Z" fill="#FF7AAA"/>
-            <path d="M72,222 Q100,216 128,222 L128,242 Q100,248 72,242 Z" fill="#FF7AAA" opacity="0.7"/>
-            <line x1="95" y1="152" x2="90" y2="178" stroke="#E0608E" stroke-width="2"/>
-            <line x1="105" y1="152" x2="110" y2="178" stroke="#E0608E" stroke-width="2"/>`
-    },
-    {
-      name: "Blazer",
-      svg: `<path d="M62,143 L30,156 L24,218 L54,218 L56,258 L144,258 L146,218 L176,218 L170,156 L138,143 Q120,132 100,132 Q80,132 62,143 Z" fill="#2C2C54" opacity="0.93"/>
-            <path d="M86,143 L78,180 L100,168 L122,180 L114,143" fill="#1A1A3E"/>
-            <path d="M130,172 L140,172 L140,180 L135,175 L130,180 Z" fill="#FF69B4"/>
-            <circle cx="100" cy="185" r="2.5" fill="#44449A"/>
-            <circle cx="100" cy="200" r="2.5" fill="#44449A"/>
-            <line x1="25" y1="202" x2="53" y2="202" stroke="#1A1A3E" stroke-width="2"/>
-            <line x1="147" y1="202" x2="175" y2="202" stroke="#1A1A3E" stroke-width="2"/>`
-    },
-    {
-      name: "Floral Kimono",
-      svg: `<path d="M62,143 L26,162 L20,258 L52,258 L54,258 L146,258 L148,258 L180,258 L174,162 L138,143 Q120,132 100,132 Q80,132 62,143 Z" fill="#F8E0F0" opacity="0.92"/>
-            <path d="M80,143 L74,258 L126,258 L120,143 L100,156 Z" fill="#F0C8E0" opacity="0.75"/>
-            <rect x="58" y="196" width="84" height="18" rx="3" fill="#C0392B" opacity="0.82"/>
-            <rect x="88" y="192" width="24" height="26" rx="3" fill="#E74C3C" opacity="0.9"/>
-            <circle cx="100" cy="205" r="5" fill="#C0392B"/>
-            <circle cx="42" cy="178" r="7" fill="#FF69B4" opacity="0.75"/>
-            <circle cx="42" cy="178" r="3.5" fill="#FFD700"/>
-            <circle cx="35" cy="204" r="6" fill="#FF9933" opacity="0.75"/>
-            <circle cx="35" cy="204" r="3" fill="#FFD700"/>
-            <circle cx="158" cy="178" r="7" fill="#FF69B4" opacity="0.75"/>
-            <circle cx="158" cy="178" r="3.5" fill="#FFD700"/>
-            <circle cx="165" cy="204" r="6" fill="#FF9933" opacity="0.75"/>
-            <circle cx="165" cy="204" r="3" fill="#FFD700"/>`
-    }
-  ],
-
-  shoes: [
-    { name: "None", svg: "" },
-    {
-      name: "Pink Sneakers",
-      svg: `<path d="M60,386 Q58,378 68,378 L96,378 L96,392 Q80,396 60,386 Z" fill="#FFB6C8"/>
-            <path d="M60,386 Q60,400 80,404 Q96,406 97,398 L97,386 Z" fill="#FF9EB5"/>
-            <path d="M58,396 Q80,408 98,400 L98,404 Q80,412 58,404 Z" fill="#ddd"/>
-            <line x1="68" y1="381" x2="90" y2="381" stroke="white" stroke-width="1.5"/>
-            <line x1="70" y1="385" x2="88" y2="385" stroke="white" stroke-width="1.5"/>
-            <path d="M103,386 Q101,378 111,378 L139,378 L139,392 Q123,396 103,386 Z" fill="#FFB6C8"/>
-            <path d="M103,386 Q103,400 121,404 Q138,406 140,398 L140,386 Z" fill="#FF9EB5"/>
-            <path d="M101,396 Q123,408 141,400 L141,404 Q123,412 101,404 Z" fill="#ddd"/>
-            <line x1="111" y1="381" x2="133" y2="381" stroke="white" stroke-width="1.5"/>
-            <line x1="113" y1="385" x2="131" y2="385" stroke="white" stroke-width="1.5"/>`
-    },
-    {
-      name: "Red Heels",
-      svg: `<path d="M63,380 Q64,372 74,372 L95,372 L95,386 Q80,392 63,380 Z" fill="#C1121F"/>
-            <path d="M63,380 Q62,395 82,398 Q96,400 97,392 L95,380 Z" fill="#E63946"/>
-            <rect x="63" y="392" width="5" height="14" rx="2" fill="#8B0000"/>
-            <path d="M82,395 Q96,402 98,396 L98,400 Q95,406 80,402 Z" fill="#C1121F"/>
-            <path d="M106,380 Q107,372 117,372 L138,372 L138,386 Q123,392 106,380 Z" fill="#C1121F"/>
-            <path d="M106,380 Q105,395 125,398 Q139,400 140,392 L138,380 Z" fill="#E63946"/>
-            <rect x="106" y="392" width="5" height="14" rx="2" fill="#8B0000"/>
-            <path d="M125,395 Q139,402 141,396 L141,400 Q138,406 123,402 Z" fill="#C1121F"/>`
-    },
-    {
-      name: "Blue Boots",
-      svg: `<rect x="60" y="342" width="36" height="52" rx="5" fill="#2B5BA8"/>
-            <path d="M60,390 Q60,406 80,410 Q96,412 97,402 L97,388 Z" fill="#2B5BA8"/>
-            <path d="M58,400 Q80,412 98,404 L98,408 Q80,418 58,408 Z" fill="#1A3A6B"/>
-            <line x1="63" y1="358" x2="93" y2="358" stroke="#1A3A6B" stroke-width="1.5"/>
-            <line x1="63" y1="366" x2="93" y2="366" stroke="#1A3A6B" stroke-width="1.5"/>
-            <line x1="65" y1="344" x2="65" y2="390" stroke="#6AAFF0" stroke-width="2"/>
-            <rect x="104" y="342" width="36" height="52" rx="5" fill="#2B5BA8"/>
-            <path d="M104,390 Q104,406 122,410 Q138,412 140,402 L140,388 Z" fill="#2B5BA8"/>
-            <path d="M102,400 Q122,412 141,404 L141,408 Q122,418 102,408 Z" fill="#1A3A6B"/>
-            <line x1="107" y1="358" x2="137" y2="358" stroke="#1A3A6B" stroke-width="1.5"/>
-            <line x1="107" y1="366" x2="137" y2="366" stroke="#1A3A6B" stroke-width="1.5"/>
-            <line x1="109" y1="344" x2="109" y2="390" stroke="#6AAFF0" stroke-width="2"/>`
-    },
-    {
-      name: "Gold Sandals",
-      svg: `<path d="M62,386 Q62,400 80,404 Q96,406 97,396 L95,386 Z" fill="#DAA520"/>
-            <path d="M62,388 Q78,384 95,388" stroke="#B8860B" stroke-width="3" fill="none"/>
-            <path d="M65,382 Q78,378 92,382" stroke="#B8860B" stroke-width="2.5" fill="none"/>
-            <line x1="78" y1="376" x2="78" y2="396" stroke="#B8860B" stroke-width="2"/>
-            <line x1="86" y1="374" x2="86" y2="394" stroke="#B8860B" stroke-width="2"/>
-            <path d="M60,397 Q80,408 98,400 L98,404 Q80,414 60,404 Z" fill="#8B6914"/>
-            <path d="M105,386 Q105,400 123,404 Q139,406 140,396 L138,386 Z" fill="#DAA520"/>
-            <path d="M105,388 Q121,384 138,388" stroke="#B8860B" stroke-width="3" fill="none"/>
-            <path d="M108,382 Q121,378 135,382" stroke="#B8860B" stroke-width="2.5" fill="none"/>
-            <line x1="121" y1="376" x2="121" y2="396" stroke="#B8860B" stroke-width="2"/>
-            <line x1="129" y1="374" x2="129" y2="394" stroke="#B8860B" stroke-width="2"/>
-            <path d="M103,397 Q123,408 141,400 L141,404 Q123,414 103,404 Z" fill="#8B6914"/>`
-    },
-    {
-      name: "Purple Flats",
-      svg: `<path d="M62,386 Q62,400 80,404 Q95,406 96,394 L94,386 Z" fill="#9B59B6"/>
-            <path d="M62,386 Q63,378 72,378 L94,378 L94,390 Q78,396 62,386 Z" fill="#8E44AD"/>
-            <path d="M60,396 Q80,406 97,398 L97,402 Q80,412 60,402 Z" fill="#6C3483"/>
-            <path d="M70,381 Q76,375 82,381 Q88,375 94,381 L82,386 Z" fill="#D7BDE2"/>
-            <path d="M105,386 Q105,400 123,404 Q138,406 139,394 L137,386 Z" fill="#9B59B6"/>
-            <path d="M105,386 Q106,378 115,378 L137,378 L137,390 Q121,396 105,386 Z" fill="#8E44AD"/>
-            <path d="M103,396 Q123,406 140,398 L140,402 Q123,412 103,402 Z" fill="#6C3483"/>
-            <path d="M113,381 Q119,375 125,381 Q131,375 137,381 L125,386 Z" fill="#D7BDE2"/>`
+              <ellipse cx="131" cy="150" rx="9" ry="8.5" fill="#5C3317"/>
+              <ellipse cx="127" cy="164" rx="8.5" ry="8" fill="#6B3D1E"/>
+              <ellipse cx="130" cy="177" rx="8" ry="7.5" fill="#5C3317"/>
+              <ellipse cx="131" cy="188" rx="7" ry="6" fill="#6B3D1E"/>
+              <ellipse cx="131" cy="196" rx="7" ry="4" fill="#FF69B4"/>
+              <path d="M128,200 Q126,210 129,216 M132,200 Q133,209 131,216 M135,199 Q138,208 136,214" stroke="#5C3317" stroke-width="2.5" fill="none" stroke-linecap="round"/>`
     }
   ],
 
@@ -856,6 +1110,68 @@ const opts = {
     }
   ],
 
+  glasses: [
+    { name: "None", svg: "" },
+    {
+      name: "Round Glasses",
+      svg: `<circle cx="85" cy="77" r="12" fill="#BEE3F7" opacity="0.35" stroke="#8B4513" stroke-width="2.5"/>
+            <circle cx="115" cy="77" r="12" fill="#BEE3F7" opacity="0.35" stroke="#8B4513" stroke-width="2.5"/>
+            <path d="M97,75 Q100,72 103,75" stroke="#8B4513" stroke-width="2.5" fill="none"/>
+            <line x1="73" y1="75" x2="60" y2="80" stroke="#8B4513" stroke-width="2.5"/>
+            <line x1="127" y1="75" x2="140" y2="80" stroke="#8B4513" stroke-width="2.5"/>`
+    },
+    {
+      name: "Cool Shades",
+      svg: `<rect x="72" y="68" width="26" height="17" rx="8" fill="#222"/>
+            <rect x="102" y="68" width="26" height="17" rx="8" fill="#222"/>
+            <path d="M98,73 Q100,70 102,73" stroke="#222" stroke-width="3" fill="none"/>
+            <line x1="72" y1="72" x2="59" y2="78" stroke="#222" stroke-width="3"/>
+            <line x1="128" y1="72" x2="141" y2="78" stroke="#222" stroke-width="3"/>
+            <ellipse cx="80" cy="72" rx="4" ry="2" fill="white" opacity="0.35"/>
+            <ellipse cx="110" cy="72" rx="4" ry="2" fill="white" opacity="0.35"/>`
+    },
+    {
+      name: "Heart Sunnies",
+      svg: `<path d="M73,72 Q73,64 80,64 Q85,64 86,69 Q87,64 92,64 Q99,64 99,72 Q99,80 86,88 Q73,80 73,72 Z" fill="#FF5C8A" opacity="0.88"/>
+            <path d="M101,72 Q101,64 108,64 Q113,64 114,69 Q115,64 120,64 Q127,64 127,72 Q127,80 114,88 Q101,80 101,72 Z" fill="#FF5C8A" opacity="0.88"/>
+            <path d="M98,72 Q100,70 102,72" stroke="#FF5C8A" stroke-width="3" fill="none"/>
+            <line x1="74" y1="71" x2="60" y2="79" stroke="#FF5C8A" stroke-width="2.5"/>
+            <line x1="126" y1="71" x2="140" y2="79" stroke="#FF5C8A" stroke-width="2.5"/>
+            <ellipse cx="80" cy="70" rx="3" ry="2" fill="white" opacity="0.5"/>
+            <ellipse cx="108" cy="70" rx="3" ry="2" fill="white" opacity="0.5"/>`
+    },
+    {
+      name: "Cat-Eye Glasses",
+      svg: `<path d="M69,63 Q66,84 80,87 Q94,89 97,77 Q98,68 88,67 Q76,66 69,63 Z" fill="#BEE3F7" opacity="0.35" stroke="#D63384" stroke-width="2.5"/>
+            <path d="M131,63 Q134,84 120,87 Q106,89 103,77 Q102,68 112,67 Q124,66 131,63 Z" fill="#BEE3F7" opacity="0.35" stroke="#D63384" stroke-width="2.5"/>
+            <path d="M97,74 Q100,71 103,74" stroke="#D63384" stroke-width="2.5" fill="none"/>
+            <line x1="70" y1="66" x2="59" y2="78" stroke="#D63384" stroke-width="2.5"/>
+            <line x1="130" y1="66" x2="141" y2="78" stroke="#D63384" stroke-width="2.5"/>
+            <circle cx="69" cy="63" r="2" fill="#FFD700"/>
+            <circle cx="131" cy="63" r="2" fill="#FFD700"/>`
+    },
+    {
+      name: "Star Sunnies",
+      svg: `<polygon points="85,62 88.8,71.7 99.3,72.4 91.2,79 93.8,89.1 85,83.5 76.2,89.1 78.8,79 70.7,72.4 81.2,71.7" fill="#FFD93D" opacity="0.92" stroke="#E6A817" stroke-width="1.5" stroke-linejoin="round"/>
+            <polygon points="115,62 118.8,71.7 129.3,72.4 121.2,79 123.8,89.1 115,83.5 106.2,89.1 108.8,79 100.7,72.4 111.2,71.7" fill="#FFD93D" opacity="0.92" stroke="#E6A817" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M96,74 Q100,71 104,74" stroke="#E6A817" stroke-width="2.5" fill="none"/>
+            <line x1="72" y1="72" x2="60" y2="79" stroke="#E6A817" stroke-width="2.5"/>
+            <line x1="128" y1="72" x2="140" y2="79" stroke="#E6A817" stroke-width="2.5"/>
+            <ellipse cx="81" cy="73" rx="3" ry="2" fill="white" opacity="0.5"/>
+            <ellipse cx="111" cy="73" rx="3" ry="2" fill="white" opacity="0.5"/>`
+    },
+    {
+      name: "Square Glasses",
+      svg: `<rect x="71" y="67" width="27" height="19" rx="4" fill="#BEE3F7" opacity="0.35" stroke="#2B5BA8" stroke-width="2.5"/>
+            <rect x="102" y="67" width="27" height="19" rx="4" fill="#BEE3F7" opacity="0.35" stroke="#2B5BA8" stroke-width="2.5"/>
+            <path d="M98,74 Q100,71 102,74" stroke="#2B5BA8" stroke-width="2.5" fill="none"/>
+            <line x1="71" y1="73" x2="60" y2="79" stroke="#2B5BA8" stroke-width="2.5"/>
+            <line x1="129" y1="73" x2="140" y2="79" stroke="#2B5BA8" stroke-width="2.5"/>
+            <line x1="76" y1="83" x2="88" y2="70" stroke="white" stroke-width="2" opacity="0.5"/>
+            <line x1="107" y1="83" x2="119" y2="70" stroke="white" stroke-width="2" opacity="0.5"/>`
+    }
+  ],
+
   earrings: [
     { name: "None", svg: "" },
     {
@@ -883,94 +1199,6 @@ const opts = {
             <circle cx="51" cy="86" r="2" fill="white" opacity="0.7"/>
             <circle cx="147" cy="88" r="5" fill="#F0EAD6"/>
             <circle cx="145" cy="86" r="2" fill="white" opacity="0.7"/>`
-    }
-  ],
-
-  necklace: [
-    { name: "None", svg: "" },
-    {
-      name: "Pearl Necklace",
-      svg: `<circle cx="79" cy="132" r="4" fill="#F0EAD6"/>
-            <circle cx="86" cy="136" r="4" fill="#F0EAD6"/>
-            <circle cx="93" cy="139" r="4" fill="#F0EAD6"/>
-            <circle cx="100" cy="140" r="4" fill="#F0EAD6"/>
-            <circle cx="107" cy="139" r="4" fill="#F0EAD6"/>
-            <circle cx="114" cy="136" r="4" fill="#F0EAD6"/>
-            <circle cx="121" cy="132" r="4" fill="#F0EAD6"/>
-            <circle cx="78" cy="131" r="1.5" fill="white" opacity="0.7"/>
-            <circle cx="99" cy="139" r="1.5" fill="white" opacity="0.7"/>
-            <circle cx="120" cy="131" r="1.5" fill="white" opacity="0.7"/>`
-    },
-    {
-      name: "Heart Pendant",
-      svg: `<path d="M80,129 Q100,140 120,129" fill="none" stroke="#DAA520" stroke-width="1.5"/>
-            <line x1="100" y1="140" x2="100" y2="150" stroke="#DAA520" stroke-width="1.5"/>
-            <path d="M95,150 Q95,145 100,149 Q105,145 105,150 Q105,155 100,159 Q95,155 95,150 Z" fill="#E63946"/>
-            <circle cx="97" cy="148" r="1.5" fill="white" opacity="0.55"/>`
-    },
-    {
-      name: "Star Chain",
-      svg: `<path d="M79,130 Q100,142 121,130" fill="none" stroke="#C0C0C0" stroke-width="1.5"/>
-            <text x="74" y="135" font-size="9" fill="#FFD700">★</text>
-            <text x="87" y="140" font-size="8" fill="#FFD700">★</text>
-            <text x="100" y="143" font-size="10" fill="#FFD700">★</text>
-            <text x="113" y="140" font-size="8" fill="#FFD700">★</text>
-            <text x="124" y="135" font-size="9" fill="#FFD700">★</text>`
-    },
-    {
-      name: "Rainbow Beads",
-      svg: `<circle cx="81" cy="130" r="4" fill="#E63946"/>
-            <circle cx="88" cy="135" r="4" fill="#FF9933"/>
-            <circle cx="95" cy="138" r="4" fill="#FFD700"/>
-            <circle cx="100" cy="140" r="4" fill="#27AE60"/>
-            <circle cx="105" cy="138" r="4" fill="#3498DB"/>
-            <circle cx="112" cy="135" r="4" fill="#9B59B6"/>
-            <circle cx="119" cy="130" r="4" fill="#E63946"/>
-            <circle cx="80" cy="129" r="1.5" fill="white" opacity="0.5"/>
-            <circle cx="99" cy="139" r="1.5" fill="white" opacity="0.5"/>
-            <circle cx="118" cy="129" r="1.5" fill="white" opacity="0.5"/>`
-    }
-  ],
-
-  bracelet: [
-    { name: "None", svg: "" },
-    {
-      name: "Gold Bangle",
-      svg: `<ellipse cx="34" cy="251" rx="14" ry="5" fill="none" stroke="#DAA520" stroke-width="3"/>
-            <ellipse cx="166" cy="251" rx="14" ry="5" fill="none" stroke="#DAA520" stroke-width="3"/>`
-    },
-    {
-      name: "Charm Bracelet",
-      svg: `<path d="M21,249 Q34,244 47,249" fill="none" stroke="#C0C0C0" stroke-width="2"/>
-            <text x="23" y="246" font-size="8" fill="#FFD700">★</text>
-            <text x="31" y="258" font-size="8" fill="#FF69B4">♥</text>
-            <text x="40" y="246" font-size="7" fill="#9B59B6">◆</text>
-            <path d="M153,249 Q166,244 179,249" fill="none" stroke="#C0C0C0" stroke-width="2"/>
-            <text x="155" y="246" font-size="8" fill="#FFD700">★</text>
-            <text x="163" y="258" font-size="8" fill="#FF69B4">♥</text>
-            <text x="172" y="246" font-size="7" fill="#9B59B6">◆</text>`
-    },
-    {
-      name: "Rainbow Beads",
-      svg: `<circle cx="22" cy="249" r="3.5" fill="#E63946"/>
-            <circle cx="28" cy="246" r="3.5" fill="#FF9933"/>
-            <circle cx="34" cy="245" r="3.5" fill="#FFD700"/>
-            <circle cx="40" cy="246" r="3.5" fill="#27AE60"/>
-            <circle cx="46" cy="249" r="3.5" fill="#3498DB"/>
-            <circle cx="154" cy="249" r="3.5" fill="#E63946"/>
-            <circle cx="160" cy="246" r="3.5" fill="#FF9933"/>
-            <circle cx="166" cy="245" r="3.5" fill="#FFD700"/>
-            <circle cx="172" cy="246" r="3.5" fill="#27AE60"/>
-            <circle cx="178" cy="249" r="3.5" fill="#3498DB"/>`
-    },
-    {
-      name: "Friendship Bracelet",
-      svg: `<rect x="20" y="245" width="28" height="8" rx="4" fill="#FF69B4"/>
-            <rect x="20" y="245" width="28" height="2.5" rx="1" fill="#FFD700" opacity="0.85"/>
-            <rect x="20" y="250" width="28" height="2.5" rx="1" fill="#27AE60" opacity="0.85"/>
-            <rect x="152" y="245" width="28" height="8" rx="4" fill="#FF69B4"/>
-            <rect x="152" y="245" width="28" height="2.5" rx="1" fill="#FFD700" opacity="0.85"/>
-            <rect x="152" y="250" width="28" height="2.5" rx="1" fill="#27AE60" opacity="0.85"/>`
     }
   ],
 
@@ -1016,7 +1244,38 @@ const opts = {
             <ellipse cx="97" cy="110" rx="5" ry="2.5" fill="white" opacity="0.4"/>`
     }
   ]
+};
 
+
+/* ===== §7 ENGINE ========================================================= */
+
+/* every option list, in one place */
+const opts = Object.assign({}, LOOKS, WARDROBE);
+
+/* which control rows to show, in order */
+const CATEGORIES = [
+  { key: 'scene',    icon: '🏞️', label: 'Scene' },
+  { sep: '⭐ required ⭐' },
+  { key: 'hair',     icon: '💇', label: 'Hair',      required: true },
+  { key: 'shirt',    icon: '👕', label: 'Top',       required: true },
+  { key: 'bottom',   icon: '👖', label: 'Pants/Skirt', required: true },
+  { sep: '✨ optional ✨' },
+  { key: 'jacket',   icon: '🧥', label: 'Jacket' },
+  { key: 'shoes',    icon: '👟', label: 'Shoes' },
+  { key: 'hat',      icon: '🎩', label: 'Hat' },
+  { key: 'glasses',  icon: '🕶️', label: 'Glasses' },
+  { key: 'earrings', icon: '💎', label: 'Earrings' },
+  { key: 'necklace', icon: '📿', label: 'Necklace' },
+  { key: 'bracelet', icon: '🔮', label: 'Bracelet' },
+  { key: 'makeup',   icon: '💄', label: 'Makeup' }
+];
+
+/* category -> the <g> layers it owns */
+const LAYERS = {
+  scene: ['scene'], hair: ['hair-back', 'hair-front'], shirt: ['shirt'],
+  bottom: ['bottom'], jacket: ['jacket'], shoes: ['shoes'], hat: ['hat'],
+  glasses: ['glasses'], earrings: ['earrings'], necklace: ['necklace'],
+  bracelet: ['bracelet'], makeup: ['makeup']
 };
 
 const SKINS = [
@@ -1027,21 +1286,149 @@ const SKINS = [
   { name: "Deep",   base: "#7C4E2A", shade: "#66401F", line: "#523318" },
 ];
 
-const SAVE_KEY = "dollDressup.v1";
+const SAVE_KEY = "dollDressup.v2";
 const state = {};
 Object.keys(opts).forEach(k => { state[k] = 0; });
 let skinIdx = 1;
 
+/* ---------- the doll herself (built from GEO, like the clothes) ---------- */
+function buildBody(){
+  const skin = 'var(--skin)', shade = 'var(--skin-shade)', line = 'var(--skin-line)';
+  let s = `<ellipse cx="100" cy="412" rx="44" ry="6" fill="#000" opacity="0.12"/>`;
+
+  /* legs + feet */
+  s += pair(paint(tube(GEO.leg.line, GEO.leg.w), skin, {sheen: true}));
+  s += pair(paint(footShape(), skin, {sheen: true}));
+  s += pair(stroke(curvePath([[63,398],[66,404],[72,406]]), line, 1, 0.35));
+  s += pair(stroke(curvePath([[70,318],[78,321],[86,318]]), line, 1.4, 0.2));   // knee
+
+  /* torso + neck */
+  s += paint(bodice({top: 146, bottom: 272, pad: 0, neckW: 16, neckD: 4, hemDip: 0}), skin, {sheen: true});
+  s += `<path d="${ringPath([[87,GEO.neck.top],[86,140],[88,GEO.neck.bottom],
+                             [112,GEO.neck.bottom],[114,140],[113,GEO.neck.top]])}" fill="${skin}"/>`;
+  s += `<ellipse cx="100" cy="128" rx="18" ry="8" fill="${shade}" opacity="0.35"/>`;
+  s += pair(stroke(curvePath([[84,156],[92,159],[97,157]]), line, 1.2, 0.28));  // collarbone
+
+  /* head + ears (kept exactly where the hair, hats and glasses expect them) */
+  s += pair(`<ellipse cx="${GEO.ear.cx}" cy="${GEO.ear.cy}" rx="${GEO.ear.rx}" ry="${GEO.ear.ry}" fill="${skin}"/>
+             <ellipse cx="${GEO.ear.cx}" cy="${GEO.ear.cy}" rx="5" ry="7" fill="${shade}" opacity="0.4"/>`);
+  s += `<ellipse cx="${GEO.head.cx}" cy="${GEO.head.cy}" rx="${GEO.head.rx}" ry="${GEO.head.ry}" fill="${skin}"/>
+        <ellipse cx="${GEO.head.cx}" cy="${GEO.head.cy}" rx="${GEO.head.rx}" ry="${GEO.head.ry}" fill="url(#gEdge)"/>`;
+
+  /* arms + hands, in front of the torso */
+  s += pair(paint(tube(GEO.arm.line, GEO.arm.w), skin, {sheen: true}));
+  s += pair(`<ellipse cx="${GEO.arm.hand[0]}" cy="${GEO.arm.hand[1]}" rx="7.4" ry="10.5" fill="${skin}"
+                      transform="rotate(7 ${GEO.arm.hand[0]} ${GEO.arm.hand[1]})"/>
+             <ellipse cx="${GEO.arm.hand[0]}" cy="${GEO.arm.hand[1]}" rx="7.4" ry="10.5" fill="url(#gEdge)"
+                      transform="rotate(7 ${GEO.arm.hand[0]} ${GEO.arm.hand[1]})"/>` +
+             stroke('M43,272 L42,278 M46,273 L46,279 M49,272 L50,278', line, 1, 0.3));
+  document.getElementById('layer-body').innerHTML = s;
+}
+
+function buildFace(){
+  const line = 'var(--skin-line)';
+  const eye = (cx) => `
+    <ellipse cx="${cx}" cy="76" rx="8.2" ry="9" fill="#FDFBF7"/>
+    <ellipse cx="${cx}" cy="76" rx="8.2" ry="9" fill="url(#gEdge)" opacity="0.5"/>
+    <ellipse cx="${cx+1}" cy="77" rx="5.2" ry="6.2" fill="#5A3A18"/>
+    <ellipse cx="${cx+1}" cy="78.5" rx="5.2" ry="4" fill="#4A2C10" opacity="0.55"/>
+    <ellipse cx="${cx+1}" cy="76.5" rx="2.3" ry="2.7" fill="#141414"/>
+    <circle cx="${cx+2.6}" cy="74" r="1.7" fill="#fff"/>
+    <circle cx="${cx-1.2}" cy="79.5" r="0.9" fill="#fff" opacity="0.55"/>
+    <path d="M${cx-8.4},74 Q${cx},66.5 ${cx+8.4},74" fill="none" stroke="#2A1F1A" stroke-width="2" stroke-linecap="round"/>
+    <path d="M${cx-8},69.5 Q${cx},64.5 ${cx+8},69.8" fill="none" stroke="#6B4C3B" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>`;
+  let s = eye(85) + eye(115);
+  /* lashes */
+  s += `<path d="M77,71 L73,67 M92.5,70.5 L95,66.5" stroke="#2A1F1A" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M107.5,70.5 L105,66.5 M123,71 L127,67" stroke="#2A1F1A" stroke-width="1.4" stroke-linecap="round"/>`;
+  /* nose + mouth + cheeks */
+  s += `<path d="M97,88 Q100,95 103,90" fill="none" stroke="${line}" stroke-width="1.6" stroke-linecap="round"/>
+        <ellipse cx="100" cy="92" rx="4.5" ry="2.4" fill="var(--skin-shade)" opacity="0.3"/>
+        <path id="base-mouth" d="M88,106 Q100,117 112,106" fill="none" stroke="#C96A80" stroke-width="2.2" stroke-linecap="round"/>
+        <ellipse cx="73" cy="96" rx="13" ry="8" fill="url(#gCheek)"/>
+        <ellipse cx="127" cy="96" rx="13" ry="8" fill="url(#gCheek)"/>`;
+  document.getElementById('layer-face').innerHTML = s;
+}
+
+/* ---------- turn one wardrobe entry into SVG ---------- */
+function svgFor(cat, item){
+  if (item.style){
+    const maker = (STYLES[cat] || {})[item.style];
+    if (!maker) return { [cat]: '' };
+    return { [cat]: maker(item) };
+  }
+  if (item.back !== undefined || item.front !== undefined)
+    return { 'hair-back': item.back || '', 'hair-front': item.front || '' };
+  return { [cat]: item.svg || '' };
+}
+
+function render(cat){
+  const item = opts[cat][state[cat]];
+  const label = document.getElementById('opt-' + cat);
+  if (label) label.textContent = item.name;
+
+  (LAYERS[cat] || [cat]).forEach(id => {
+    const g = document.getElementById('layer-' + id);
+    if (g) g.innerHTML = '';
+  });
+  const parts = svgFor(cat, item);
+  Object.keys(parts).forEach(id => {
+    const g = document.getElementById('layer-' + id);
+    if (g) g.innerHTML = parts[id];
+  });
+
+  /* hide the plain mouth when a lipstick look is on */
+  const m = document.getElementById('base-mouth');
+  if (m) m.style.display = (state.makeup === 0) ? '' : 'none';
+}
+const renderAll = () => Object.keys(opts).forEach(render);
+
+function applySkin(){
+  const s = SKINS[skinIdx], root = document.documentElement.style;
+  root.setProperty('--skin', s.base);
+  root.setProperty('--skin-shade', s.shade);
+  root.setProperty('--skin-line', s.line);
+  document.querySelectorAll('#skin-swatches .swatch').forEach((b, i) =>
+    b.classList.toggle('active', i === skinIdx));
+}
+
+/* ---------- controls are generated from CATEGORIES ---------- */
+function buildControls(){
+  let h = `
+    <div class="action-row">
+      <button class="action-btn surprise" onclick="surpriseMe()">🎲 Surprise!</button>
+      <button class="action-btn save" onclick="saveLook()">📸 Save</button>
+      <button class="action-btn reset-btn" onclick="resetDoll()">🔄 Reset</button>
+    </div>
+    <div class="swatch-row">
+      <span class="cat-icon">🎨</span><span class="cat-name">Skin</span>
+      <div id="skin-swatches" style="display:flex;gap:7px;flex:1;justify-content:center">
+        ${SKINS.map((s,i) => `<button class="swatch" style="background:${s.base}" title="${s.name}" onclick="setSkin(${i})"></button>`).join('')}
+      </div>
+    </div>`;
+  CATEGORIES.forEach(c => {
+    if (c.sep){ h += `<div class="section-label">${c.sep}</div>`; return; }
+    if (!opts[c.key]) return;
+    h += `<div class="category-row${c.required ? ' required' : ''}">
+            <span class="cat-icon">${c.icon}</span>
+            <span class="cat-name">${c.label}</span>
+            <button class="nav-btn" onclick="change('${c.key}',-1)">◀</button>
+            <span class="option-name" id="opt-${c.key}">—</span>
+            <button class="nav-btn" onclick="change('${c.key}',1)">▶</button>
+          </div>`;
+  });
+  document.getElementById('controls').innerHTML = h;
+}
+
 /* ---------- persistence ---------- */
-function persist() {
+function persist(){
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      state: state, skin: skinIdx,
-      name: document.getElementById('doll-name').value
+      state, skin: skinIdx, name: document.getElementById('doll-name').value
     }));
-  } catch(e) {}
+  } catch(e){}
 }
-function restore() {
+function restore(){
   try {
     const d = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (!d) return;
@@ -1050,106 +1437,44 @@ function restore() {
     });
     if (typeof d.skin === 'number' && d.skin < SKINS.length) skinIdx = d.skin;
     if (d.name) document.getElementById('doll-name').value = d.name;
-  } catch(e) {}
-}
-
-/* ---------- rendering ---------- */
-const layerMap = {
-  scene: 'layer-bg', shirt: 'layer-shirt', bottom: 'layer-bottom',
-  jacket: 'layer-jacket', shoes: 'layer-shoes',
-  hat: 'layer-hat', earrings: 'layer-earrings',
-  necklace: 'layer-necklace', bracelet: 'layer-bracelet',
-  makeup: 'layer-makeup', glasses: 'layer-glasses'
-};
-
-function render(cat) {
-  const o = opts[cat][state[cat]];
-  document.getElementById('opt-' + cat).textContent = o.name;
-
-  if (cat === 'hair') {
-    document.getElementById('layer-hair-back').innerHTML = o.back || '';
-    document.getElementById('layer-hair-front').innerHTML = o.front || '';
-  } else {
-    document.getElementById(layerMap[cat]).innerHTML = o.svg || '';
-  }
-
-  // Hide the base mouth when a makeup option (which draws its own lips) is active
-  const baseMouth = document.getElementById('base-mouth');
-  if (baseMouth) {
-    baseMouth.style.display = (state.makeup === 0) ? '' : 'none';
-  }
-}
-
-function applySkin() {
-  const s = SKINS[skinIdx];
-  const root = document.documentElement.style;
-  root.setProperty('--skin', s.base);
-  root.setProperty('--skin-shade', s.shade);
-  root.setProperty('--skin-line', s.line);
-  document.querySelectorAll('#skin-swatches .swatch').forEach((b, i) => {
-    b.classList.toggle('active', i === skinIdx);
-  });
-}
-
-function buildSwatches() {
-  const wrap = document.getElementById('skin-swatches');
-  wrap.innerHTML = SKINS.map((s, i) =>
-    `<button class="swatch" style="background:${s.base}" title="${s.name}" onclick="setSkin(${i})"></button>`
-  ).join('');
-}
-
-function pop(cls) {
-  const svg = document.getElementById('doll');
-  svg.classList.remove('pop', 'wiggle');
-  void svg.offsetWidth;   // restart the animation
-  svg.classList.add(cls || 'pop');
+  } catch(e){}
 }
 
 /* ---------- actions ---------- */
-function change(cat, dir) {
+function pop(cls){
+  const svg = document.getElementById('doll');
+  svg.classList.remove('pop', 'wiggle');
+  void svg.offsetWidth;
+  svg.classList.add(cls || 'pop');
+}
+function change(cat, dir){
   state[cat] = (state[cat] + dir + opts[cat].length) % opts[cat].length;
-  render(cat);
-  pop('pop');
-  persist();
+  render(cat); pop('pop'); persist();
 }
-
-function setSkin(i) {
-  skinIdx = i;
-  applySkin();
-  pop('pop');
-  persist();
-}
-
-function surpriseMe() {
+function setSkin(i){ skinIdx = i; applySkin(); pop('pop'); persist(); }
+function surpriseMe(){
   Object.keys(opts).forEach(cat => {
-    if (cat === 'scene') return;   // keep the chosen backdrop
+    if (cat === 'scene') return;
     state[cat] = Math.floor(Math.random() * opts[cat].length);
     render(cat);
   });
-  pop('wiggle');
-  persist();
+  pop('wiggle'); persist();
 }
-
-function resetDoll() {
+function resetDoll(){
   Object.keys(opts).forEach(cat => { state[cat] = 0; render(cat); });
-  skinIdx = 1;
-  applySkin();
-  pop('wiggle');
-  persist();
+  skinIdx = 1; applySkin(); pop('wiggle'); persist();
 }
-
-function saveLook() {
+function saveLook(){
   const svg = document.getElementById('doll');
   const clone = svg.cloneNode(true);
   const s = SKINS[skinIdx];
-  // Bake the skin vars onto the svg so they survive standalone rendering
   clone.setAttribute('style', `--skin:${s.base};--skin-shade:${s.shade};--skin-line:${s.line}`);
   clone.setAttribute('width', '400');
   clone.setAttribute('height', '840');
   const xml = new XMLSerializer().serializeToString(clone);
   const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml' }));
   const img = new Image();
-  img.onload = function() {
+  img.onload = function(){
     const c = document.createElement('canvas');
     c.width = 400; c.height = 840;
     const ctx = c.getContext('2d');
@@ -1158,22 +1483,22 @@ function saveLook() {
     ctx.drawImage(img, 0, 0, c.width, c.height);
     URL.revokeObjectURL(url);
     const a = document.createElement('a');
-    const nm = (document.getElementById('doll-name').value.trim() || 'my-doll')
-      .replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-    a.download = nm + '.png';
+    a.download = (document.getElementById('doll-name').value.trim() || 'my-doll')
+      .replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '.png';
     a.href = c.toDataURL('image/png');
     a.click();
   };
   img.src = url;
 }
 
-document.getElementById('doll-name').addEventListener('change', persist);
-
-// Initialize
-buildSwatches();
+/* ---------- go ---------- */
+buildControls();
+buildBody();
+buildFace();
 restore();
-Object.keys(opts).forEach(cat => render(cat));
+renderAll();
 applySkin();
+document.getElementById('doll-name').addEventListener('change', persist);
 </script>
 </body>
 </html>
