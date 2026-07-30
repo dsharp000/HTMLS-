@@ -117,6 +117,9 @@ h1 {
   width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid transparent;
   cursor: pointer; transition: transform 0.1s, border-color 0.15s; padding: 0;
 }
+.swatch.sm { width: 17px; height: 17px; border-width: 2px; }
+/* swatch rows give their palette the room it needs, wrapping if tight */
+.swatch-row .cat-name { min-width: auto; }
 .swatch:hover { transform: scale(1.15); }
 .swatch.active { border-color: #d63384; transform: scale(1.12); }
 
@@ -213,8 +216,25 @@ h1 {
 
 
 /* ===== §1 GEO — body measurements ======================================== */
+/* Head shapes: half-width of the face at each y, apex first, chin last.
+   The skull above y≈56 is nearly identical in every shape so hats, glasses
+   and hairlines keep fitting; the cheeks, jaw and chin are what vary.
+   Keep half-width at y=96 above ~33 so cheek blush stays on the face. */
+const HEADS = [
+  { name: "Oval",   tbl: [[34,0],[38,14],[44,24],[52,32],[62,37],[72,39.4],[80,40],
+                          [88,38],[96,34.5],[106,28],[114,20],[122,10],[126,0]] },
+  { name: "Round",  tbl: [[34,0],[38,15],[44,26],[52,34],[62,38.5],[72,40],[80,41],
+                          [88,40.5],[96,38.5],[106,34],[114,26],[121,13],[126,0]] },
+  { name: "Heart",  tbl: [[34,0],[38,14],[44,25],[52,33],[62,38.5],[72,41],[80,41.5],
+                          [88,37.5],[96,33],[104,22.5],[112,14],[120,6.5],[129,0]] },
+  { name: "Square", tbl: [[34,0],[38,15],[44,26],[52,34],[62,38],[72,40],[80,40.5],
+                          [88,40],[96,39],[104,37.5],[110,36],[110,36],[117,26],[121,12],[124,0]] },
+  { name: "Slim",   tbl: [[34,0],[38,13],[44,22],[52,29],[62,34],[72,36],[80,37],
+                          [88,34.5],[96,32],[106,26.5],[116,19],[124,9],[131,0]] }
+];
+
 const GEO = {
-  head: { cx: 100, cy: 80, rx: 40, ry: 46 },
+  head: { cx: 100, cy: 80, rx: 40, ry: 46 },   // nominal box (hats/hair art use it)
   ear:  { cx: 57,  cy: 84, rx: 9,  ry: 11 },
   neck: { top: 110, bottom: 156, w: 13 },
 
@@ -479,6 +499,135 @@ function skirt(o = {}){
   return { d: ringPath(ring), wTop, wBot, top, bottom, at };
 }
 
+/* ---------- head & hair fitting ----------
+   Hair is built FROM the head outline, so it can never leave a bald patch and
+   it re-fits itself when the face shape changes. */
+const headTbl   = () => HEADS[state.head || 0].tbl;
+const headHalfW = y => interp(headTbl(), y);
+
+/** the face outline for the chosen head shape */
+function headRing(pad = 0){
+  const t = headTbl();
+  const right = t.map(([y, w]) => [100 + (w > 0 ? w + pad : 0), y]);
+  const left  = right.slice(1, -1).map(([x, y]) => [200 - x, y]).reverse();
+  return ringPath(right.concat(left));
+}
+/** how far out hair hangs once it is past the widest part of the head */
+const hairFall = vol => headHalfW(80) + vol;
+
+/** the hair lying on the skull: hugs the head, with `vol` of thickness */
+function capRing(o = {}){
+  const v = o.vol !== undefined ? o.vol : 5;
+  const hl = o.hairline !== undefined ? o.hairline : 56;
+  const low = o.temple !== undefined ? o.temple : 86;
+  const side = [];
+  [low, 80, 72, 64, 56, 48, 44, 40].forEach(y => {
+    if (y <= low) side.push([100 - (headHalfW(y) + v), y]);
+  });
+  const apex  = [100, 34 - v * 1.5];
+  const other = side.map(([x, y]) => [200 - x, y]).reverse();
+  /* the hairline: low at the temples, arcing up across the forehead */
+  const brow = [[100 + 26, 64], [100 + 13, hl + 4], [100, hl], [100 - 13, hl + 4], [100 - 26, 64]];
+  return ringPath([...side, apex, ...other, ...brow]);
+}
+
+/** the mass of hair hanging behind the head, down to y = o.len */
+function backMass(o){
+  const v = o.vol !== undefined ? o.vol : 5, spread = o.spread !== undefined ? o.spread : 5;
+  const side = [];
+  [40, 48, 56, 64, 72, 80, 88, 96, 106].forEach(y => side.push([100 - (headHalfW(y) + v + 1), y]));
+  const fall = hairFall(v);
+  for (let i = 1; i <= 4; i++){
+    const t = i / 4;
+    side.push([100 - (fall + spread * t), 108 + (o.len - 108) * t]);
+  }
+  const other = side.map(([x, y]) => [200 - x, y]).reverse();
+  return ringPath([...side, [100, o.len + (o.hemDip !== undefined ? o.hemDip : 7)],
+                   ...other, [100, 34 - v * 1.6]]);
+}
+
+/** a face-framing strand: follows the skull, then hangs straight down */
+function sideStrand(o){
+  const v = o.vol !== undefined ? o.vol : 5;
+  const w = o.sideW !== undefined ? o.sideW : 8, len = o.sideLen || 140;
+  const fall = hairFall(v);
+  const xAt = y => (y <= 80 ? headHalfW(y) + v : fall);
+  const outer = [], inner = [];
+  const step = Math.max(8, (len - 50) / 7);
+  for (let y = 50; y <= len; y += step){
+    const t = (y - 50) / (len - 50);
+    const x = 100 - xAt(y);
+    outer.push([x, y]);
+    inner.push([x + w * (1 - 0.4 * t), y]);
+  }
+  return ringPath(outer.concat(inner.reverse()));
+}
+
+/** A curly mass. Uniform circles read as a sheep and a smooth outline reads
+    as a hood, so the edge is built from irregular lobes: each lobe is a
+    valley + a doubled peak, with the radius varied per lobe. Drawn behind the
+    head, so the face paints over it. */
+function curlyMass(o){
+  const v = o.vol !== undefined ? o.vol : 6;
+  const puff = o.puff !== undefined ? o.puff : 9;
+  const len = o.len || 150;
+  const R = headHalfW(80) + v + puff;
+  const lobes = o.lobes || 12;
+  const cy = 72;
+  /* valley points around the head, at irregular radii */
+  const pts = [];
+  for (let i = 0; i < lobes; i++){
+    const a = (i / lobes) * 2 * Math.PI;
+    const rr = R * (0.9 + 0.07 * Math.sin(i * 2.4) + 0.04 * Math.sin(i * 5.1 + 1));
+    const y = cy - Math.cos(a) * rr * 0.96;
+    pts.push([100 + Math.sin(a) * rr, y > cy ? cy + (y - cy) * ((len - cy) / (R * 0.96)) : y]);
+  }
+  /* bulge an arc outward between each pair: round clumps, not spikes */
+  let d = 'M' + XY(pts[0]);
+  for (let i = 0; i < lobes; i++){
+    const a = pts[i], b = pts[(i + 1) % lobes];
+    const chord = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const r = chord * (0.62 + 0.1 * Math.abs(Math.sin(i * 1.9)));
+    d += ` A${F(r)},${F(r)} 0 0 1 ${XY(b)}`;
+  }
+  return d + 'Z';
+}
+/** true where hair belongs: above the hairline, or beside the face */
+function inHair(x, y, o){
+  if (y < (o.hairline !== undefined ? o.hairline : 58) - 3) return true;
+  return Math.abs(x - 100) > headHalfW(y) + 1;
+}
+/** short S-strokes that read as coils */
+function coils(c, o, spots, r, w, op){
+  const dk = dark(c, 0.38), lt = lite(c, 0.26);
+  let s = '';
+  spots.forEach(([x, y, k], i) => {
+    const rr = r * (k || 1);
+    s += stroke(`M${F(x-rr)},${F(y)} Q${F(x-rr*0.45)},${F(y-rr*1.15)} ${F(x)},${F(y)}` +
+                ` Q${F(x+rr*0.45)},${F(y+rr*1.15)} ${F(x+rr)},${F(y)}`,
+                i % 3 === 0 ? lt : dk, w, op);
+  });
+  return s;
+}
+/** coil positions inside the mass, never on the face */
+function coilSpots(o, band){
+  const v = o.vol !== undefined ? o.vol : 6;
+  const R = (headHalfW(80) + v + (o.puff !== undefined ? o.puff : 9));
+  const out = [];
+  const n = band === 'edge' ? 21 : 16;
+  for (let i = 0; i < n; i++){
+    const t = n === 1 ? 0.5 : i / (n - 1);
+    const a = (-1 + 2 * t) * Math.PI * 0.94;
+    const f = band === 'edge' ? 0.9 + 0.07 * Math.sin(a * 3.1)
+                              : 0.62 + 0.12 * Math.sin(a * 2.3 + 1.4);
+    const rr = R * f;
+    const x = 100 + Math.sin(a) * rr, y = 72 - Math.cos(a) * rr * 0.96;
+    if (y > 138 || !inHair(x, y, o)) continue;
+    out.push([x, y, 0.78 + 0.3 * Math.abs(Math.sin(a * 2.7))]);
+  }
+  return out;
+}
+
 /** the bare foot outline, optionally padded (shoes) or tilted (heels) */
 function footShape(o = {}){
   let ring = GEO.foot;
@@ -553,6 +702,87 @@ const STYLES = {
       s += stroke(curvePath([[100 - halfW(bot) - 2, bot], [100, bot + 4], [100 + halfW(bot) + 2, bot]]),
                   '#000', 3.5, 0.14);
       return s;
+    }
+  },
+
+  /* ---------- HAIR ----------
+     One factory drives every hairstyle. It builds the cap from the current
+     head shape, so hair re-fits itself and never leaves a bald patch.      */
+  hair: {
+    hair(o){
+      /* colour comes from the palette swatch, not the style, so any style
+         can be any colour (o.color is only a fallback) */
+      const c = hairColor() || o.color, dk = dark(c, 0.3), lt = lite(c, 0.3);
+      const v = o.vol !== undefined ? o.vol : 5;
+      const apexY = 34 - v * 1.5;
+      let back = '', front = '';
+
+      /* --- behind the head --- */
+      if (o.len)    back += paint(backMass(o), c, {sheen: true});
+      if (o.curls){
+        back += paint(curlyMass(o), c, {sheen: true});
+        back += coils(c, o, coilSpots(o, 'edge'), 6, 2.2, 0.5);
+        back += coils(c, o, coilSpots(o, 'in'),   5.2, 1.9, 0.36);
+      }
+      if (o.ponytail){
+        const tail = tube([[122,40],[145,64],[150,100],[139,134],[129,158]], [11,13,12,9,5]);
+        back += paint(tail, c, {sheen: true});
+        back += stroke(curvePath([[136,66],[146,96],[139,126]]), lt, 2, 0.35);
+      }
+
+      /* --- the cap on the skull --- */
+      front += paint(capRing({vol: v, hairline: o.hairline, temple: o.temple}), c, {sheen: true});
+      if (o.curls){
+        /* texture on the cap (above the hairline only) + a loose curl at each temple */
+        front += coils(c, o, coilSpots({...o, puff: Math.max(0, (o.puff || 9) - 11)}, 'edge'), 5, 1.9, 0.4);
+        const hl = o.hairline !== undefined ? o.hairline : 60;
+        const fx = headHalfW(hl + 8) + v;
+        front += stroke(`M${F(100-fx+2)},${F(hl+5)} Q${F(100-fx-5)},${F(hl+13)} ${F(100-fx+3)},${F(hl+20)}`, c, 3.4, 0.95);
+        front += stroke(`M${F(100+fx-2)},${F(hl+7)} Q${F(100+fx+6)},${F(hl+16)} ${F(100+fx-3)},${F(hl+23)}`, c, 3.4, 0.95);
+      }
+
+      /* --- face-framing strands --- */
+      if (o.sides) front += pair(paint(sideStrand(o), c, {sheen: true}));
+
+      /* --- braids / buns / wisps --- */
+      if (o.braids){
+        const bx = 100 - (hairFall(v) + 1);
+        let b = '';
+        for (let i = 0; i < 7; i++){
+          const y = 104 + i * 13, r = 9.6 - i * 0.55;
+          b += `<ellipse cx="${F(bx + (i % 2 ? 2 : -2))}" cy="${y}" rx="${F(r)}" ry="${F(r * 0.92)}"
+                         fill="${i % 2 ? lite(c, 0.12) : c}"/>`;
+          b += stroke(`M${F(bx-r*0.85)},${F(y+2.5)} L${F(bx+r*0.85)},${F(y-2.5)}`, dark(c,0.3), 1.3, 0.32);
+        }
+        const ty = 104 + 7 * 13;
+        b += `<ellipse cx="${F(bx)}" cy="${F(ty - 5)}" rx="6.5" ry="3.4" fill="${o.tie || '#FF69B4'}"/>`;
+        b += stroke(`M${F(bx-3)},${F(ty)} Q${F(bx-5)},${F(ty+9)} ${F(bx-2)},${F(ty+15)}`, c, 2.4, 0.9) +
+             stroke(`M${F(bx+2)},${F(ty)} Q${F(bx+4)},${F(ty+9)} ${F(bx+1)},${F(ty+15)}`, c, 2.4, 0.9);
+        front += pair(b);
+      }
+      const bun = (cx, cy, r) =>
+        `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c}"/>
+         <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#gEdge)"/>
+         <path d="${curvePath([[cx-r*0.6,cy-r*0.3],[cx,cy-r*0.75],[cx+r*0.6,cy-r*0.3]])}"
+               fill="none" stroke="${lt}" stroke-width="2" opacity="0.45"/>` +
+        (o.tie ? `<ellipse cx="${cx}" cy="${cy+r-1}" rx="${F(r*0.6)}" ry="3" fill="${o.tie}"/>` : '');
+      if (o.bun)  front += bun(100, F(apexY - 6), 14);
+      if (o.buns2) front += pair(bun(74, F(apexY + 4), 11));
+      if (o.waves){
+        const wx = 100 - hairFall(v) + 5;
+        front += pair(stroke(curvePath([[wx+1,92],[wx-4,124],[wx+2,156],[wx-3,188]]), lt, 2.6, 0.32));
+        front += pair(stroke(curvePath([[wx+9,100],[wx+4,132],[wx+10,164]]), dark(c,0.22), 2.2, 0.22));
+      }
+      if (o.wisps){
+        const fx = 100 - hairFall(v);
+        front += pair(stroke(`M${F(fx+2)},${F(o.sideLen-14)} Q${F(fx-3)},${F(o.sideLen-4)} ${F(fx+3)},${F(o.sideLen+4)}`, c, 2.6, 0.9));
+      }
+
+      /* --- parting and crown gloss --- */
+      const px = 100 + (o.part || 0) * 26;
+      front += stroke(`M${F(px)},${F(apexY + 3)} L${F(100 + (o.part || 0) * 16)},${F((o.hairline || 56) + 2)}`, dk, 1.6, 0.45);
+      front += stroke(curvePath([[100-24, apexY+13], [100, apexY+7], [100+24, apexY+13]]), lt, 4, 0.4);
+      return { 'hair-back': back, 'hair-front': front };
     }
   },
 
@@ -965,83 +1195,34 @@ const LOOKS = {
     }
   ],
 
+  /* ---- HAIR: data only. The cap, back mass, strands, braids and buns are
+     generated from the head shape (§3 FIT), so any face shape stays covered.
+     color, vol (thickness), hairline (y on the forehead), temple (how far the
+     cap comes down at the sides), len/spread (mass behind), sides/sideLen/
+     sideW (face-framing strands), curls, ponytail, braids, bun, buns2,
+     wisps, part (-1..1), tie (colour of the tie/scrunchie). Colour itself
+     comes from the HAIR_COLORS swatches, not from the style.              ---- */
   hair: [
-    {
-      name: "Long Straight (Brown)",
-      back: `<path d="M60,40 Q55,13 100,11 Q145,13 140,40 L146,120 Q152,180 148,225 Q124,238 100,240 Q76,238 52,225 Q48,180 54,120 Z" fill="#7B3F1E"/>
-             <path d="M60,60 Q52,140 55,215" stroke="#93552B" stroke-width="2.5" opacity="0.6" fill="none"/>
-             <path d="M140,60 Q148,140 145,215" stroke="#93552B" stroke-width="2.5" opacity="0.6" fill="none"/>`,
-      front: `<path d="M60,42 Q56,16 100,13 Q144,16 140,42 L138,92 Q130,62 100,58 Q70,62 62,92 Z" fill="#7B3F1E"/>
-              <path d="M62,74 Q54,130 56,170 Q58,204 70,222 Q76,208 72,168 Q70,120 70,84 Z" fill="#7B3F1E"/>
-              <path d="M138,74 Q146,130 144,170 Q142,204 130,222 Q124,208 128,168 Q130,120 130,84 Z" fill="#7B3F1E"/>
-              <path d="M72,24 Q96,17 122,26" stroke="#A5643A" stroke-width="3.5" fill="none" opacity="0.55" stroke-linecap="round"/>`
-    },
-    {
-      name: "Curly (Black)",
-      back: `<path d="M46,40 Q60,16 100,14 Q140,16 154,40 L156,140 Q100,170 44,140 Z" fill="#1a1a1a"/>
-             <circle cx="100" cy="26" r="18" fill="#1a1a1a"/><circle cx="72" cy="32" r="16" fill="#1a1a1a"/><circle cx="128" cy="32" r="16" fill="#1a1a1a"/>
-             <circle cx="54" cy="52" r="15" fill="#1a1a1a"/><circle cx="146" cy="52" r="15" fill="#1a1a1a"/>
-             <circle cx="46" cy="78" r="14" fill="#1a1a1a"/><circle cx="154" cy="78" r="14" fill="#1a1a1a"/>
-             <circle cx="44" cy="104" r="13" fill="#1a1a1a"/><circle cx="156" cy="104" r="13" fill="#1a1a1a"/>
-             <circle cx="48" cy="128" r="13" fill="#1a1a1a"/><circle cx="152" cy="128" r="13" fill="#1a1a1a"/>
-             <circle cx="56" cy="148" r="12" fill="#1a1a1a"/><circle cx="144" cy="148" r="12" fill="#1a1a1a"/>
-             <path d="M40,72 Q36,78 40,84" stroke="#4a4a4a" stroke-width="2" fill="none" opacity="0.8"/>
-             <path d="M160,72 Q164,78 160,84" stroke="#4a4a4a" stroke-width="2" fill="none" opacity="0.8"/>`,
-      front: `<path d="M62,42 Q60,18 100,15 Q140,18 138,42 L134,78 Q120,64 100,64 Q80,64 66,78 Z" fill="#1a1a1a"/>
-              <circle cx="70" cy="52" r="11" fill="#1a1a1a"/><circle cx="86" cy="42" r="11" fill="#1a1a1a"/><circle cx="100" cy="38" r="11" fill="#1a1a1a"/><circle cx="114" cy="42" r="11" fill="#1a1a1a"/><circle cx="130" cy="52" r="11" fill="#1a1a1a"/>
-              <circle cx="63" cy="68" r="9" fill="#1a1a1a"/><circle cx="137" cy="68" r="9" fill="#1a1a1a"/>
-              <path d="M64,46 Q68,40 74,41" stroke="#4a4a4a" stroke-width="2" fill="none" opacity="0.8"/>
-              <path d="M94,32 Q100,28 106,32" stroke="#4a4a4a" stroke-width="2" fill="none" opacity="0.8"/>
-              <path d="M126,46 Q132,42 136,48" stroke="#4a4a4a" stroke-width="2" fill="none" opacity="0.8"/>`
-    },
-    {
-      name: "Short Bob (Blonde)",
-      back: `<path d="M60,42 Q55,15 100,13 Q145,15 140,42 L144,100 Q146,124 132,132 Q118,138 100,139 Q82,138 68,132 Q54,124 56,100 Z" fill="#F5D060"/>
-             <path d="M62,70 Q58,110 68,128" stroke="#D9B23F" stroke-width="2" opacity="0.7" fill="none"/>
-             <path d="M138,70 Q142,110 132,128" stroke="#D9B23F" stroke-width="2" opacity="0.7" fill="none"/>`,
-      front: `<path d="M62,42 Q58,17 100,14 Q142,17 138,42 L137,66 Q100,72 63,66 Z" fill="#F5D060"/>
-              <path d="M63,50 Q56,90 60,116 Q64,132 78,136 Q72,120 72,96 Q72,70 71,54 Z" fill="#F5D060"/>
-              <path d="M137,50 Q144,90 140,116 Q136,132 122,136 Q128,120 128,96 Q128,70 129,54 Z" fill="#F5D060"/>
-              <path d="M74,28 Q98,21 124,29" stroke="#FBE49A" stroke-width="3.5" fill="none" opacity="0.8" stroke-linecap="round"/>`
-    },
-    {
-      name: "Ponytail (Red)",
-      back: `<path d="M62,44 Q58,16 100,13 Q142,16 138,44 L136,100 Q118,112 100,114 Q82,112 64,100 Z" fill="#CC3300"/>
-             <path d="M104,17 Q152,20 160,62 Q168,104 156,146 Q150,166 138,178 Q132,172 134,158 Q146,118 142,84 Q138,48 102,30 Z" fill="#CC3300"/>
-             <path d="M146,60 Q154,68 156,80" stroke="#A82800" stroke-width="2" fill="none" opacity="0.7"/>
-             <path d="M152,100 Q152,118 148,136" stroke="#A82800" stroke-width="2" fill="none" opacity="0.7"/>
-             <path d="M120,26 Q144,36 150,58" stroke="#E8552A" stroke-width="2.5" fill="none" opacity="0.7"/>`,
-      front: `<path d="M64,42 Q60,18 100,15 Q140,18 136,42 L134,82 Q118,64 98,65 Q76,67 66,84 Z" fill="#CC3300"/>
-              <path d="M70,30 Q92,20 112,25" stroke="#E8552A" stroke-width="3" fill="none" opacity="0.6" stroke-linecap="round"/>
-              <ellipse cx="119" cy="24" rx="6" ry="9" fill="#FF69B4" transform="rotate(52 119 24)"/>
-              <ellipse cx="119" cy="24" rx="3" ry="5.5" fill="#FF8FC5" transform="rotate(52 119 24)"/>`
-    },
-    {
-      name: "Braids (Dark Brown)",
-      back: `<path d="M64,42 Q60,17 100,14 Q140,17 136,42 L134,105 Q118,116 100,118 Q82,116 66,105 Z" fill="#5C3317"/>
-             <ellipse cx="67" cy="112" rx="10" ry="9" fill="#5C3317"/>
-             <ellipse cx="133" cy="112" rx="10" ry="9" fill="#5C3317"/>`,
-      front: `<path d="M66,42 Q62,19 100,16 Q138,19 134,42 L131,80 Q116,70 100,70 Q84,70 69,80 Z" fill="#5C3317"/>
-              <path d="M100,17 L100,36" stroke="#3E2210" stroke-width="1.5"/>
-              <path d="M78,26 Q88,20 98,23" stroke="#7A4526" stroke-width="2.5" fill="none" opacity="0.7" stroke-linecap="round"/>
-              <path d="M102,23 Q112,20 122,26" stroke="#7A4526" stroke-width="2.5" fill="none" opacity="0.7" stroke-linecap="round"/>
-              <ellipse cx="68" cy="120" rx="10" ry="9" fill="#5C3317"/>
-              <ellipse cx="72" cy="135" rx="9.5" ry="9" fill="#6B3D1E"/>
-              <ellipse cx="69" cy="150" rx="9" ry="8.5" fill="#5C3317"/>
-              <ellipse cx="73" cy="164" rx="8.5" ry="8" fill="#6B3D1E"/>
-              <ellipse cx="70" cy="177" rx="8" ry="7.5" fill="#5C3317"/>
-              <ellipse cx="69" cy="188" rx="7" ry="6" fill="#6B3D1E"/>
-              <ellipse cx="69" cy="196" rx="7" ry="4" fill="#FF69B4"/>
-              <path d="M66,200 Q64,210 67,216 M70,200 Q71,209 69,216 M73,199 Q76,208 74,214" stroke="#5C3317" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-              <ellipse cx="132" cy="120" rx="10" ry="9" fill="#5C3317"/>
-              <ellipse cx="128" cy="135" rx="9.5" ry="9" fill="#6B3D1E"/>
-              <ellipse cx="131" cy="150" rx="9" ry="8.5" fill="#5C3317"/>
-              <ellipse cx="127" cy="164" rx="8.5" ry="8" fill="#6B3D1E"/>
-              <ellipse cx="130" cy="177" rx="8" ry="7.5" fill="#5C3317"/>
-              <ellipse cx="131" cy="188" rx="7" ry="6" fill="#6B3D1E"/>
-              <ellipse cx="131" cy="196" rx="7" ry="4" fill="#FF69B4"/>
-              <path d="M128,200 Q126,210 129,216 M132,200 Q133,209 131,216 M135,199 Q138,208 136,214" stroke="#5C3317" stroke-width="2.5" fill="none" stroke-linecap="round"/>`
-    }
+    { name: "Long Straight", style: 'hair', vol: 5,   hairline: 56,
+      len: 244, spread: 7, sides: true, sideLen: 222, sideW: 9, part: 0.16 },
+    { name: "Curly",         style: 'hair', vol: 6,   hairline: 60,
+      len: 138, spread: 12, curls: true, puff: 8, lobes: 12, part: 0 },
+    { name: "Short Bob",     style: 'hair', vol: 5.5, hairline: 54,
+      len: 134, spread: 5, sides: true, sideLen: 142, sideW: 12, part: 0.2 },
+    { name: "Ponytail",      style: 'hair', vol: 5,   hairline: 55,
+      len: 110, spread: 2, ponytail: true, tie: "#FF69B4", sides: true, sideLen: 98, sideW: 5, part: 0.3 },
+    { name: "Braids",        style: 'hair', vol: 5,   hairline: 56,
+      len: 110, spread: 2, braids: true, tie: "#FF69B4", part: 0 },
+    { name: "Pixie Cut",     style: 'hair', vol: 5.5, hairline: 56,
+      sides: true, sideLen: 98, sideW: 7, wisps: true, part: 0.28 },
+    { name: "Top Bun",       style: 'hair', vol: 4.5, hairline: 55,
+      len: 96, spread: 0, bun: true, tie: "#F5C242", sides: true, sideLen: 104, sideW: 4.5, part: 0.12 },
+    { name: "Space Buns",    style: 'hair', vol: 5,   hairline: 56,
+      len: 98, spread: 0, buns2: true, tie: "#FFF0F5", sides: true, sideLen: 94, sideW: 4.5, part: 0 },
+    { name: "Long Waves",    style: 'hair', vol: 5.5, hairline: 57,
+      len: 210, spread: 12, sides: true, sideLen: 196, sideW: 10, part: 0.22, waves: true },
+    { name: "Curly Bob",     style: 'hair', vol: 5.5, hairline: 58,
+      len: 128, spread: 6, curls: true, puff: 4, lobes: 11, part: 0 }
   ],
 
   hat: [
@@ -1206,8 +1387,8 @@ const LOOKS = {
     { name: "None", svg: "" },
     {
       name: "Pink & Blush",
-      svg: `<ellipse cx="73" cy="96" rx="14" ry="8" fill="#FFB0C0" opacity="0.55"/>
-            <ellipse cx="127" cy="96" rx="14" ry="8" fill="#FFB0C0" opacity="0.55"/>
+      svg: `<ellipse cx="77" cy="96" rx="11" ry="8" fill="#FFB0C0" opacity="0.55"/>
+            <ellipse cx="123" cy="96" rx="11" ry="8" fill="#FFB0C0" opacity="0.55"/>
             <ellipse cx="85" cy="73" rx="9" ry="5" fill="#FFB6C1" opacity="0.4"/>
             <ellipse cx="115" cy="73" rx="9" ry="5" fill="#FFB6C1" opacity="0.4"/>
             <path d="M88,106 Q100,119 112,106 Q105,113 100,115 Q95,113 88,106 Z" fill="#FF8FAB"/>
@@ -1215,8 +1396,8 @@ const LOOKS = {
     },
     {
       name: "Red Lips",
-      svg: `<ellipse cx="72" cy="96" rx="12" ry="6" fill="#FFB0C0" opacity="0.28"/>
-            <ellipse cx="128" cy="96" rx="12" ry="6" fill="#FFB0C0" opacity="0.28"/>
+      svg: `<ellipse cx="77" cy="96" rx="10.5" ry="6" fill="#FFB0C0" opacity="0.28"/>
+            <ellipse cx="123" cy="96" rx="10.5" ry="6" fill="#FFB0C0" opacity="0.28"/>
             <path d="M87,106 Q100,120 113,106 Q105,115 100,117 Q95,115 87,106 Z" fill="#CC0000"/>
             <path d="M88,106 Q100,108 112,106" stroke="#990000" stroke-width="1.2" fill="none"/>
             <ellipse cx="97" cy="112" rx="4" ry="2" fill="white" opacity="0.3"/>`
@@ -1227,8 +1408,8 @@ const LOOKS = {
             <ellipse cx="115" cy="73" rx="10" ry="6" fill="#9B59B6" opacity="0.5"/>
             <ellipse cx="82" cy="71" rx="5" ry="2.5" fill="#FFD700" opacity="0.3"/>
             <ellipse cx="112" cy="71" rx="5" ry="2.5" fill="#FFD700" opacity="0.3"/>
-            <ellipse cx="72" cy="95" rx="13" ry="7" fill="#FF69B4" opacity="0.4"/>
-            <ellipse cx="128" cy="95" rx="13" ry="7" fill="#FF69B4" opacity="0.4"/>
+            <ellipse cx="77" cy="95" rx="11" ry="7" fill="#FF69B4" opacity="0.4"/>
+            <ellipse cx="123" cy="95" rx="11" ry="7" fill="#FF69B4" opacity="0.4"/>
             <path d="M87,106 Q100,120 113,106 Q105,115 100,117 Q95,115 87,106 Z" fill="#E63946"/>
             <path d="M88,106 Q100,109 112,106" stroke="#C0392B" stroke-width="1.2" fill="none"/>
             <ellipse cx="97" cy="112" rx="4" ry="2" fill="white" opacity="0.35"/>
@@ -1237,8 +1418,8 @@ const LOOKS = {
     },
     {
       name: "Natural Gloss",
-      svg: `<ellipse cx="73" cy="97" rx="12" ry="6" fill="#FFCDD2" opacity="0.3"/>
-            <ellipse cx="127" cy="97" rx="12" ry="6" fill="#FFCDD2" opacity="0.3"/>
+      svg: `<ellipse cx="77" cy="97" rx="10.5" ry="6" fill="#FFCDD2" opacity="0.3"/>
+            <ellipse cx="123" cy="97" rx="10.5" ry="6" fill="#FFCDD2" opacity="0.3"/>
             <path d="M88,106 Q100,117 112,106 Q105,113 100,115 Q95,113 88,106 Z" fill="#DEB8A0"/>
             <path d="M89,106 Q100,108 111,106" stroke="#C0897A" stroke-width="1" fill="none"/>
             <ellipse cx="97" cy="110" rx="5" ry="2.5" fill="white" opacity="0.4"/>`
@@ -1250,13 +1431,16 @@ const LOOKS = {
 /* ===== §7 ENGINE ========================================================= */
 
 /* every option list, in one place */
-const opts = Object.assign({}, LOOKS, WARDROBE);
+const opts = Object.assign({ head: HEADS }, LOOKS, WARDROBE);
 
 /* which control rows to show, in order */
 const CATEGORIES = [
   { key: 'scene',    icon: '🏞️', label: 'Scene' },
+  { swatch: 'skin',  icon: '🎨', label: 'Skin' },
   { sep: '⭐ required ⭐' },
+  { key: 'head',     icon: '🙂', label: 'Face Shape', required: true },
   { key: 'hair',     icon: '💇', label: 'Hair',      required: true },
+  { swatch: 'hair',  icon: '🖌️', label: 'Hair Color' },
   { key: 'shirt',    icon: '👕', label: 'Top',       required: true },
   { key: 'bottom',   icon: '👖', label: 'Pants/Skirt', required: true },
   { sep: '✨ optional ✨' },
@@ -1286,7 +1470,23 @@ const SKINS = [
   { name: "Deep",   base: "#7C4E2A", shade: "#66401F", line: "#523318" },
 ];
 
-const SAVE_KEY = "dollDressup.v2";
+/* Hair colour is chosen separately from the style, so any style can be any
+   colour. Add a line here and it shows up as a swatch. */
+const HAIR_COLORS = [
+  { name: "Brown",    hex: "#7B3F1E" },
+  { name: "Black",    hex: "#221E1C" },
+  { name: "Blonde",   hex: "#EFC75E" },
+  { name: "Auburn",   hex: "#A2452A" },
+  { name: "Red",      hex: "#C9401F" },
+  { name: "Chestnut", hex: "#8B5A2B" },
+  { name: "Platinum", hex: "#DCCFAE" },
+  { name: "Pink",     hex: "#E0688F" },
+  { name: "Blue",     hex: "#5B8FD9" }
+];
+let hairIdx = 0;
+const hairColor = () => HAIR_COLORS[hairIdx].hex;
+
+const SAVE_KEY = "dollDressup.v3";
 const state = {};
 Object.keys(opts).forEach(k => { state[k] = 0; });
 let skinIdx = 1;
@@ -1309,11 +1509,12 @@ function buildBody(){
   s += `<ellipse cx="100" cy="128" rx="18" ry="8" fill="${shade}" opacity="0.35"/>`;
   s += pair(stroke(curvePath([[84,156],[92,159],[97,157]]), line, 1.2, 0.28));  // collarbone
 
-  /* head + ears (kept exactly where the hair, hats and glasses expect them) */
+  /* head + ears. Ears stay put for every face shape so earrings still land on
+     them; the face outline itself comes from the chosen head shape. */
   s += pair(`<ellipse cx="${GEO.ear.cx}" cy="${GEO.ear.cy}" rx="${GEO.ear.rx}" ry="${GEO.ear.ry}" fill="${skin}"/>
              <ellipse cx="${GEO.ear.cx}" cy="${GEO.ear.cy}" rx="5" ry="7" fill="${shade}" opacity="0.4"/>`);
-  s += `<ellipse cx="${GEO.head.cx}" cy="${GEO.head.cy}" rx="${GEO.head.rx}" ry="${GEO.head.ry}" fill="${skin}"/>
-        <ellipse cx="${GEO.head.cx}" cy="${GEO.head.cy}" rx="${GEO.head.rx}" ry="${GEO.head.ry}" fill="url(#gEdge)"/>`;
+  const face = headRing();
+  s += `<path d="${face}" fill="${skin}"/><path d="${face}" fill="url(#gEdge)"/>`;
 
   /* arms + hands, in front of the torso */
   s += pair(paint(tube(GEO.arm.line, GEO.arm.w), skin, {sheen: true}));
@@ -1344,9 +1545,11 @@ function buildFace(){
   /* nose + mouth + cheeks */
   s += `<path d="M97,88 Q100,95 103,90" fill="none" stroke="${line}" stroke-width="1.6" stroke-linecap="round"/>
         <ellipse cx="100" cy="92" rx="4.5" ry="2.4" fill="var(--skin-shade)" opacity="0.3"/>
-        <path id="base-mouth" d="M88,106 Q100,117 112,106" fill="none" stroke="#C96A80" stroke-width="2.2" stroke-linecap="round"/>
-        <ellipse cx="73" cy="96" rx="13" ry="8" fill="url(#gCheek)"/>
-        <ellipse cx="127" cy="96" rx="13" ry="8" fill="url(#gCheek)"/>`;
+        <path id="base-mouth" d="M88,106 Q100,117 112,106" fill="none" stroke="#C96A80" stroke-width="2.2" stroke-linecap="round"/>`;
+  /* blush follows the cheek, so it stays on a narrow face */
+  const bx = 100 - (headHalfW(96) - 9);
+  s += `<ellipse cx="${F(bx)}" cy="96" rx="12" ry="8" fill="url(#gCheek)"/>
+        <ellipse cx="${F(200-bx)}" cy="96" rx="12" ry="8" fill="url(#gCheek)"/>`;
   document.getElementById('layer-face').innerHTML = s;
 }
 
@@ -1355,7 +1558,9 @@ function svgFor(cat, item){
   if (item.style){
     const maker = (STYLES[cat] || {})[item.style];
     if (!maker) return { [cat]: '' };
-    return { [cat]: maker(item) };
+    const out = maker(item);
+    /* a maker may return one string, or {layerId: svg} to paint several layers */
+    return (typeof out === 'string') ? { [cat]: out } : out;
   }
   if (item.back !== undefined || item.front !== undefined)
     return { 'hair-back': item.back || '', 'hair-front': item.front || '' };
@@ -1366,6 +1571,15 @@ function render(cat){
   const item = opts[cat][state[cat]];
   const label = document.getElementById('opt-' + cat);
   if (label) label.textContent = item.name;
+
+  /* the face shape lives in the body layer, and hair is fitted to it */
+  if (cat === 'head'){
+    buildBody();
+    buildFace();
+    render('hair');
+    render('makeup');   // rebuilt face needs the lipstick state re-applied
+    return;
+  }
 
   (LAYERS[cat] || [cat]).forEach(id => {
     const g = document.getElementById('layer-' + id);
@@ -1391,6 +1605,10 @@ function applySkin(){
   document.querySelectorAll('#skin-swatches .swatch').forEach((b, i) =>
     b.classList.toggle('active', i === skinIdx));
 }
+function applyHairColor(){
+  document.querySelectorAll('#hair-swatches .swatch').forEach((b, i) =>
+    b.classList.toggle('active', i === hairIdx));
+}
 
 /* ---------- controls are generated from CATEGORIES ---------- */
 function buildControls(){
@@ -1399,15 +1617,25 @@ function buildControls(){
       <button class="action-btn surprise" onclick="surpriseMe()">🎲 Surprise!</button>
       <button class="action-btn save" onclick="saveLook()">📸 Save</button>
       <button class="action-btn reset-btn" onclick="resetDoll()">🔄 Reset</button>
-    </div>
-    <div class="swatch-row">
-      <span class="cat-icon">🎨</span><span class="cat-name">Skin</span>
-      <div id="skin-swatches" style="display:flex;gap:7px;flex:1;justify-content:center">
-        ${SKINS.map((s,i) => `<button class="swatch" style="background:${s.base}" title="${s.name}" onclick="setSkin(${i})"></button>`).join('')}
-      </div>
     </div>`;
   CATEGORIES.forEach(c => {
     if (c.sep){ h += `<div class="section-label">${c.sep}</div>`; return; }
+    if (c.swatch === 'skin'){
+      h += `<div class="swatch-row"><span class="cat-icon">${c.icon}</span>
+              <span class="cat-name">${c.label}</span>
+              <div id="skin-swatches" style="display:flex;gap:7px;flex:1;justify-content:center">
+                ${SKINS.map((s,i) => `<button class="swatch" style="background:${s.base}" title="${s.name}" onclick="setSkin(${i})"></button>`).join('')}
+              </div></div>`;
+      return;
+    }
+    if (c.swatch === 'hair'){
+      h += `<div class="swatch-row"><span class="cat-icon">${c.icon}</span>
+              <span class="cat-name">${c.label}</span>
+              <div id="hair-swatches" style="display:flex;flex-wrap:wrap;gap:4px;flex:1;justify-content:center">
+                ${HAIR_COLORS.map((s,i) => `<button class="swatch sm" style="background:${s.hex}" title="${s.name}" onclick="setHairColor(${i})"></button>`).join('')}
+              </div></div>`;
+      return;
+    }
     if (!opts[c.key]) return;
     h += `<div class="category-row${c.required ? ' required' : ''}">
             <span class="cat-icon">${c.icon}</span>
@@ -1424,18 +1652,20 @@ function buildControls(){
 function persist(){
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      state, skin: skinIdx, name: document.getElementById('doll-name').value
+      state, skin: skinIdx, hair: hairIdx, name: document.getElementById('doll-name').value
     }));
   } catch(e){}
 }
 function restore(){
   try {
-    const d = JSON.parse(localStorage.getItem(SAVE_KEY));
+    /* fall back to the previous save format so an existing doll isn't lost */
+    const d = JSON.parse(localStorage.getItem(SAVE_KEY) || localStorage.getItem("dollDressup.v2"));
     if (!d) return;
     Object.keys(opts).forEach(k => {
       if (typeof d.state?.[k] === 'number' && d.state[k] < opts[k].length) state[k] = d.state[k];
     });
     if (typeof d.skin === 'number' && d.skin < SKINS.length) skinIdx = d.skin;
+    if (typeof d.hair === 'number' && d.hair < HAIR_COLORS.length) hairIdx = d.hair;
     if (d.name) document.getElementById('doll-name').value = d.name;
   } catch(e){}
 }
@@ -1452,17 +1682,22 @@ function change(cat, dir){
   render(cat); pop('pop'); persist();
 }
 function setSkin(i){ skinIdx = i; applySkin(); pop('pop'); persist(); }
+function setHairColor(i){ hairIdx = i; applyHairColor(); render('hair'); pop('pop'); persist(); }
 function surpriseMe(){
   Object.keys(opts).forEach(cat => {
     if (cat === 'scene') return;
     state[cat] = Math.floor(Math.random() * opts[cat].length);
     render(cat);
   });
+  hairIdx = Math.floor(Math.random() * HAIR_COLORS.length);
+  applyHairColor(); render('hair');
   pop('wiggle'); persist();
 }
 function resetDoll(){
   Object.keys(opts).forEach(cat => { state[cat] = 0; render(cat); });
-  skinIdx = 1; applySkin(); pop('wiggle'); persist();
+  skinIdx = 1; hairIdx = 0;
+  applySkin(); applyHairColor(); render('hair');
+  pop('wiggle'); persist();
 }
 function saveLook(){
   const svg = document.getElementById('doll');
@@ -1498,6 +1733,7 @@ buildFace();
 restore();
 renderAll();
 applySkin();
+applyHairColor();
 document.getElementById('doll-name').addEventListener('change', persist);
 </script>
 </body>
