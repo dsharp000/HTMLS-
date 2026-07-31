@@ -507,6 +507,17 @@
     }
     .gear-push.wish:hover { color: var(--wish); border-color: var(--wish); }
     .gear-push.cut:hover  { color: var(--cut);  border-color: var(--cut); }
+    /* Lit up = this item already has a copy in that list; clicking again removes it */
+    .gear-push.wish.active {
+      color: var(--wish);
+      border-color: var(--wish);
+      background: rgba(122,167,232,0.14);
+    }
+    .gear-push.cut.active {
+      color: var(--cut);
+      border-color: var(--cut);
+      background: rgba(224,138,90,0.14);
+    }
 
     /* ── Add gear row ─────────────────────────────────────────── */
     .add-gear-row {
@@ -653,7 +664,30 @@
       border-radius: 50%;
       flex-shrink: 0;
     }
-    .list-row .gear-name-input { font-size: 0.82rem; }
+    .list-name {
+      flex: 1;
+      font-size: 0.82rem;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .list-owner {
+      font-size: 0.66rem;
+      color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .list-lbs {
+      font-size: 0.8rem;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      min-width: 2.6em;
+      flex-shrink: 0;
+    }
+    /* Owner deleted the underlying gear — the copy is stale, so dim it */
+    .list-row.orphan .list-name,
+    .list-row.orphan .list-lbs { opacity: 0.45; text-decoration: line-through; }
     .list-act {
       background: none;
       border: none;
@@ -772,7 +806,7 @@
   <div class="list-card" id="listcard-wish">
     <div class="list-header">
       <div class="list-title">Wish List
-        <span class="list-sub">Want it aboard if the weight frees up</span>
+        <span class="list-sub">Nice to have — flagged, still packed</span>
       </div>
       <div class="list-total-badge" id="ltotal-wish">0.0 lbs</div>
     </div>
@@ -783,7 +817,7 @@
   <div class="list-card" id="listcard-cut">
     <div class="list-header">
       <div class="list-title">Cut List
-        <span class="list-sub">Staying home — weight already saved</span>
+        <span class="list-sub">First to drop — this is the weight you'd save</span>
       </div>
       <div class="list-total-badge" id="ltotal-cut">0.0 lbs</div>
     </div>
@@ -924,8 +958,7 @@ let fbInited = false;
 // Wish / Cut lists: gear pulled off a person and parked. Keyed `${slotId}__${gearId}`
 // so the same item can't land in a list twice, and it remembers where to go back to.
 let lists = { wish: {}, cut: {} };
-const LIST_KINDS  = ['wish','cut'];
-const LIST_LABELS = { wish:'Wish List', cut:'Cut List' };
+const LIST_KINDS = ['wish','cut'];
 
 // ── Math ────────────────────────────────────────────────────────
 
@@ -945,16 +978,31 @@ function grandTotal() {
   return SLOTS.reduce((s, id) => s + personTotal(members[id]), 0);
 }
 
-// Wish/Cut weights are tallied on their own and never roll into grandTotal() —
-// these items are off the plane by definition.
+// Wish/Cut entries are pointers, not moves: the item stays in its owner's stash
+// (and in grandTotal()), and the list just mirrors it. Name/weight are read live
+// from the source so the two views can never drift; the stored snapshot is only
+// a fallback for when the owner deletes the underlying item.
 function listItems(kind) {
   return Object.entries(lists[kind] || {})
-    .map(([key, it]) => ({ ...it, key }))
+    .map(([key, it]) => {
+      const src = members[it.from]?.gear?.[it.id];
+      return {
+        ...it,
+        key,
+        name:   src ? src.name   : it.name,
+        weight: Number((src ? src.weight : it.weight)) || 0,
+        orphan: !src,
+      };
+    })
     .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
 }
 
 function listTotal(kind) {
   return listItems(kind).reduce((s, it) => s + (Number(it.weight) || 0), 0);
+}
+
+function inList(kind, slotId, gearId) {
+  return !!lists[kind]?.[`${slotId}__${gearId}`];
 }
 
 function fmt(n) { return (Math.round(n * 10) / 10).toFixed(1); }
@@ -1142,10 +1190,12 @@ function renderGearList(slotId, gear) {
                onblur="window._saveGearWeight('${slotId}','${item.id}',this.value)"
                onkeydown="if(event.key==='Enter')this.blur()">
         <span class="gear-lbs">lbs</span>
-        <button class="gear-push wish" onclick="window._pushToList('${slotId}','${item.id}','wish')"
-                title="Move to the Wish List — off the plane, weight tracked separately">Wish</button>
-        <button class="gear-push cut" onclick="window._pushToList('${slotId}','${item.id}','cut')"
-                title="Move to the Cut List — off the plane, weight tracked separately">Cut</button>
+        <button class="gear-push wish ${inList('wish', slotId, item.id) ? 'active' : ''}"
+                onclick="window._toggleList('${slotId}','${item.id}','wish')"
+                title="Copy to the Wish List — the item stays right here">Wish</button>
+        <button class="gear-push cut ${inList('cut', slotId, item.id) ? 'active' : ''}"
+                onclick="window._toggleList('${slotId}','${item.id}','cut')"
+                title="Copy to the Cut List — the item stays right here">Cut</button>
         <button class="gear-del" onclick="window._deleteGear('${slotId}','${item.id}')"
                 title="Remove">✕</button>
       </div>`;
@@ -1256,6 +1306,7 @@ function refreshCardStats(slotId) {
       : '';
   }
   renderMeter();
+  renderLists();  // the lists mirror this gear, so weight edits show up there too
 }
 
 window._saveName = (slotId, val) => {
@@ -1285,6 +1336,7 @@ window._saveGearName = (slotId, gearId, val) => {
   if (!val.trim()) return;
   if (members[slotId]?.gear?.[gearId]) members[slotId].gear[gearId].name = val.trim();
   set(ref(db, `alaska-trip/members/${slotId}/gear/${gearId}/name`), val.trim());
+  renderLists();  // the lists mirror this name
 };
 
 window._saveGearWeight = (slotId, gearId, val) => {
@@ -1349,10 +1401,6 @@ function nextOrder(kind) {
 }
 
 function renderLists() {
-  const focusedId    = document.activeElement ? document.activeElement.id : null;
-  const focusedStart = document.activeElement && document.activeElement.selectionStart !== undefined
-                       ? document.activeElement.selectionStart : null;
-
   LIST_KINDS.forEach(kind => {
     const body  = document.getElementById(`list-${kind}`);
     const foot  = document.getElementById(`lfoot-${kind}`);
@@ -1361,26 +1409,27 @@ function renderLists() {
 
     const items = listItems(kind);
     const total = listTotal(kind);
-    const other = kind === 'wish' ? 'cut' : 'wish';
 
     if (badge) badge.textContent = `${fmt(total)} lbs`;
     if (foot) {
       foot.textContent = items.length
-        ? `${items.length} item${items.length === 1 ? '' : 's'} · ${fmt(total)} lbs — tallied separately, not part of the 850 lb load.`
-        : 'Tallied separately — never part of the 850 lb load.';
+        ? `${items.length} item${items.length === 1 ? '' : 's'} · ${fmt(total)} lbs — tallied on its own. These stay in each person's stash and still count toward the 850.`
+        : "Tallied on its own — copies only, nothing leaves anyone's stash.";
     }
 
     if (!items.length) {
       body.innerHTML = `<div class="list-empty">Nothing here yet.<br>
-        Hit <strong>${kind === 'wish' ? 'Wish' : 'Cut'}</strong> on any gear row to move an item in.</div>`;
+        Hit <strong>${kind === 'wish' ? 'Wish' : 'Cut'}</strong> on any gear row to copy an item down here.</div>`;
       return;
     }
 
+    // Read-only mirrors — edit the name or weight on the owner's card and it
+    // updates here too.
     body.innerHTML = items.map((it, i) => {
       const owner = ownerName(it.from);
       const color = SLOT_COLORS[it.from]?.main || 'var(--muted)';
       return `
-      <div class="list-row" id="lrow-${kind}-${it.key}">
+      <div class="list-row ${it.orphan ? 'orphan' : ''}" id="lrow-${kind}-${it.key}">
         <span class="list-rank">${i + 1}</span>
         <span class="list-move">
           <button class="list-act" title="Higher priority"
@@ -1388,92 +1437,42 @@ function renderLists() {
           <button class="list-act" title="Lower priority"
                   onclick="window._listMove('${kind}','${it.key}',1)" ${i === items.length - 1 ? 'disabled' : ''}>▼</button>
         </span>
-        <span class="list-owner-dot" style="background:${color}" title="From ${esc(owner)}"></span>
-        <input type="text" class="gear-name-input" value="${esc(it.name)}"
-               id="lname-${kind}-${it.key}" title="From ${esc(owner)} — click to edit"
-               onblur="window._saveListName('${kind}','${it.key}',this.value)"
-               onkeydown="if(event.key==='Enter')this.blur()">
-        <input type="number" class="gear-weight-input" value="${(Number(it.weight) || 0).toFixed(2)}"
-               id="lweight-${kind}-${it.key}" min="0" step="0.01"
-               onblur="window._saveListWeight('${kind}','${it.key}',this.value)"
-               onkeydown="if(event.key==='Enter')this.blur()">
+        <span class="list-owner-dot" style="background:${color}" title="${esc(owner)}"></span>
+        <span class="list-name" title="${esc(owner)}${it.orphan ? ' — no longer in their stash' : ''}">${esc(it.name)}</span>
+        <span class="list-owner">${esc(owner)}${it.orphan ? ' · removed' : ''}</span>
+        <span class="list-lbs">${fmt(it.weight)}</span>
         <span class="gear-lbs">lbs</span>
-        <button class="list-act" title="Put it back on ${esc(owner)}"
-                onclick="window._listRestore('${kind}','${it.key}')">↩</button>
-        <button class="list-act" title="Move to the ${LIST_LABELS[other]}"
-                onclick="window._listSwap('${kind}','${it.key}')">⇄</button>
-        <button class="list-act del" title="Delete for good"
+        <button class="list-act del" title="Remove from this list (keeps the item)"
                 onclick="window._listDelete('${kind}','${it.key}')">✕</button>
       </div>`;
     }).join('');
   });
-
-  if (focusedId) {
-    const el = document.getElementById(focusedId);
-    if (el) {
-      el.focus();
-      if (focusedStart !== null && el.setSelectionRange) {
-        try { el.setSelectionRange(focusedStart, focusedStart); } catch {}
-      }
-    }
-  }
 }
 
-// Move a gear item off a person and into a list. The weight leaves the 850 lb
-// total and starts counting against that list's own tally instead.
-window._pushToList = (slotId, gearId, kind) => {
-  const item = members[slotId]?.gear?.[gearId];
-  if (!item) return;
+// Copy a gear item down into a list, or take the copy back out if it's already
+// there. The item never leaves its owner — the 850 lb total is untouched.
+window._toggleList = (slotId, gearId, kind) => {
+  const key = `${slotId}__${gearId}`;
 
-  const key   = `${slotId}__${gearId}`;
-  const entry = {
-    id:     gearId,
-    name:   item.name,
-    weight: Number(item.weight) || 0,
-    from:   slotId,
-    order:  nextOrder(kind),
-  };
+  if (lists[kind]?.[key]) {
+    delete lists[kind][key];
+    remove(ref(db, `alaska-trip/lists/${kind}/${key}`));
+  } else {
+    const item = members[slotId]?.gear?.[gearId];
+    if (!item) return;
+    // name/weight are a fallback snapshot; listItems() prefers the live source.
+    const entry = {
+      id:     gearId,
+      name:   item.name,
+      weight: Number(item.weight) || 0,
+      from:   slotId,
+      order:  nextOrder(kind),
+    };
+    lists[kind][key] = entry;
+    set(ref(db, `alaska-trip/lists/${kind}/${key}`), entry);
+  }
 
-  lists[kind][key] = entry;
-  delete members[slotId].gear[gearId];
-  set(ref(db, `alaska-trip/lists/${kind}/${key}`), entry);
-  remove(ref(db, `alaska-trip/members/${slotId}/gear/${gearId}`));
-
-  renderGearList(slotId, members[slotId].gear || {});
-  refreshCardStats(slotId);
-  renderLists();
-};
-
-// Send it back to whoever it came from — checked, so the weight is visible again.
-window._listRestore = (kind, key) => {
-  const entry = lists[kind]?.[key];
-  if (!entry) return;
-  const slotId = entry.from;
-  if (!members[slotId]) return;
-
-  const item = { id: entry.id, name: entry.name, weight: Number(entry.weight) || 0, included: true };
-  if (!members[slotId].gear) members[slotId].gear = {};
-  members[slotId].gear[entry.id] = item;
-  delete lists[kind][key];
-  set(ref(db, `alaska-trip/members/${slotId}/gear/${entry.id}`), item);
-  remove(ref(db, `alaska-trip/lists/${kind}/${key}`));
-
-  renderGearList(slotId, members[slotId].gear);
-  refreshCardStats(slotId);
-  renderLists();
-};
-
-window._listSwap = (kind, key) => {
-  const entry = lists[kind]?.[key];
-  if (!entry) return;
-  const other = kind === 'wish' ? 'cut' : 'wish';
-  const moved = { ...entry, order: nextOrder(other) };
-  delete moved.key;
-
-  lists[other][key] = moved;
-  delete lists[kind][key];
-  set(ref(db, `alaska-trip/lists/${other}/${key}`), moved);
-  remove(ref(db, `alaska-trip/lists/${kind}/${key}`));
+  renderGearList(slotId, members[slotId]?.gear || {});  // repaint the pill state
   renderLists();
 };
 
@@ -1495,22 +1494,12 @@ window._listMove = (kind, key, dir) => {
   renderLists();
 };
 
+// Drops the copy only — the owner keeps the gear.
 window._listDelete = (kind, key) => {
+  const entry = lists[kind]?.[key];
   delete lists[kind]?.[key];
   remove(ref(db, `alaska-trip/lists/${kind}/${key}`));
-  renderLists();
-};
-
-window._saveListName = (kind, key, val) => {
-  if (!val.trim()) return;
-  if (lists[kind]?.[key]) lists[kind][key].name = val.trim();
-  set(ref(db, `alaska-trip/lists/${kind}/${key}/name`), val.trim());
-};
-
-window._saveListWeight = (kind, key, val) => {
-  const w = Math.max(0, parseFloat(val) || 0);
-  if (lists[kind]?.[key]) lists[kind][key].weight = w;
-  set(ref(db, `alaska-trip/lists/${kind}/${key}/weight`), w);
+  if (entry && members[entry.from]) renderGearList(entry.from, members[entry.from].gear || {});
   renderLists();
 };
 
@@ -1583,6 +1572,9 @@ onValue(membersRef, async snap => {
 onValue(ref(db, 'alaska-trip/lists'), snap => {
   const data = snap.val() || {};
   lists = { wish: data.wish || {}, cut: data.cut || {} };
+  // Repaint the gear rows too — this snapshot can land after the members one,
+  // and the Wish/Cut pills light up based on what's in here.
+  SLOTS.forEach(id => { if (members[id]) renderGearList(id, members[id].gear || {}); });
   renderLists();
 });
 </script>
