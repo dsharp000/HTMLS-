@@ -713,18 +713,24 @@
       text-align: right;
       flex-shrink: 0;
     }
-    .list-move {
+    .list-move, .gear-move {
       display: flex;
       flex-direction: column;
       gap: 1px;
       flex-shrink: 0;
     }
-    .list-move .list-act {
+    .list-move .list-act, .gear-move .list-act {
       font-size: 0.55rem;
       padding: 0;
       height: 10px;
       line-height: 10px;
     }
+    /* Gear-row arrows stay quiet until you're on the row */
+    .gear-move .list-act { color: var(--border); }
+    .gear-row:hover .gear-move .list-act { color: var(--muted); }
+    .gear-move .list-act:hover { color: var(--accent); }
+    .gear-move .list-act:disabled,
+    .gear-row:hover .gear-move .list-act:disabled { color: var(--border); opacity: 0.35; }
 
     .list-foot {
       padding: 0.6rem 1rem 0.8rem;
@@ -1007,6 +1013,35 @@ function inList(kind, slotId, gearId) {
 
 function fmt(n) { return (Math.round(n * 10) / 10).toFixed(1); }
 
+// Gear order. Items predate the ▲▼ buttons and have no `order` field, so until a
+// slot has been reordered we fall back to the original rule: DEFAULT_GEAR order
+// first, then added items by id. The first reorder writes a dense order onto
+// every item in that slot, and from then on that's what sorts the list.
+function gearOrdered(slotId, gear) {
+  const items = Object.values(gear || {});
+  if (items.length && items.every(g => Number.isFinite(Number(g.order)))) {
+    return items.slice().sort((a, b) => Number(a.order) - Number(b.order));
+  }
+
+  const defaults = slotDefaults(slotId);
+  const rankOf = item => {
+    const i = defaults.findIndex(d => d.id === item.id);
+    return i === -1 ? Infinity : i;
+  };
+  return items.slice().sort((a, b) => {
+    const ai = rankOf(a), bi = rankOf(b);
+    if (ai !== bi) return ai - bi;   // two added items both rank Infinity — fall through to id
+    return a.id > b.id ? 1 : -1;
+  });
+}
+
+// New gear goes to the bottom of whatever order the slot is currently in.
+function nextGearOrder(slotId) {
+  const vals = Object.values(members[slotId]?.gear || {})
+    .map(g => Number(g.order)).filter(Number.isFinite);
+  return vals.length ? Math.max(...vals) + 1 : 0;
+}
+
 // ── Render helpers ──────────────────────────────────────────────
 
 function setIfNotFocused(id, value) {
@@ -1160,20 +1195,10 @@ function renderGearList(slotId, gear) {
   const focusedStart = document.activeElement && document.activeElement.selectionStart !== undefined
                        ? document.activeElement.selectionStart : null;
 
-  const defaults = slotDefaults(slotId);
-  // Defaults keep their list order; anything else (added/imported items) sorts after them by id.
-  const orderOf = item => {
-    const i = defaults.findIndex(d => d.id === item.id);
-    return i === -1 ? Infinity : i;
-  };
-  const sorted = Object.values(gear).sort((a, b) => {
-    const di = orderOf(a) - orderOf(b);
-    if (di !== 0) return di;
-    return (a.id > b.id ? 1 : -1);
-  });
+  const sorted = gearOrdered(slotId, gear);
 
   let html = '';
-  for (const item of sorted) {
+  sorted.forEach((item, i) => {
     const checked = item.included ? 'checked' : '';
     const rowCls  = item.included ? '' : 'excluded';
     html += `
@@ -1181,6 +1206,12 @@ function renderGearList(slotId, gear) {
         <input type="checkbox" class="gear-check" ${checked}
                id="gcheck-${slotId}-${item.id}"
                onchange="window._toggleGear('${slotId}','${item.id}',this.checked)">
+        <span class="gear-move">
+          <button class="list-act" title="Move up"
+                  onclick="window._moveGear('${slotId}','${item.id}',-1)" ${i === 0 ? 'disabled' : ''}>▲</button>
+          <button class="list-act" title="Move down"
+                  onclick="window._moveGear('${slotId}','${item.id}',1)" ${i === sorted.length - 1 ? 'disabled' : ''}>▼</button>
+        </span>
         <input type="text" class="gear-name-input" value="${esc(item.name)}"
                id="gname-${slotId}-${item.id}" title="Click to edit name"
                onblur="window._saveGearName('${slotId}','${item.id}',this.value)"
@@ -1199,7 +1230,7 @@ function renderGearList(slotId, gear) {
         <button class="gear-del" onclick="window._deleteGear('${slotId}','${item.id}')"
                 title="Remove">✕</button>
       </div>`;
-  }
+  });
   container.innerHTML = html;
 
   // Restore focus
@@ -1346,6 +1377,28 @@ window._saveGearWeight = (slotId, gearId, val) => {
   refreshCardStats(slotId);
 };
 
+// Swap two neighbours, then renumber every item in the slot 0..n-1. The full
+// renumber is what migrates a legacy list (no `order` anywhere) onto explicit
+// ordering in one write.
+window._moveGear = (slotId, gearId, dir) => {
+  const gear = members[slotId]?.gear;
+  if (!gear) return;
+
+  const items = gearOrdered(slotId, gear);
+  const i = items.findIndex(g => g.id === gearId);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= items.length) return;
+
+  [items[i], items[j]] = [items[j], items[i]];
+  const updates = {};
+  items.forEach((g, idx) => {
+    if (gear[g.id]) gear[g.id].order = idx;
+    updates[`${g.id}/order`] = idx;
+  });
+  update(ref(db, `alaska-trip/members/${slotId}/gear`), updates);
+  renderGearList(slotId, gear);
+};
+
 window._setAllGear = (slotId, included) => {
   const gear = members[slotId]?.gear;
   if (!gear) return;
@@ -1374,7 +1427,7 @@ window._addGear = (slotId) => {
   if (!name) { nameEl.focus(); return; }
 
   const id   = `g_${Date.now()}`;
-  const item = { id, name, weight, included: true };
+  const item = { id, name, weight, included: true, order: nextGearOrder(slotId) };
   if (!members[slotId].gear) members[slotId].gear = {};
   members[slotId].gear[id] = item;
   set(ref(db, `alaska-trip/members/${slotId}/gear/${id}`), item);
