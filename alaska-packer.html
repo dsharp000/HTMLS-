@@ -725,12 +725,24 @@
       height: 10px;
       line-height: 10px;
     }
-    /* Gear-row arrows stay quiet until you're on the row */
-    .gear-move .list-act { color: var(--border); }
-    .gear-row:hover .gear-move .list-act { color: var(--muted); }
-    .gear-move .list-act:hover { color: var(--accent); }
+    /* Jump to the front of the list — the ▲▼ pair only steps one row at a time */
+    .move-top {
+      font-size: 0.72rem;
+      padding: 0 0.1rem;
+      align-self: center;
+    }
+
+    /* Gear-row reorder controls stay quiet until you're on the row */
+    .gear-move .list-act,
+    .gear-row .move-top { color: var(--border); }
+    .gear-row:hover .gear-move .list-act,
+    .gear-row:hover .move-top { color: var(--muted); }
+    .gear-move .list-act:hover,
+    .gear-row .move-top:hover { color: var(--accent); }
     .gear-move .list-act:disabled,
-    .gear-row:hover .gear-move .list-act:disabled { color: var(--border); opacity: 0.35; }
+    .gear-row .move-top:disabled,
+    .gear-row:hover .gear-move .list-act:disabled,
+    .gear-row:hover .move-top:disabled { color: var(--border); opacity: 0.35; }
 
     .list-foot {
       padding: 0.6rem 1rem 0.8rem;
@@ -1206,6 +1218,8 @@ function renderGearList(slotId, gear) {
         <input type="checkbox" class="gear-check" ${checked}
                id="gcheck-${slotId}-${item.id}"
                onchange="window._toggleGear('${slotId}','${item.id}',this.checked)">
+        <button class="list-act move-top" title="Move to top of the list"
+                onclick="window._moveGear('${slotId}','${item.id}','top')" ${i === 0 ? 'disabled' : ''}>⤒</button>
         <span class="gear-move">
           <button class="list-act" title="Move up"
                   onclick="window._moveGear('${slotId}','${item.id}',-1)" ${i === 0 ? 'disabled' : ''}>▲</button>
@@ -1377,7 +1391,22 @@ window._saveGearWeight = (slotId, gearId, val) => {
   refreshCardStats(slotId);
 };
 
-// Swap two neighbours, then renumber every item in the slot 0..n-1. The full
+// Reposition `items[i]`: dir is -1/+1 for a single step or 'top' to jump to the
+// front. Returns false if the move is a no-op. Mutates `items` in place.
+function reposition(items, i, dir) {
+  if (i < 0) return false;
+  if (dir === 'top') {
+    if (i === 0) return false;
+    items.unshift(items.splice(i, 1)[0]);
+    return true;
+  }
+  const j = i + dir;
+  if (j < 0 || j >= items.length) return false;
+  [items[i], items[j]] = [items[j], items[i]];
+  return true;
+}
+
+// Move a gear item, then renumber every item in the slot 0..n-1. The full
 // renumber is what migrates a legacy list (no `order` anywhere) onto explicit
 // ordering in one write.
 window._moveGear = (slotId, gearId, dir) => {
@@ -1385,11 +1414,8 @@ window._moveGear = (slotId, gearId, dir) => {
   if (!gear) return;
 
   const items = gearOrdered(slotId, gear);
-  const i = items.findIndex(g => g.id === gearId);
-  const j = i + dir;
-  if (i < 0 || j < 0 || j >= items.length) return;
+  if (!reposition(items, items.findIndex(g => g.id === gearId), dir)) return;
 
-  [items[i], items[j]] = [items[j], items[i]];
   const updates = {};
   items.forEach((g, idx) => {
     if (gear[g.id]) gear[g.id].order = idx;
@@ -1484,6 +1510,8 @@ function renderLists() {
       return `
       <div class="list-row ${it.orphan ? 'orphan' : ''}" id="lrow-${kind}-${it.key}">
         <span class="list-rank">${i + 1}</span>
+        <button class="list-act move-top" title="Make this the top priority"
+                onclick="window._listMove('${kind}','${it.key}','top')" ${i === 0 ? 'disabled' : ''}>⤒</button>
         <span class="list-move">
           <button class="list-act" title="Higher priority"
                   onclick="window._listMove('${kind}','${it.key}',-1)" ${i === 0 ? 'disabled' : ''}>▲</button>
@@ -1529,15 +1557,12 @@ window._toggleList = (slotId, gearId, kind) => {
   renderLists();
 };
 
-// Swap two neighbours, then renumber the whole list 0..n-1 so order values stay
-// dense even if an item arrived without one.
+// Reorder a box, then renumber it 0..n-1 so order values stay dense even if an
+// item arrived without one.
 window._listMove = (kind, key, dir) => {
   const items = listItems(kind);
-  const i = items.findIndex(it => it.key === key);
-  const j = i + dir;
-  if (i < 0 || j < 0 || j >= items.length) return;
+  if (!reposition(items, items.findIndex(it => it.key === key), dir)) return;
 
-  [items[i], items[j]] = [items[j], items[i]];
   const updates = {};
   items.forEach((it, idx) => {
     if (lists[kind][it.key]) lists[kind][it.key].order = idx;
