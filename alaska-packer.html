@@ -1554,6 +1554,8 @@ function tickCountdown() {
 tickCountdown();
 setInterval(tickCountdown, 1000);
 
+renderLists();  // paint the empty state before Firebase answers
+
 // ── Firebase listener ────────────────────────────────────────────
 
 onValue(membersRef, async snap => {
