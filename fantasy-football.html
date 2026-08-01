@@ -148,8 +148,14 @@
     .best-count-denom { font-size: 11px; font-family: sans-serif; color: #bbb; }
     .best-tally { font-size: 10px; font-family: sans-serif; color: #999; margin-top: 3px; white-space: nowrap; }
 
-    .save-dot { position: fixed; bottom: 18px; right: 18px; font-size: 11px; font-family: sans-serif; color: #bbb; background: white; padding: 4px 10px; border-radius: 20px; box-shadow: 0 1px 8px rgba(0,0,0,0.1); opacity: 0; transition: opacity 0.3s; }
-    .save-dot.visible { opacity: 1; }
+    .sync-pill {
+      position: fixed; bottom: 14px; right: 14px; z-index: 20;
+      font-size: 11px; font-family: sans-serif; color: #888;
+      background: white; padding: 6px 12px; border-radius: 20px;
+      box-shadow: 0 1px 10px rgba(0,0,0,0.13); border: 1px solid #eee;
+      cursor: default; max-width: 70vw;
+    }
+    .sync-pill.offline { color: #B91C1C; border-color: #FECACA; background: #FEF2F2; cursor: pointer; }
 
     @media (max-width: 480px) {
       .app-header { padding: 16px 16px 14px; }
@@ -237,8 +243,9 @@ let activeId    = null;
 let tab         = "calendar";
 let nameInput   = "";
 let saveTimer   = null;
-let remoteReady = false;   // true once Firebase has delivered a snapshot
-let remoteOK    = true;    // false once Firebase errors out → localStorage mode
+let remoteReady = false;   // true once Firebase has delivered a snapshot (or we gave up)
+let remoteOK    = true;    // false while Firebase is unreachable → localStorage mode
+let syncMsg     = "";      // transient message shown in the sync pill
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -289,16 +296,30 @@ function loadLocal() {
   } catch (e) {}
 }
 
+function hasContent() {
+  return ['a','b'].some(lg => (states[lg].people || []).length > 0);
+}
+
 function persist() {
-  if (!remoteReady && remoteOK) return;   // don't clobber before first load
+  if (!remoteReady) return;   // don't clobber shared data before the first load
   saveLocal();
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    if (!remoteOK || !window._fbSet) { flashSave("Saved on this device ✓"); return; }
-    window._fbSet(snapshot())
-      .then(() => flashSave("Saved ✓"))
-      .catch(err => { goLocal(err); flashSave("Saved on this device ✓"); });
-  }, 600);
+  saveTimer = setTimeout(pushRemote, 600);
+}
+
+// Always re-attempt the remote write. A single failure must not latch the app
+// into local-only mode for the rest of the session — the rules may have just
+// been fixed, or the network may have come back.
+function pushRemote() {
+  if (!window._fbSet) { setSync("Saved on this device ✓"); return; }
+  window._fbSet(snapshot())
+    .then(() => {
+      const recovered = !remoteOK;
+      remoteOK = true;
+      setSync(recovered ? "Reconnected — synced ✓" : "Saved ✓");
+      if (recovered) render();
+    })
+    .catch(err => { goLocal(err); setSync("Saved on this device ✓"); render(); });
 }
 
 function goLocal(err) {
@@ -307,12 +328,33 @@ function goLocal(err) {
   remoteReady = true;
 }
 
-function flashSave(msg) {
-  const el = document.getElementById('save-dot');
-  if (!el) return;
-  el.textContent = msg;
-  el.classList.add('visible');
-  setTimeout(() => el.classList.remove('visible'), 1800);
+// Transient status text; the pill itself is always visible.
+let syncTimer = null;
+function setSync(msg) {
+  syncMsg = msg;
+  const el = document.getElementById('sync-pill');
+  if (el) el.innerHTML = syncPillInner();
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    syncMsg = "";
+    const e2 = document.getElementById('sync-pill');
+    if (e2) e2.innerHTML = syncPillInner();
+  }, 2200);
+}
+
+function syncPillInner() {
+  if (syncMsg) return esc(syncMsg);
+  if (!remoteReady) return '⏳ Connecting…';
+  return remoteOK ? '🟢 Live — shared with your league'
+                  : '🔴 This device only — tap to retry';
+}
+
+function retrySync() {
+  if (remoteOK) return;
+  setSync("Reconnecting…");
+  remoteOK = true;
+  if (window._fbOn) window._fbOn(onFbData);
+  pushRemote();
 }
 
 // ── League switch ─────────────────────────────────────────────────────────────
@@ -653,7 +695,8 @@ function render() {
       ${tab === 'best' ? bestDaysHTML() : ''}
     </div>
 
-    <div class="save-dot" id="save-dot">Saved ✓</div>
+    <div class="sync-pill${(remoteReady && !remoteOK) ? ' offline' : ''}"
+         id="sync-pill" onclick="retrySync()">${syncPillInner()}</div>
   `;
 }
 
@@ -674,8 +717,20 @@ function applyData(data) {
 window._fbFail = err => { goLocal(err); loadLocal(); render(); };
 
 function onFbData(data) {
-  applyData(data);
+  const remoteEmpty = !data || (!data.a && !data.b);
+  const seed = remoteEmpty && hasContent();   // local work predates the sync being live
+
+  if (!seed) applyData(data);
+
+  const firstLoad = !remoteReady;
   remoteReady = true;
+  remoteOK    = true;
+
+  // Anything entered while sync was down would otherwise stay invisible to
+  // everyone else until the next edit — push it up now.
+  if (seed) { saveLocal(); pushRemote(); }
+  else if (firstLoad) setSync(remoteEmpty ? "Connected ✓" : "Loaded from your league ✓");
+
   render();
 }
 
