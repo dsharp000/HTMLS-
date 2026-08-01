@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fantasy Football Draft Picker 2026</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Georgia, 'Times New Roman', serif; background: #F4FAF5; min-height: 100vh; transition: background 0.3s; }
+    body.league-b { background: #F5F7FF; }
+    #root { min-height: 100vh; }
+
+    .loading {
+      display: flex; align-items: center; justify-content: center;
+      height: 100vh; font-family: Georgia, serif; color: #15803D; font-size: 18px;
+    }
+
+    /* ── Header ── */
+    .app-header {
+      background: linear-gradient(135deg, #14532D 0%, #22C55E 100%);
+      padding: 20px 24px 18px;
+      box-shadow: 0 4px 24px rgba(20,83,45,0.35);
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    body.league-b .app-header {
+      background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+      box-shadow: 0 4px 24px rgba(30,58,138,0.35);
+    }
+    .header-inner { max-width: 820px; margin: 0 auto; }
+    .header-top { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+    .header-ball { font-size: 38px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
+    .header-title { margin: 0; font-size: 26px; font-weight: bold; color: white; letter-spacing: -0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.12); display: inline; }
+    .header-edit { background: none; border: none; cursor: pointer; font-size: 14px; opacity: 0.6; padding: 0 0 0 8px; }
+    .header-sub { margin: 3px 0 0; font-size: 13px; color: rgba(255,255,255,0.85); font-family: sans-serif; }
+
+    /* ── League toggle pill ── */
+    .cal-toggle {
+      display: inline-flex; background: rgba(0,0,0,0.22); border-radius: 30px;
+      padding: 3px; gap: 2px; margin-bottom: 14px; max-width: 100%;
+    }
+    .cal-btn {
+      padding: 7px 20px; border-radius: 24px; border: none;
+      font-family: sans-serif; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+      color: rgba(255,255,255,0.7); background: transparent;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw;
+    }
+    .cal-btn.cal-active { background: white; color: #15803D; }
+    body.league-b .cal-btn.cal-active { color: #1E40AF; }
+
+    /* ── Tab bar ── */
+    .tab-bar { display: flex; gap: 8px; }
+    .tab-btn {
+      padding: 7px 18px; border-radius: 20px;
+      border: 2px solid rgba(255,255,255,0.55);
+      font-weight: bold; font-size: 13px; font-family: sans-serif;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .tab-btn.active { background: white; color: #15803D; }
+    .tab-btn:not(.active) { background: transparent; color: white; }
+    body.league-b .tab-btn.active { color: #1E40AF; }
+
+    /* ── Main ── */
+    .main { max-width: 820px; margin: 0 auto; padding: 24px 16px 60px; }
+
+    .panel {
+      background: white; border-radius: 18px; padding: 22px 22px 20px;
+      box-shadow: 0 2px 18px rgba(0,0,0,0.07); margin-bottom: 24px;
+    }
+
+    /* ── People ── */
+    .people-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 10px; }
+    .people-label { font-size: 12px; font-family: sans-serif; font-weight: 800; color: #bbb; text-transform: uppercase; letter-spacing: 0.1em; }
+    .editing-badge { font-size: 12px; font-family: sans-serif; color: #15803D; font-weight: 700; text-align: right; }
+    body.league-b .editing-badge { color: #1E40AF; }
+    .people-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; min-height: 38px; }
+    .people-empty { font-family: sans-serif; font-size: 13px; color: #ccc; align-self: center; }
+    .person-chip { display: flex; align-items: stretch; border-radius: 20px; overflow: hidden; border: 2.5px solid #eee; transition: all 0.15s; }
+    .person-btn { display: flex; align-items: center; gap: 7px; padding: 6px 10px; background: #fafafa; border: none; cursor: pointer; font-family: sans-serif; font-size: 13px; font-weight: 400; color: #555; }
+    .person-chip.active .person-btn { font-weight: 800; }
+    .person-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .person-days { font-size: 10px; opacity: 0.6; }
+    .person-remove { padding: 6px 10px 6px 2px; background: #fafafa; border: none; cursor: pointer; font-size: 15px; color: #ccc; line-height: 1; }
+    .add-row { display: flex; gap: 8px; }
+    .add-input { flex: 1; padding: 9px 14px; border-radius: 10px; border: 1.5px solid #e8e8e8; font-size: 14px; font-family: sans-serif; outline: none; background: #fafafa; }
+    .add-input:focus { border-color: #22C55E; }
+    body.league-b .add-input:focus { border-color: #3B82F6; }
+    .add-btn { padding: 9px 22px; border-radius: 10px; border: none; background: linear-gradient(135deg, #14532D, #22C55E); color: white; font-weight: bold; font-size: 14px; font-family: sans-serif; cursor: pointer; box-shadow: 0 2px 10px rgba(20,83,45,0.3); transition: background 0.3s; }
+    body.league-b .add-btn { background: linear-gradient(135deg, #1E3A8A, #3B82F6); box-shadow: 0 2px 10px rgba(30,58,138,0.3); }
+
+    /* ── Banners ── */
+    .banner { border-radius: 10px; padding: 10px 16px; margin-bottom: 20px; font-family: sans-serif; font-size: 13px; }
+    .banner-green { background: #F0FDF4; border: 1.5px solid #BBF7D0; color: #15803D; }
+    .banner-blue  { background: #F3F8FF; border: 1.5px solid #BFDBFE; color: #1E40AF; }
+
+    /* ── Key / legend ── */
+    .key-row { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 4px; }
+    .key-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-family: sans-serif; color: #666; }
+    .key-swatch { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
+
+    /* ── Month grid ── */
+    .month-panel { background: white; border-radius: 18px; padding: 22px 20px 26px; box-shadow: 0 2px 18px rgba(0,0,0,0.07); user-select: none; }
+    .month-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px; }
+    .month-name { font-size: 24px; font-weight: bold; color: #15803D; letter-spacing: -0.5px; transition: color 0.3s; }
+    body.league-b .month-name { color: #1E40AF; }
+    .month-year { font-size: 12px; font-family: sans-serif; color: #ccc; font-weight: 700; letter-spacing: 0.1em; }
+    .weekday-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 4px; }
+    .weekday-lbl { text-align: center; font-size: 9px; font-family: sans-serif; font-weight: 800; color: #d0d0d0; letter-spacing: 0.07em; padding-bottom: 6px; }
+    .day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .day-cell { aspect-ratio: 1; border-radius: 8px; background: #F7F7F7; border: 2.5px solid transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 0.07s; position: relative; }
+    .day-cell.clickable { cursor: pointer; }
+    .day-num { font-size: 13px; font-family: sans-serif; font-weight: 400; color: #aaa; }
+    .day-cell.my-on .day-num { font-weight: 800; }
+    .day-cell.has-count .day-num { color: #444; }
+    .day-dots { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; max-width: 80%; margin-top: 2px; }
+    .day-dot { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
+    .dot-overflow { font-size: 7px; color: #bbb; line-height: 5px; }
+    .day-flag { position: absolute; top: 2px; right: 3px; font-size: 8px; line-height: 1; }
+    .month-legend { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; font-family: sans-serif; color: #999; }
+    .legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .kickoff-note { margin-top: 12px; font-family: sans-serif; font-size: 11px; color: #bbb; }
+
+    /* ── Best days ── */
+    .best-empty { background: white; border-radius: 18px; padding: 48px 24px; text-align: center; box-shadow: 0 2px 18px rgba(0,0,0,0.07); font-family: sans-serif; color: #ccc; font-size: 15px; }
+    .best-panel { background: white; border-radius: 18px; padding: 24px 22px 30px; box-shadow: 0 2px 18px rgba(0,0,0,0.07); }
+    .best-title { margin: 0 0 6px; font-size: 22px; font-weight: bold; color: #15803D; letter-spacing: -0.4px; transition: color 0.3s; }
+    body.league-b .best-title { color: #1E40AF; }
+    .best-sub { margin: 0 0 22px; font-family: sans-serif; font-size: 12px; color: #bbb; }
+    .best-list { display: flex; flex-direction: column; gap: 10px; }
+    .best-row { display: flex; align-items: center; gap: 14px; padding: 13px 16px; border-radius: 12px; border: 1.5px solid #f0f0f0; background: #FAFAFA; }
+    .best-row.top { border-color: rgba(34,197,94,0.25); }
+    body.league-b .best-row.top { border-color: rgba(59,130,246,0.25); }
+    .best-medal { font-size: 20px; min-width: 30px; }
+    .best-info { flex: 1; min-width: 0; }
+    .best-date { font-family: sans-serif; font-weight: 700; font-size: 15px; color: #333; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .all-in { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; background: #DCFCE7; color: #15803D; padding: 2px 8px; border-radius: 10px; }
+    .best-bar-wrap { height: 6px; border-radius: 3px; background: #eee; overflow: hidden; margin-bottom: 6px; display: flex; }
+    .best-bar-g { height: 100%; background: linear-gradient(90deg, #16A34A, #22C55E); }
+    .best-bar-y { height: 100%; background: linear-gradient(90deg, #EAB308, #FACC15); }
+    .best-bar-r { height: 100%; background: linear-gradient(90deg, #DC2626, #EF4444); }
+    .best-who { display: flex; flex-wrap: wrap; gap: 5px; }
+    .best-who-chip { display: flex; align-items: center; gap: 4px; font-size: 11px; font-family: sans-serif; padding: 2px 9px; border-radius: 10px; font-weight: 700; }
+    .best-who-dot { width: 5px; height: 5px; border-radius: 50%; }
+    .best-count { text-align: right; flex-shrink: 0; }
+    .best-count-num { font-size: 22px; font-weight: bold; color: #15803D; font-family: sans-serif; line-height: 1; transition: color 0.3s; }
+    body.league-b .best-count-num { color: #1E40AF; }
+    .best-count-denom { font-size: 11px; font-family: sans-serif; color: #bbb; }
+    .best-tally { font-size: 10px; font-family: sans-serif; color: #999; margin-top: 3px; white-space: nowrap; }
+
+    .save-dot { position: fixed; bottom: 18px; right: 18px; font-size: 11px; font-family: sans-serif; color: #bbb; background: white; padding: 4px 10px; border-radius: 20px; box-shadow: 0 1px 8px rgba(0,0,0,0.1); opacity: 0; transition: opacity 0.3s; }
+    .save-dot.visible { opacity: 1; }
+
+    @media (max-width: 480px) {
+      .app-header { padding: 16px 16px 14px; }
+      .header-title { font-size: 20px; }
+      .main { padding: 16px 12px 48px; }
+      .month-panel { padding: 16px 12px 20px; }
+      .cal-btn { padding: 7px 14px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"><div class="loading">🏈 Loading…</div></div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue, set }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCp2PBbqdj_g6NPR9iYQb7Z6tgXbqLtHIA",
+  authDomain:        "lunch-f7021.firebaseapp.com",
+  databaseURL:       "https://lunch-f7021-default-rtdb.firebaseio.com",
+  projectId:         "lunch-f7021",
+  storageBucket:     "lunch-f7021.firebasestorage.app",
+  messagingSenderId: "1053755216064",
+  appId:             "1:1053755216064:web:14b749200f825a4e9bdd25",
+};
+
+try {
+  const fbApp   = initializeApp(firebaseConfig);
+  const db      = getDatabase(fbApp);
+  const rootRef = ref(db, "fantasy-football-2026");
+
+  window._fbSet = d  => set(rootRef, d);
+  window._fbOn  = cb => onValue(
+    rootRef,
+    snap => cb(snap.val()),
+    err  => window._fbFail && window._fbFail(err)
+  );
+} catch (e) {
+  console.warn("Firebase init failed — running local-only", e);
+}
+window._fbTried = true;
+</script>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+
+const YEAR   = 2026;
+const MONTHS = [
+  { name:"August",    days:31, offset:6 },  // Aug 1, 2026 = Saturday
+  { name:"September", days:30, offset:2 },  // Sep 1, 2026 = Tuesday
+];
+const WEEKDAYS = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
+const PALETTE  = [
+  "#E63946","#F4A261","#2A9D8F","#457B9D","#E76F51",
+  "#8338EC","#06D6A0","#FB5607","#3A86FF","#FF006E",
+  "#8B5CF6","#0EA5E9",
+];
+const MAX_PEOPLE = 12;
+const LS_KEY     = "fantasy-football-2026";
+
+// Expected NFL Week 1 kickoff: Thursday after Labor Day (Sep 7, 2026) → Sep 10.
+const KICKOFF = { mIdx: 1, d: 10 };
+
+// avail values: "g" = good to go, "y" = might be OK, "r" = can't make it
+const ANSWERS = {
+  g: { label:"Good to go",   fill:"#22C55E", line:"#16A34A", soft:"#22c55e22" },
+  y: { label:"Might be OK",  fill:"#FACC15", line:"#CA8A04", soft:"#eab30822" },
+  r: { label:"Can't make it",fill:"#EF4444", line:"#DC2626", soft:"#ef444422" },
+};
+const SCORE = { g: 1, y: 0.5, r: 0 };
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+const states = {
+  a: { name:"League 1", people: [], avail: {} },
+  b: { name:"League 2", people: [], avail: {} },
+};
+let activeLeague = 'a';
+let state = states.a;      // always points at the active league
+
+let activeId    = null;
+let tab         = "calendar";
+let nameInput   = "";
+let saveTimer   = null;
+let remoteReady = false;   // true once Firebase has delivered a snapshot
+let remoteOK    = true;    // false once Firebase errors out → localStorage mode
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function dayKey(mIdx, d) { return `${mIdx}:${d}`; }
+
+function getCounts() {
+  const counts = {};
+  state.people.forEach(p => {
+    Object.entries(state.avail[p.id] || {}).forEach(([k, v]) => {
+      if (!ANSWERS[v]) return;
+      if (!counts[k]) counts[k] = { g: 0, y: 0, r: 0 };
+      counts[k][v]++;
+    });
+  });
+  return counts;
+}
+
+function nextState(cur) {
+  if (!cur)        return 'g';
+  if (cur === 'g') return 'y';
+  if (cur === 'y') return 'r';
+  return null;
+}
+
+function maxCount() { return state.people.length || 1; }
+
+function peopleWith(k, val) {
+  return state.people.filter(p => (state.avail[p.id] || {})[k] === val);
+}
+
+// ── Persistence ───────────────────────────────────────────────────────────────
+
+function snapshot() {
+  return {
+    a: { name: states.a.name, people: states.a.people, avail: states.a.avail },
+    b: { name: states.b.name, people: states.b.people, avail: states.b.avail },
+  };
+}
+
+function saveLocal() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(snapshot())); } catch (e) {}
+}
+
+function loadLocal() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) applyData(JSON.parse(raw));
+  } catch (e) {}
+}
+
+function persist() {
+  if (!remoteReady && remoteOK) return;   // don't clobber before first load
+  saveLocal();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    if (!remoteOK || !window._fbSet) { flashSave("Saved on this device ✓"); return; }
+    window._fbSet(snapshot())
+      .then(() => flashSave("Saved ✓"))
+      .catch(err => { goLocal(err); flashSave("Saved on this device ✓"); });
+  }, 600);
+}
+
+function goLocal(err) {
+  if (remoteOK) console.warn("Firebase unavailable — using local storage", err);
+  remoteOK    = false;
+  remoteReady = true;
+}
+
+function flashSave(msg) {
+  const el = document.getElementById('save-dot');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 1800);
+}
+
+// ── League switch ─────────────────────────────────────────────────────────────
+
+function switchLeague(lg) {
+  if (activeLeague === lg) return;
+  activeLeague = lg;
+  state    = states[lg];
+  activeId = null;
+  document.body.classList.toggle('league-b', lg === 'b');
+  render();
+}
+
+function renameLeague() {
+  const name = prompt("League name:", state.name);
+  if (name === null) return;
+  const trimmed = name.trim().slice(0, 40);
+  if (!trimmed) return;
+  state.name = trimmed;
+  persist();
+  render();
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+
+function addPerson() {
+  const name = nameInput.trim().slice(0, 24);
+  if (!name || state.people.length >= MAX_PEOPLE) return;
+  const id    = `p_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+  const color = PALETTE[state.people.length % PALETTE.length];
+  state.people = [...state.people, { id, name, color }];
+  state.avail  = { ...state.avail, [id]: {} };
+  activeId  = id;
+  nameInput = "";
+  persist();
+  render();
+}
+
+function removePerson(id) {
+  const person = state.people.find(p => p.id === id);
+  if (!person) return;
+  if (!confirm(`Remove ${person.name} and all their dates? This cannot be undone.`)) return;
+  state.people = state.people.filter(p => p.id !== id);
+  const newAvail = { ...state.avail };
+  delete newAvail[id];
+  state.avail = newAvail;
+  if (activeId === id) activeId = null;
+  persist();
+  render();
+}
+
+function setDay(mIdx, d, val) {
+  if (!activeId) return;
+  const k  = dayKey(mIdx, d);
+  const pa = { ...(state.avail[activeId] || {}) };
+  if (val === null) delete pa[k];
+  else pa[k] = val;
+  state.avail = { ...state.avail, [activeId]: pa };
+  persist();
+}
+
+function onDayClick(mIdx, d) {
+  if (!activeId || !d) return;
+  const cur = (state.avail[activeId] || {})[dayKey(mIdx, d)] || null;
+  setDay(mIdx, d, nextState(cur));
+  render();
+}
+
+function setTab(t)       { tab = t; render(); }
+function setActiveId(id) { activeId = activeId === id ? null : id; render(); }
+
+// ── Render helpers ────────────────────────────────────────────────────────────
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function personChipHTML(p) {
+  const isMe   = activeId === p.id;
+  const myDays = Object.values(state.avail[p.id] || {}).filter(v => v === 'g').length;
+  const border = isMe ? `border-color:${p.color}` : '';
+  const shadow = isMe ? `box-shadow:0 2px 12px ${p.color}44` : '';
+  const btnBg  = isMe ? `${p.color}18` : '#fafafa';
+  const btnFW  = isMe ? '800' : '400';
+  const btnClr = isMe ? p.color : '#555';
+  return `
+    <div class="person-chip${isMe?' active':''}" style="${border};${shadow}">
+      <button class="person-btn" style="background:${btnBg};font-weight:${btnFW};color:${btnClr}" onclick="setActiveId('${p.id}')">
+        <span class="person-dot" style="background:${p.color}"></span>
+        ${esc(p.name)}
+        ${myDays > 0 ? `<span class="person-days">(${myDays})</span>` : ''}
+      </button>
+      <button class="person-remove" style="background:${btnBg}" onclick="removePerson('${p.id}')">×</button>
+    </div>`;
+}
+
+function monthGridHTML(m, mIdx) {
+  const cells = [];
+  for (let i = 0; i < m.offset; i++) cells.push(null);
+  for (let d = 1; d <= m.days; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const counts   = getCounts();
+  const mc       = maxCount();
+  const isB      = activeLeague === 'b';
+
+  const dayHTML = cells.map((d, i) => {
+    if (!d) return `<div></div>`;
+    const k       = dayKey(mIdx, d);
+    const myState = activeId ? ((state.avail[activeId] || {})[k] || null) : null;
+    const c       = counts[k] || { g: 0, y: 0, r: 0 };
+    const ratio   = (c.g + 0.5 * c.y) / Math.max(mc, 1);
+    const isWknd  = i % 7 === 0 || i % 7 === 6;
+
+    let bg, border;
+    if (myState) {
+      const a = ANSWERS[myState];
+      bg     = myState === 'g' ? `rgba(34,197,94,${0.25 + 0.5 * ratio})`
+             : myState === 'y' ? 'rgba(250,204,21,0.35)'
+             :                    'rgba(239,68,68,0.25)';
+      border = `2.5px solid ${a.line}`;
+    } else {
+      const tint = isB ? `rgba(59,130,246,${0.07 + 0.24 * ratio})`
+                       : `rgba(34,197,94,${0.07 + 0.26 * ratio})`;
+      bg     = (c.g + c.y) > 0 ? tint : (isWknd ? '#F1F3F1' : '#F7F7F7');
+      border = '2.5px solid transparent';
+    }
+
+    const allDots = [
+      ...peopleWith(k,'g').map(() => 'g'),
+      ...peopleWith(k,'y').map(() => 'y'),
+      ...peopleWith(k,'r').map(() => 'r'),
+    ];
+    const dotsHTML = allDots.length ? `
+      <div class="day-dots">
+        ${allDots.slice(0,6).map(t =>
+          `<span class="day-dot" style="background:${ANSWERS[t].fill};outline:1.5px solid ${ANSWERS[t].line}"></span>`
+        ).join('')}
+        ${allDots.length > 6 ? `<span class="dot-overflow">…</span>` : ''}
+      </div>` : '';
+
+    const titleParts = [];
+    ['g','y','r'].forEach(t => {
+      const ppl = peopleWith(k, t);
+      if (ppl.length) titleParts.push(`${t==='g'?'✅':t==='y'?'⚠️':'❌'} ${ppl.map(p=>p.name).join(', ')}`);
+    });
+
+    const isKick = mIdx === KICKOFF.mIdx && d === KICKOFF.d;
+    const flag   = isKick ? `<span class="day-flag" title="Expected NFL Week 1 kickoff">🏈</span>` : '';
+
+    return `
+      <div class="day-cell${myState?' my-on':''}${(c.g+c.y)>0?' has-count':''}${activeId?' clickable':''}"
+        style="background:${bg};border:${border}"
+        title="${esc(titleParts.join(' | '))}"
+        onclick="onDayClick(${mIdx},${d})">
+        <span class="day-num">${d}</span>
+        ${dotsHTML}${flag}
+      </div>`;
+  }).join('');
+
+  const legendHTML = state.people.length > 0 ? `
+    <div class="month-legend">
+      ${state.people.map(p => {
+        const cnt = Object.entries(state.avail[p.id]||{})
+          .filter(([k,v]) => v==='g' && Number(k.split(':')[0])===mIdx).length;
+        return `<span class="legend-item">
+          <span class="legend-dot" style="background:${p.color}"></span>
+          ${esc(p.name)}${cnt > 0 ? ` · ${cnt}d` : ''}
+        </span>`;
+      }).join('')}
+    </div>` : '';
+
+  const kickHTML = mIdx === KICKOFF.mIdx
+    ? `<div class="kickoff-note">🏈 Sept 10 — expected NFL Week 1 kickoff (draft before this)</div>` : '';
+
+  return `
+    <div class="month-panel">
+      <div class="month-header">
+        <span class="month-name">${m.name}</span>
+        <span class="month-year">${YEAR}</span>
+      </div>
+      <div class="weekday-row">${WEEKDAYS.map(d=>`<div class="weekday-lbl">${d}</div>`).join('')}</div>
+      <div class="day-grid">${dayHTML}</div>
+      ${legendHTML}
+      ${kickHTML}
+    </div>`;
+}
+
+function bestDaysHTML() {
+  const counts = getCounts();
+  const mc     = maxCount();
+
+  const best = Object.entries(counts)
+    .map(([k,c]) => {
+      const [mIdx,d] = k.split(':').map(Number);
+      return { k, mIdx, d, ...c, score: c.g * SCORE.g + c.y * SCORE.y };
+    })
+    .filter(x => x.score > 0)
+    .sort((a,b) =>
+      b.score - a.score ||            // most availability wins
+      a.r - b.r ||                    // fewest hard conflicts
+      b.g - a.g ||                    // prefer firm yeses over maybes
+      a.mIdx - b.mIdx || a.d - b.d    // earlier date breaks final ties
+    )
+    .slice(0, 20);
+
+  if (!best.length) return `
+    <div class="best-empty">No dates marked yet — head to the Calendar tab and start tapping days! 🏈</div>`;
+
+  const rowsHTML = best.map((x, idx) => {
+    const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':`${idx+1}.`;
+    const isB   = activeLeague === 'b';
+    const topBg = idx < 3 ? `background:rgba(${isB?'59,130,246':'34,197,94'},${0.04+0.04*(3-idx)})` : '';
+    const allIn = state.people.length > 0 && x.g === state.people.length;
+
+    const pct = n => (n / Math.max(mc,1)) * 100;
+    const whoHTML = ['g','y','r'].map(t =>
+      peopleWith(x.k, t).map(p => `
+        <span class="best-who-chip" style="background:${ANSWERS[t].soft};color:${ANSWERS[t].line}">
+          <span class="best-who-dot" style="background:${ANSWERS[t].fill}"></span>${esc(p.name)}
+        </span>`).join('')
+    ).join('');
+
+    return `
+      <div class="best-row${idx<3?' top':''}" style="${topBg}">
+        <span class="best-medal">${medal}</span>
+        <div class="best-info">
+          <div class="best-date">
+            ${MONTHS[x.mIdx].name} ${x.d}, ${YEAR}
+            ${allIn ? `<span class="all-in">EVERYONE'S IN</span>` : ''}
+          </div>
+          <div class="best-bar-wrap">
+            <div class="best-bar-g" style="width:${pct(x.g)}%"></div>
+            <div class="best-bar-y" style="width:${pct(x.y)}%"></div>
+            <div class="best-bar-r" style="width:${pct(x.r)}%"></div>
+          </div>
+          <div class="best-who">${whoHTML}</div>
+        </div>
+        <div class="best-count">
+          <div class="best-count-num">${x.g}</div>
+          <div class="best-count-denom">/${mc} in</div>
+          <div class="best-tally">${x.y} maybe · ${x.r} out</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="best-panel">
+      <h3 class="best-title">🏆 Best Draft Days — ${esc(state.name)}</h3>
+      <p class="best-sub">Ranked by availability (a "maybe" counts half), then by fewest hard conflicts.</p>
+      <div class="best-list">${rowsHTML}</div>
+    </div>`;
+}
+
+// ── Main render ───────────────────────────────────────────────────────────────
+
+function render() {
+  const isB          = activeLeague === 'b';
+  const activePerson = state.people.find(p => p.id === activeId);
+
+  const peopleHTML = state.people.length === 0
+    ? `<span class="people-empty">Add yourself to get started!</span>`
+    : state.people.map(personChipHTML).join('');
+
+  const bannerHTML = (() => {
+    if (tab !== 'calendar') return '';
+    if (state.people.length === 0)
+      return `<div class="banner ${isB?'banner-blue':'banner-green'}">👋 This picker is <strong>shared</strong> — send the link to your league and everyone can drop in their dates. Start by entering your name above!</div>`;
+    if (!activeId)
+      return `<div class="banner ${isB?'banner-blue':'banner-green'}">👆 Tap your name above to select yourself, then tap days to cycle: <strong>green</strong> → <strong>yellow</strong> → <strong>red</strong> → clear.</div>`;
+    return '';
+  })();
+
+  const keyHTML = tab === 'calendar' ? `
+    <div class="panel" style="padding:16px 22px">
+      <div class="key-row">
+        ${Object.entries(ANSWERS).map(([t,a]) => `
+          <span class="key-item">
+            <span class="key-swatch" style="background:${a.fill};outline:1.5px solid ${a.line}"></span>
+            ${a.label}
+          </span>`).join('')}
+        <span class="key-item"><span class="key-swatch" style="background:#F1F3F1"></span>Weekend</span>
+      </div>
+    </div>` : '';
+
+  const calendarHTML = tab === 'calendar'
+    ? `<div style="display:flex;flex-direction:column;gap:20px">${MONTHS.map((m,mi)=>monthGridHTML(m,mi)).join('')}</div>`
+    : '';
+
+  const addInputSection = state.people.length < MAX_PEOPLE ? `
+    <div class="add-row">
+      <input class="add-input" id="name-input" value="${esc(nameInput)}"
+        placeholder="Enter your name…"
+        oninput="nameInput=this.value"
+        onkeydown="if(event.key==='Enter')addPerson()">
+      <button class="add-btn" onclick="addPerson()">+ Join</button>
+    </div>` : '';
+
+  document.getElementById('root').innerHTML = `
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="header-top">
+          <span class="header-ball">🏈</span>
+          <div>
+            <h1 class="header-title">${esc(state.name)} Draft</h1>
+            <button class="header-edit" onclick="renameLeague()" title="Rename league">✏️</button>
+            <p class="header-sub">Shared draft-date picker · August – September ${YEAR} · Up to ${MAX_PEOPLE} managers</p>
+          </div>
+        </div>
+
+        <div class="cal-toggle">
+          <button class="cal-btn${activeLeague==='a'?' cal-active':''}" onclick="switchLeague('a')">🏈 ${esc(states.a.name)}</button>
+          <button class="cal-btn${activeLeague==='b'?' cal-active':''}" onclick="switchLeague('b')">🏆 ${esc(states.b.name)}</button>
+        </div>
+
+        <div class="tab-bar">
+          <button class="tab-btn${tab==='calendar'?' active':''}" onclick="setTab('calendar')">📅 Calendar</button>
+          <button class="tab-btn${tab==='best'?' active':''}" onclick="setTab('best')">🏆 Best Days</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="main">
+      <div class="panel">
+        <div class="people-header">
+          <span class="people-label">Who's drafting? (${state.people.length}/${MAX_PEOPLE})</span>
+          ${activePerson ? `<span class="editing-badge">✏️ Editing: ${esc(activePerson.name)}</span>` : ''}
+        </div>
+        <div class="people-list">${peopleHTML}</div>
+        ${addInputSection}
+      </div>
+
+      ${bannerHTML}
+      ${keyHTML}
+      ${calendarHTML}
+      ${tab === 'best' ? bestDaysHTML() : ''}
+    </div>
+
+    <div class="save-dot" id="save-dot">Saved ✓</div>
+  `;
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
+
+function applyData(data) {
+  if (!data) return;
+  ['a','b'].forEach(lg => {
+    const d = data[lg];
+    if (!d) return;
+    states[lg].name   = d.name   || states[lg].name;
+    states[lg].people = d.people || [];
+    states[lg].avail  = d.avail  || {};
+  });
+  state = states[activeLeague];
+}
+
+window._fbFail = err => { goLocal(err); loadLocal(); render(); };
+
+function onFbData(data) {
+  applyData(data);
+  remoteReady = true;
+  render();
+}
+
+let waited = 0;
+function waitForFb() {
+  if (window._fbOn) { window._fbOn(onFbData); return; }
+  waited += 50;
+  if (waited > 4000 || (window._fbTried && !window._fbOn)) {   // SDK blocked or failed to load
+    goLocal("firebase sdk unavailable");
+    loadLocal();
+    render();
+    return;
+  }
+  setTimeout(waitForFb, 50);
+}
+
+loadLocal();   // paint instantly from the last local copy, then let Firebase win
+render();
+waitForFb();
+</script>
+</body>
+</html>
