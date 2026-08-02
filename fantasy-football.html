@@ -196,10 +196,13 @@ try {
     snap => cb(snap.val()),
     err  => window._fbFail && window._fbFail(err)
   );
+  // Tell the app the bridge is up. This script is deferred, so the app has
+  // almost always run already — but handle either order.
+  if (window._fbBridgeReady) window._fbBridgeReady();
 } catch (e) {
   console.warn("Firebase init failed — running local-only", e);
+  if (window._fbFail) window._fbFail(e);
 }
-window._fbTried = true;
 </script>
 
 <script>
@@ -349,12 +352,14 @@ function syncPillInner() {
                   : '🔴 This device only — tap to retry';
 }
 
+// Re-subscribe only. Do NOT push here: this device's copy may be empty or
+// stale, and onFbData already decides correctly whether to seed or adopt.
 function retrySync() {
   if (remoteOK) return;
   setSync("Reconnecting…");
-  remoteOK = true;
-  if (window._fbOn) window._fbOn(onFbData);
-  pushRemote();
+  subscribed = false;
+  if (window._fbOn) { subscribeRemote(); }
+  else setSync("Still offline — check your connection");
 }
 
 // ── League switch ─────────────────────────────────────────────────────────────
@@ -714,7 +719,16 @@ function applyData(data) {
   state = states[activeLeague];
 }
 
-window._fbFail = err => { goLocal(err); loadLocal(); render(); };
+// An onValue error cancels the listener, so allow a later re-subscribe.
+// Only fall back to the local copy if we never managed to load the shared one —
+// otherwise we'd overwrite good league data with a stale device copy.
+window._fbFail = err => {
+  const hadRemote = remoteReady && remoteOK;
+  subscribed = false;
+  goLocal(err);
+  if (!hadRemote) loadLocal();
+  render();
+};
 
 function onFbData(data) {
   const remoteEmpty = !data || (!data.a && !data.b);
@@ -734,22 +748,25 @@ function onFbData(data) {
   render();
 }
 
-let waited = 0;
-function waitForFb() {
-  if (window._fbOn) { window._fbOn(onFbData); return; }
-  waited += 50;
-  if (waited > 4000 || (window._fbTried && !window._fbOn)) {   // SDK blocked or failed to load
-    goLocal("firebase sdk unavailable");
-    loadLocal();
-    render();
-    return;
-  }
-  setTimeout(waitForFb, 50);
+// The module script is deferred and fetches the SDK over the network, so it can
+// land well after this script runs — on a phone that can take many seconds.
+// Never give up on it by timeout: it announces itself instead.
+let subscribed = false;
+function subscribeRemote() {
+  if (subscribed || !window._fbOn) return;
+  subscribed = true;
+  window._fbOn(onFbData);
 }
+window._fbBridgeReady = subscribeRemote;
 
-loadLocal();   // paint instantly from the last local copy, then let Firebase win
+// Only affects what the pill says — remote can still connect afterwards.
+setTimeout(() => {
+  if (!subscribed && !remoteReady) { goLocal("firebase sdk slow to load"); render(); }
+}, 8000);
+
+loadLocal();       // paint instantly from the last local copy, then let Firebase win
 render();
-waitForFb();
+subscribeRemote(); // in case the bridge was already up before we got here
 </script>
 </body>
 </html>
