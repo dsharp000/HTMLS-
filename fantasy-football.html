@@ -254,6 +254,13 @@ let syncMsg     = "";      // transient message shown in the sync pill
 
 function dayKey(mIdx, d) { return `${mIdx}:${d}`; }
 
+// Derived from the same grid offset the calendar renders with, so the two can't
+// disagree: Aug 1 sits at column 6 (Sat), Sep 1 at column 2 (Tue).
+const WEEKDAYS_FULL = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+function weekdayName(mIdx, d) {
+  return WEEKDAYS_FULL[(MONTHS[mIdx].offset + d - 1) % 7];
+}
+
 function getCounts() {
   const counts = {};
   state.people.forEach(p => {
@@ -590,7 +597,7 @@ function bestDaysHTML() {
         <span class="best-medal">${medal}</span>
         <div class="best-info">
           <div class="best-date">
-            ${MONTHS[x.mIdx].name} ${x.d}, ${YEAR}
+            ${weekdayName(x.mIdx, x.d)}, ${MONTHS[x.mIdx].name} ${x.d}, ${YEAR}
             ${allIn ? `<span class="all-in">EVERYONE'S IN</span>` : ''}
           </div>
           <div class="best-bar-wrap">
