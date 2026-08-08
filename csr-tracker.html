@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Sapphire Reserve Credit Tracker</title>
+<meta name="description" content="Track every Chase Sapphire Reserve credit against the $795 annual fee — monthly, semiannual, and annual, with deadlines." />
+<meta name="theme-color" content="#EDEFF3" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="CSR Credits" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%8E%3C/text%3E%3C/svg%3E" />
+<style>
+  :root{
+    --ink:#0F1A2B; --ink-2:#4A5769; --ink-3:#8A96A8; --paper:#EDEFF3; --card:#FFFFFF;
+    --line:#D3D9E3; --sapphire:#2242C7; --sapphire-soft:#E4E9FB; --claimed:#1F7A5C; --warn:#9C6410;
+    --warn-soft:#FBF1DF; --dead:#B4BCC9;
+  }
+  *,*::before,*::after{ box-sizing:border-box; }
+  html,body{ margin:0; background:var(--paper); }
+  body{
+    color:var(--ink); padding:20px 16px 56px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:720px; margin:0 auto; }
+  .num{ font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+  .eyebrow{ font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); margin:0; }
+  h1{ font-size:25px; font-weight:800; letter-spacing:-.03em; margin:6px 0 0; line-height:1.15; }
+
+  .topline{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+
+  .ledger{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin:18px 0 10px; }
+  .big{ font-size:40px; font-weight:700; line-height:1; }
+  .of{ font-size:13px; color:var(--ink-2); margin:7px 0 0; }
+  .bar{ position:relative; height:26px; background:var(--paper); border:1px solid var(--line);
+    border-radius:6px; margin-top:16px; overflow:hidden; }
+  .fill{ position:absolute; top:0; bottom:0; left:0; width:0; background:var(--sapphire);
+    border-radius:5px 0 0 5px; transition:width .45s cubic-bezier(.22,.9,.3,1); }
+  .fill.paid{ background:var(--claimed); }
+  .tick{ position:absolute; top:-5px; bottom:-5px; width:2px; background:var(--ink); }
+  .ticklab{ display:flex; justify-content:space-between; margin-top:7px; font-size:11px; color:var(--ink-3); }
+  .verdict{ margin:12px 0 0; font-size:13px; font-weight:600; color:var(--warn); }
+  .verdict.paid{ color:var(--claimed); }
+
+  .field{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px;
+    padding-top:14px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--ink-2); }
+  .field input{ font:inherit; padding:6px 9px; border:1px solid var(--line); border-radius:7px;
+    background:var(--paper); color:var(--ink); }
+  .field label{ font-weight:650; color:var(--ink); }
+  .field .reset-note{ font-weight:650; color:var(--warn); }
+
+  /* deadline panel */
+  .risk{ background:var(--warn-soft); border:1px solid #E9D6AE; border-radius:14px; padding:16px 18px; margin-bottom:10px; }
+  .risk.clear{ background:var(--card); border-color:var(--line); }
+  .risk-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  .risk-head .eyebrow{ color:var(--warn); }
+  .risk.clear .risk-head .eyebrow{ color:var(--claimed); }
+  .risk-total{ font-size:15px; font-weight:700; color:var(--warn); }
+  .risk-list{ list-style:none; margin:12px 0 0; padding:0; }
+  .risk-list li{ display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    font-size:13px; padding:6px 0; border-top:1px dashed #E3D2AF; }
+  .risk-list li:first-child{ border-top:none; }
+  .risk-what{ font-weight:650; }
+  .risk-when{ font-size:12px; color:var(--warn); font-weight:650; white-space:nowrap; }
+  .risk-when.soon{ color:#A32B1C; }
+  .risk-none{ font-size:13px; color:var(--ink-2); margin:8px 0 0; }
+
+  /* points panel */
+  .points{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:10px; }
+  .points-row{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-top:12px; }
+  .points input{ font:inherit; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-variant-numeric:tabular-nums; font-size:20px; font-weight:700; width:190px; padding:9px 11px;
+    border:1px solid var(--line); border-radius:9px; background:var(--paper); color:var(--ink); }
+  .points-out{ text-align:right; }
+  .points-out .amt{ font-size:32px; font-weight:700; line-height:1; color:var(--sapphire); }
+  .points-out .cap{ font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--ink-3); margin-bottom:6px; }
+  .points-note{ font-size:12px; line-height:1.5; color:var(--ink-2); margin:14px 0 0;
+    padding-top:12px; border-top:1px dashed var(--line); }
+
+  .sec{ margin-top:26px; }
+  .sechead{ display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+    padding-bottom:8px; border-bottom:2px solid var(--ink); }
+  .sechead h2{ margin:0; }
+  .secsub{ font-size:12px; color:var(--ink-3); margin:8px 0 0; }
+  .row{ background:var(--card); border:1px solid var(--line); border-top:none; padding:14px 16px; }
+  .sec .row:first-of-type{ border-top:1px solid var(--line); }
+  .sec .row:last-child{ border-radius:0 0 12px 12px; }
+  .rowtop{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  .name{ font-size:15px; font-weight:700; letter-spacing:-.01em; }
+  .val{ font-size:13px; font-weight:700; color:var(--ink-2); white-space:nowrap; }
+  .detail{ font-size:12.5px; line-height:1.45; color:var(--ink-2); margin:5px 0 0; }
+  .tag{ display:inline-block; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+    padding:2px 6px; border-radius:4px; margin-left:8px; vertical-align:1px;
+    background:var(--paper); color:var(--ink-3); border:1px solid var(--line); }
+  .tag.ends{ background:var(--warn-soft); color:var(--warn); border-color:#E9D6AE; }
+  .row.expired{ background:#F7F8FA; }
+  .row.expired .name,.row.expired .val{ color:var(--dead); }
+  .row.expired .detail{ color:var(--dead); }
+  .row.expired .strip,.row.expired .slots{ opacity:.45; pointer-events:none; }
+
+  .strip{ display:grid; grid-template-columns:repeat(12,1fr); gap:5px; margin-top:12px; }
+  .punch{ position:relative; aspect-ratio:1; border:1px solid var(--line); border-radius:5px;
+    background:var(--paper); color:var(--ink-3); font-size:10px; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; padding:0; font-family:inherit;
+    transition:background .15s,color .15s,border-color .15s,box-shadow .15s; }
+  .punch:hover{ border-color:var(--sapphire); color:var(--sapphire); }
+  .punch[aria-pressed="true"]{ background:var(--sapphire); border-color:var(--sapphire); color:#fff;
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.28); }
+  .punch.now{ border-color:var(--ink); border-width:2px; color:var(--ink); }
+  .punch.now[aria-pressed="true"]{ color:#fff; }
+  .punch.future{ opacity:.4; }
+  .punch.gone{ background:repeating-linear-gradient(-45deg,#F2F4F7,#F2F4F7 3px,#E7EAF0 3px,#E7EAF0 6px);
+    color:var(--dead); cursor:not-allowed; }
+  .punch.gone:hover{ border-color:var(--line); color:var(--dead); }
+  .striplab{ font-size:11px; color:var(--ink-3); margin:7px 0 0; }
+
+  .slots{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .slot{ flex:1 1 140px; font:inherit; font-size:13px; font-weight:650; text-align:left;
+    padding:10px 12px; border:1px solid var(--line); border-radius:9px; background:var(--paper);
+    color:var(--ink-2); cursor:pointer; transition:background .15s,color .15s,border-color .15s; }
+  .slot:hover{ border-color:var(--sapphire); color:var(--sapphire); }
+  .slot[aria-pressed="true"]{ background:var(--sapphire-soft); border-color:var(--sapphire); color:var(--sapphire); }
+  .slot.live{ border-color:var(--ink); }
+  .slot span{ display:block; font-size:11px; font-weight:600; opacity:.75; margin-top:2px; }
+
+  .check{ display:flex; gap:12px; align-items:flex-start; width:100%; font:inherit; text-align:left;
+    background:none; border:none; padding:0; cursor:pointer; color:inherit; }
+  .box{ flex:none; width:22px; height:22px; margin-top:1px; border:1.5px solid var(--line);
+    border-radius:6px; background:var(--paper); display:flex; align-items:center; justify-content:center;
+    color:transparent; font-size:13px; font-weight:800; transition:background .15s,border-color .15s,color .15s; }
+  .check:hover .box{ border-color:var(--sapphire); }
+  .check[aria-pressed="true"] .box{ background:var(--claimed); border-color:var(--claimed); color:#fff; }
+  .check[aria-pressed="true"] .name{ text-decoration:line-through; text-decoration-color:var(--ink-3); color:var(--ink-2); }
+  .check .grow{ flex:1; }
+  .row.expired .check{ cursor:not-allowed; }
+  .row.expired .box{ background:#F2F4F7; border-color:var(--line); color:transparent; }
+
+  .foot{ margin-top:28px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .reset{ font:inherit; font-size:12.5px; font-weight:650; padding:8px 14px; border:1px solid var(--line);
+    border-radius:8px; background:var(--card); color:var(--ink-2); cursor:pointer; }
+  .reset:hover{ border-color:var(--warn); color:var(--warn); }
+  .note{ font-size:11.5px; line-height:1.5; color:var(--ink-3); max-width:420px; margin:0; }
+  .note a{ color:var(--ink-2); }
+  .status{ font-size:12px; color:var(--ink-3); }
+
+  button:focus-visible, input:focus-visible{ outline:2px solid var(--sapphire); outline-offset:2px; }
+  @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+  @media (max-width:520px){ .strip{ grid-template-columns:repeat(6,1fr); } .big{ font-size:34px; }
+    .points input{ width:100%; } .points-out{ text-align:left; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topline">
+    <div>
+      <p class="eyebrow">Chase Sapphire Reserve &middot; <span id="yearLabel"></span></p>
+      <h1>Credit tracker</h1>
+    </div>
+  </div>
+
+  <div class="ledger">
+    <div class="num big" id="claimed">$0</div>
+    <p class="of">claimed of <span class="num" id="total"></span> available &middot; annual fee <span class="num">$795</span></p>
+    <div class="bar">
+      <div class="fill" id="fill"></div>
+      <div class="tick" id="tick"></div>
+    </div>
+    <div class="ticklab">
+      <span>$0</span>
+      <span>fee covered at $795</span>
+      <span class="num" id="totalRight"></span>
+    </div>
+    <p class="verdict" id="verdict"></p>
+    <div class="field">
+      <label for="anniv">Card anniversary</label>
+      <input type="date" id="anniv" />
+      <span id="annivNote">The $300 travel credit resets on this date, not Jan 1.</span>
+    </div>
+  </div>
+
+  <div class="risk" id="risk"></div>
+
+  <div class="points">
+    <div class="sechead" style="border-bottom:none;padding-bottom:0">
+      <h2 class="eyebrow">Ultimate Rewards balance</h2>
+    </div>
+    <div class="points-row">
+      <div>
+        <label for="pts" class="striplab" style="display:block;margin:0 0 6px">Points</label>
+        <input type="number" id="pts" min="0" step="1000" inputmode="numeric" placeholder="0" />
+      </div>
+      <div class="points-out">
+        <div class="cap">Cash value at 1&cent;</div>
+        <div class="amt num" id="ptsVal">$0.00</div>
+      </div>
+    </div>
+    <p class="points-note">
+      Points &divide; 100. That's the floor &mdash; roughly what you'd get taking cash back. Transferred to
+      Hyatt, United, or Air Canada, the same balance usually stretches well past this number.
+    </p>
+  </div>
+
+  <div id="sections"></div>
+
+  <div class="foot">
+    <p class="note">
+      Everything is saved in this browser only &mdash; nothing is sent anywhere, and nobody else sees
+      your entries. Credit terms change often; confirm anything close to a deadline against your Chase
+      account. <a href="index.html">&larr; Razor's Edge</a>
+    </p>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="status" id="status"></span>
+      <button type="button" class="reset" id="reset">Clear all</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var LS_KEY  = "csr-tracker";
+  var LEGACY  = ["csr-tracker-2026"];
+  var FEE     = 795;
+  var MONTHS  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var MONTHS_LONG = ["January","February","March","April","May","June",
+                     "July","August","September","October","November","December"];
+
+  /* `through` = last day the credit exists at all. Past that the row greys out
+     and stops counting toward the total, so the math stays honest as the
+     2026-era offers age out. */
+  var MONTHLY = [
+    { id:"lyft", name:"Lyft in-app credit", per:10, through:"2027-09-30",
+      detail:"Pay with the Reserve in the Lyft app." },
+    { id:"peloton", name:"Peloton membership", per:10, through:"2027-12-31",
+      detail:"Activation required." },
+    { id:"doordash", name:"DoorDash promos", per:25,
+      detail:"One $5 restaurant promo plus two $10 non-restaurant promos. Promo value, not a statement credit." }
+  ];
+
+  var SEMI = [
+    { id:"dining", name:"Exclusive Tables dining", per:150, halves:true, slots:["Jan–Jun","Jul–Dec"],
+      detail:"Only at Sapphire Reserve Exclusive Tables restaurants, booked through OpenTable. Coverage is thin outside major metros." },
+    { id:"stubhub", name:"StubHub / viagogo", per:150, halves:true, slots:["Jan–Jun","Jul–Dec"],
+      detail:"Entertainment and event tickets." },
+    { id:"edit", name:"The Edit hotel credit", per:250, slots:["Booking 1","Booking 2"],
+      detail:"Prepaid stay of two nights or more. Two eligible bookings per calendar year — the old Jan–Jun / Jul–Dec split was removed Jan 1, 2026." }
+  ];
+
+  var ANNUAL = [
+    { id:"travel", name:"Travel credit", value:300, anniversary:true,
+      detail:"Posts automatically against travel charges — airfare, hotels, rental cars, transit, tolls, parking. Resets on your account anniversary, not Jan 1." },
+    { id:"hotel250", name:"Chase Travel hotels credit", value:250, through:"2026-12-31",
+      detail:"2026 only. Select Chase Travel hotels (IHG, Omni, Virgin), two-night minimum, book by Dec 31, 2026." }
+  ];
+
+  var ONCE = [
+    { id:"globalentry", name:"Global Entry / TSA PreCheck", note:"Up to $120, once every four years" },
+    { id:"apple", name:"Apple TV+ and Apple Music", note:"Activate — complimentary through Jun 22, 2027", through:"2027-06-22" },
+    { id:"dashpass", name:"DashPass membership", note:"Activate in the DoorDash app" },
+    { id:"prioritypass", name:"Priority Pass enrollment", note:"Sapphire Lounges, Priority Pass, select Air Canada lounges" },
+    { id:"ihg", name:"IHG One Rewards Platinum", note:"Enroll — status through Dec 31, 2027", through:"2027-12-31" }
+  ];
+
+  /* ---- dates ---- */
+  function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function nowDay() { return startOfDay(new Date()); }
+  function parseISO(s) {
+    if (!s) return null;
+    var p = String(s).split("-");
+    if (p.length !== 3) return null;
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return isFinite(d.getTime()) ? d : null;
+  }
+  function iso(d) {
+    function pad(n) { return (n < 10 ? "0" : "") + n; }
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+  function daysUntil(d) {
+    return Math.round((startOfDay(d) - nowDay()) / 86400000);
+  }
+  function fmtDate(d) {
+    return MONTHS[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
+  }
+  function countdown(d) {
+    var n = daysUntil(d);
+    if (n < 0) return "expired";
+    if (n === 0) return "today";
+    if (n === 1) return "tomorrow";
+    return n + " days";
+  }
+
+  var TODAY = nowDay();
+  var YEAR  = TODAY.getFullYear();
+  var MONTH = TODAY.getMonth();
+
+  /* ---- availability ---- */
+  function endsThisYear(item) {
+    var t = parseISO(item.through);
+    return t && t.getFullYear() === YEAR;
+  }
+  function expired(item) {
+    var t = parseISO(item.through);
+    return !!t && t < TODAY;
+  }
+  // A monthly credit only counts for months that start on or before its end date.
+  function monthLive(item, i) {
+    var t = parseISO(item.through);
+    return !t || new Date(YEAR, i, 1) <= t;
+  }
+  function liveMonths(item) {
+    var n = 0;
+    for (var i = 0; i < 12; i++) if (monthLive(item, i)) n++;
+    return n;
+  }
+  function endOfMonth(i) { return new Date(YEAR, i + 1, 0); }
+  function endOfHalf(h) { return h === 0 ? new Date(YEAR, 5, 30) : new Date(YEAR, 11, 31); }
+  function endOfYear() { return new Date(YEAR, 11, 31); }
+  // Deadline for a semiannual slot: the half's end, or year end for booking-style slots.
+  function slotDeadline(s, i) { return s.halves ? endOfHalf(i) : endOfYear(); }
+  // Deadline for an annual credit: its own end date, the next anniversary, or year end.
+  function annualDeadline(a) {
+    if (a.anniversary && state.anniversary) {
+      var next = nextAnniversary();
+      if (next) return next;
+    }
+    var t = parseISO(a.through);
+    return t && t < endOfYear() ? t : endOfYear();
+  }
+
+  function totalAvailable() {
+    var t = 0;
+    MONTHLY.forEach(function (m) { t += m.per * liveMonths(m); });
+    SEMI.forEach(function (s) { if (!expired(s)) t += s.per * 2; });
+    ANNUAL.forEach(function (a) { if (!expired(a)) t += a.value; });
+    return t;
+  }
+
+  /* ---- anniversary ---- */
+  // Start of the anniversary year we're currently inside; the travel credit
+  // resets when this rolls over.
+  function anniversaryPeriod() {
+    var d = parseISO(state.anniversary);
+    if (!d) return null;
+    var start = new Date(YEAR, d.getMonth(), d.getDate());
+    if (start > TODAY) start = new Date(YEAR - 1, d.getMonth(), d.getDate());
+    return start;
+  }
+  function nextAnniversary() {
+    var start = anniversaryPeriod();
+    if (!start) return null;
+    return new Date(start.getFullYear() + 1, start.getMonth(), start.getDate());
+  }
+
+  /* ---- state ---- */
+  function blank() {
+    var s = { year:YEAR, monthly:{}, semi:{}, annual:{}, once:{},
+              anniversary:"", points:"", travelPeriod:"" };
+    MONTHLY.forEach(function (m) {
+      s.monthly[m.id] = [];
+      for (var i = 0; i < 12; i++) s.monthly[m.id].push(false);
+    });
+    SEMI.forEach(function (x) { s.semi[x.id] = [false, false]; });
+    ANNUAL.forEach(function (x) { s.annual[x.id] = false; });
+    ONCE.forEach(function (x) { s.once[x.id] = false; });
+    return s;
+  }
+
+  var state = blank();
+
+  function money(n) { return "$" + n.toLocaleString("en-US"); }
+  function money2(n) {
+    return "$" + n.toLocaleString("en-US", { minimumFractionDigits:2, maximumFractionDigits:2 });
+  }
+
+  // Tolerate a saved shape that isn't a clean 12/2-slot array of booleans.
+  function boolArray(v, n) {
+    var out = [], i;
+    for (i = 0; i < n; i++) out.push(!!(v && v[i]));
+    return out;
+  }
+
+  function merge(saved) {
+    if (!saved) return;
+    MONTHLY.forEach(function (m) {
+      if (saved.monthly && saved.monthly[m.id] !== undefined)
+        state.monthly[m.id] = boolArray(saved.monthly[m.id], 12);
+    });
+    SEMI.forEach(function (s) {
+      if (saved.semi && saved.semi[s.id] !== undefined)
+        state.semi[s.id] = boolArray(saved.semi[s.id], 2);
+    });
+    ANNUAL.forEach(function (a) {
+      if (saved.annual && saved.annual[a.id] !== undefined) state.annual[a.id] = !!saved.annual[a.id];
+    });
+    ONCE.forEach(function (o) {
+      if (saved.once && saved.once[o.id] !== undefined) state.once[o.id] = !!saved.once[o.id];
+    });
+    if (saved.anniversary) state.anniversary = saved.anniversary;
+    if (saved.points) state.points = saved.points;
+    if (saved.travelPeriod) state.travelPeriod = saved.travelPeriod;
+    state.year = saved.year || state.year;
+    rollover();
+  }
+
+  // Recurring credits reset on Jan 1; the travel credit resets on the card
+  // anniversary instead. "Set up once" items survive both.
+  var rolledYear = 0, rolledTravel = false;
+  function rollover() {
+    if (state.year !== YEAR) {
+      rolledYear = state.year;
+      MONTHLY.forEach(function (m) { state.monthly[m.id] = boolArray(null, 12); });
+      SEMI.forEach(function (s) { state.semi[s.id] = [false, false]; });
+      ANNUAL.forEach(function (a) { if (!a.anniversary) state.annual[a.id] = false; });
+      state.year = YEAR;
+    }
+    var period = anniversaryPeriod();
+    if (period) {
+      var key = iso(period);
+      if (state.travelPeriod !== key) {
+        if (state.travelPeriod) {
+          ANNUAL.forEach(function (a) { if (a.anniversary) state.annual[a.id] = false; });
+          rolledTravel = true;
+        }
+        state.travelPeriod = key;
+      }
+    }
+  }
+
+  /* ---- storage ---- */
+  var flashTimer;
+  function flash(msg) {
+    var el = document.getElementById("status");
+    el.textContent = msg;
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () { el.textContent = ""; }, 1800);
+  }
+
+  function saveLocal() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(state)); return true; }
+    catch (e) { return false; }
+  }
+
+  function loadLocal() {
+    var raw = null;
+    try {
+      raw = localStorage.getItem(LS_KEY);
+      if (!raw) {
+        for (var i = 0; i < LEGACY.length && !raw; i++) raw = localStorage.getItem(LEGACY[i]);
+      }
+      if (raw) merge(JSON.parse(raw));
+    } catch (e) {}
+  }
+
+  function save() {
+    flash(saveLocal() ? "Saved" : "Couldn't save — browser storage is blocked");
+  }
+
+  /* ---- build ---- */
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+  function tag(text, cls) {
+    return el("span", "tag" + (cls ? " " + cls : ""), text);
+  }
+
+  function sectionHead(title, right, sub) {
+    var frag = document.createDocumentFragment();
+    var head = el("div", "sechead");
+    head.appendChild(el("h2", "eyebrow", title));
+    head.appendChild(el("span", right.mono ? "num val" : "val", right.text));
+    frag.appendChild(head);
+    if (sub) frag.appendChild(el("p", "secsub", sub));
+    return frag;
+  }
+
+  // Rows carry their own repaint so a totals refresh doesn't rebuild the DOM.
+  var repainters = [];
+
+  function build() {
+    var host = document.getElementById("sections");
+    host.textContent = "";
+    repainters = [];
+
+    /* monthly */
+    var s1 = el("section", "sec");
+    var monthlyTotal = 0;
+    MONTHLY.forEach(function (m) { monthlyTotal += m.per * liveMonths(m); });
+    s1.appendChild(sectionHead("Every month — use it or lose it",
+      { text: money(monthlyTotal) + "/yr", mono:true },
+      "This month is outlined. Tap a month to punch it."));
+
+    MONTHLY.forEach(function (m) {
+      // A credit that ended mid-year keeps its live months tappable — only a
+      // year with no live months at all greys the row out.
+      var dead = liveMonths(m) === 0;
+      var row = el("div", "row" + (dead ? " expired" : ""));
+      var top = el("div", "rowtop");
+      var nm = el("span", "name", m.name);
+      if (dead) nm.appendChild(tag("Expired"));
+      else if (expired(m)) nm.appendChild(tag("Ended " + fmtDate(parseISO(m.through)), "ends"));
+      else if (endsThisYear(m)) nm.appendChild(tag("Ends " + fmtDate(parseISO(m.through)), "ends"));
+      top.appendChild(nm);
+      top.appendChild(el("span", "num val", money(m.per) + "/mo"));
+      row.appendChild(top);
+      row.appendChild(el("p", "detail", m.detail));
+
+      var strip = el("div", "strip");
+      var lab = el("p", "striplab num");
+      var buttons = [];
+
+      function refreshStrip() {
+        var done = 0, i;
+        for (i = 0; i < 12; i++) if (state.monthly[m.id][i] && monthLive(m, i)) done++;
+        var avail = liveMonths(m);
+        lab.textContent = done + "/" + avail + " punched · " +
+          money(done * m.per) + " of " + money(m.per * avail);
+        buttons.forEach(function (b, idx) {
+          b.setAttribute("aria-pressed", String(!!state.monthly[m.id][idx]));
+        });
+      }
+
+      MONTHS.forEach(function (mo, i) {
+        var live = monthLive(m, i);
+        var cls = "punch";
+        if (!live) cls += " gone";
+        else if (i === MONTH) cls += " now";
+        else if (i > MONTH) cls += " future";
+        var b = el("button", cls, mo.charAt(0));
+        b.type = "button";
+        b.disabled = !live;
+        b.setAttribute("aria-label", m.name + ", " + MONTHS_LONG[i] +
+          (live ? "" : " — credit ended"));
+        if (live) {
+          b.addEventListener("click", function () {
+            state.monthly[m.id][i] = !state.monthly[m.id][i];
+            refreshStrip();
+            paintAll();
+            save();
+          });
+        }
+        buttons.push(b);
+        strip.appendChild(b);
+      });
+
+      row.appendChild(strip);
+      refreshStrip();
+      row.appendChild(lab);
+      repainters.push(refreshStrip);
+      s1.appendChild(row);
+    });
+    host.appendChild(s1);
+
+    /* semiannual */
+    var s2 = el("section", "sec");
+    var semiTotal = 0;
+    SEMI.forEach(function (x) { if (!expired(x)) semiTotal += x.per * 2; });
+    s2.appendChild(sectionHead("Two shots a year", { text: money(semiTotal) + "/yr", mono:true }));
+
+    SEMI.forEach(function (s) {
+      var dead = expired(s);
+      var row = el("div", "row" + (dead ? " expired" : ""));
+      var top = el("div", "rowtop");
+      var nm = el("span", "name", s.name);
+      if (dead) nm.appendChild(tag("Expired"));
+      top.appendChild(nm);
+      top.appendChild(el("span", "num val", money(s.per) + " × 2"));
+      row.appendChild(top);
+      row.appendChild(el("p", "detail", s.detail));
+
+      var slots = el("div", "slots");
+      s.slots.forEach(function (label, i) {
+        var live = s.halves ? (i === (MONTH < 6 ? 0 : 1)) : true;
+        var b = el("button", "slot" + (live && !dead ? " live" : ""));
+        b.type = "button";
+        b.disabled = dead;
+        var sub = el("span");
+        b.appendChild(document.createTextNode(label));
+        b.appendChild(sub);
+        function paint() {
+          b.setAttribute("aria-pressed", String(!!state.semi[s.id][i]));
+          if (state.semi[s.id][i]) sub.textContent = money(s.per) + " claimed";
+          else if (dead) sub.textContent = "Expired unused";
+          else sub.textContent = "Unused · " + countdown(slotDeadline(s, i)) + " left";
+        }
+        paint();
+        repainters.push(paint);
+        if (!dead) {
+          b.addEventListener("click", function () {
+            state.semi[s.id][i] = !state.semi[s.id][i];
+            paint();
+            paintAll();
+            save();
+          });
+        }
+        slots.appendChild(b);
+      });
+      row.appendChild(slots);
+      s2.appendChild(row);
+    });
+    host.appendChild(s2);
+
+    /* annual */
+    var s3 = el("section", "sec");
+    var annualTotal = 0;
+    ANNUAL.forEach(function (x) { if (!expired(x)) annualTotal += x.value; });
+    s3.appendChild(sectionHead("Once this year", { text: money(annualTotal), mono:true }));
+
+    ANNUAL.forEach(function (a) {
+      var dead = expired(a);
+      var row = el("div", "row" + (dead ? " expired" : ""));
+      var b = el("button", "check");
+      b.type = "button";
+      b.disabled = dead;
+      var box = el("span", "box", "✓");
+      box.setAttribute("aria-hidden", "true");
+      var grow = el("span", "grow");
+      var top = el("span", "rowtop");
+      var nm = el("span", "name", a.name);
+      if (dead) nm.appendChild(tag("Expired"));
+      else if (endsThisYear(a)) nm.appendChild(tag("Ends " + fmtDate(parseISO(a.through)), "ends"));
+      top.appendChild(nm);
+      top.appendChild(el("span", "num val", money(a.value)));
+      grow.appendChild(top);
+      var d = el("span", "detail", a.detail);
+      d.style.display = "block";
+      grow.appendChild(d);
+      var when = el("span", "detail");
+      when.style.display = "block";
+      grow.appendChild(when);
+      b.appendChild(box);
+      b.appendChild(grow);
+      function paint() {
+        b.setAttribute("aria-pressed", String(!!state.annual[a.id]));
+        if (dead) { when.textContent = ""; return; }
+        var dl = annualDeadline(a);
+        when.textContent = state.annual[a.id]
+          ? "Claimed · resets " + fmtDate(dl)
+          : "Unused · " + countdown(dl) + " left (" + fmtDate(dl) + ")";
+      }
+      paint();
+      repainters.push(paint);
+      if (!dead) {
+        b.addEventListener("click", function () {
+          state.annual[a.id] = !state.annual[a.id];
+          paint();
+          paintAll();
+          save();
+        });
+      }
+      row.appendChild(b);
+      s3.appendChild(row);
+    });
+    host.appendChild(s3);
+
+    /* set once */
+    var s4 = el("section", "sec");
+    s4.appendChild(sectionHead("Set up once, then forget", { text:"not counted above", mono:false }));
+    ONCE.forEach(function (o) {
+      var dead = expired(o);
+      var row = el("div", "row" + (dead ? " expired" : ""));
+      var b = el("button", "check");
+      b.type = "button";
+      b.disabled = dead;
+      var box = el("span", "box", "✓");
+      box.setAttribute("aria-hidden", "true");
+      var grow = el("span", "grow");
+      var n = el("span", "name", o.name); n.style.display = "block";
+      if (dead) n.appendChild(tag("Expired"));
+      var d = el("span", "detail", o.note); d.style.display = "block";
+      grow.appendChild(n); grow.appendChild(d);
+      b.appendChild(box); b.appendChild(grow);
+      b.setAttribute("aria-pressed", String(!!state.once[o.id]));
+      if (!dead) {
+        b.addEventListener("click", function () {
+          state.once[o.id] = !state.once[o.id];
+          b.setAttribute("aria-pressed", String(state.once[o.id]));
+          save();
+        });
+      }
+      row.appendChild(b);
+      s4.appendChild(row);
+    });
+    host.appendChild(s4);
+  }
+
+  /* ---- totals ---- */
+  function claimedTotal() {
+    var claimed = 0;
+    MONTHLY.forEach(function (m) {
+      for (var i = 0; i < 12; i++) if (state.monthly[m.id][i] && monthLive(m, i)) claimed += m.per;
+    });
+    SEMI.forEach(function (s) {
+      if (expired(s)) return;
+      claimed += state.semi[s.id].filter(Boolean).length * s.per;
+    });
+    ANNUAL.forEach(function (a) { if (state.annual[a.id] && !expired(a)) claimed += a.value; });
+    return claimed;
+  }
+
+  function totals() {
+    var claimed = claimedTotal();
+    var TOTAL = totalAvailable();
+
+    document.getElementById("claimed").textContent = money(claimed);
+    document.getElementById("total").textContent = money(TOTAL);
+    document.getElementById("totalRight").textContent = money(TOTAL);
+
+    var fill = document.getElementById("fill");
+    fill.style.width = Math.min(100, (claimed / TOTAL) * 100) + "%";
+    var paid = claimed >= FEE;
+    fill.className = "fill" + (paid ? " paid" : "");
+    document.getElementById("tick").style.left = ((FEE / TOTAL) * 100) + "%";
+
+    var v = document.getElementById("verdict");
+    v.className = "verdict" + (paid ? " paid" : "");
+    v.textContent = paid
+      ? "Fee covered. " + money(claimed - FEE) + " ahead."
+      : money(FEE - claimed) + " to go before the fee breaks even.";
+  }
+
+  /* ---- what's about to expire ---- */
+  function riskList() {
+    var out = [];
+    MONTHLY.forEach(function (m) {
+      if (expired(m) || !monthLive(m, MONTH) || state.monthly[m.id][MONTH]) return;
+      out.push({ what:m.name, amt:m.per, when:endOfMonth(MONTH), note:MONTHS_LONG[MONTH] });
+    });
+    SEMI.forEach(function (s) {
+      if (expired(s)) return;
+      s.slots.forEach(function (label, i) {
+        if (state.semi[s.id][i]) return;
+        if (s.halves && i !== (MONTH < 6 ? 0 : 1)) return;  // the other half isn't at risk yet
+        out.push({ what:s.name, amt:s.per, when:slotDeadline(s, i), note:label });
+      });
+    });
+    ANNUAL.forEach(function (a) {
+      if (expired(a) || state.annual[a.id]) return;
+      out.push({ what:a.name, amt:a.value, when:annualDeadline(a), note:"" });
+    });
+    out.sort(function (x, y) { return x.when - y.when; });
+    return out;
+  }
+
+  function paintRisk() {
+    var host = document.getElementById("risk");
+    host.textContent = "";
+    var items = riskList();
+    var soon = items.filter(function (r) { return daysUntil(r.when) <= 45; });
+    var show = soon.length ? soon : items.slice(0, 3);
+    var atRisk = show.reduce(function (n, r) { return n + r.amt; }, 0);
+
+    host.className = "risk" + (show.length ? "" : " clear");
+    var head = el("div", "risk-head");
+    head.appendChild(el("p", "eyebrow", show.length ? "Expiring soon" : "Nothing expiring"));
+    if (show.length) head.appendChild(el("span", "risk-total num", money(atRisk) + " at risk"));
+    host.appendChild(head);
+
+    if (!show.length) {
+      host.appendChild(el("p", "risk-none", "Every live credit for " + YEAR + " is claimed. Nice."));
+      return;
+    }
+
+    var ul = el("ul", "risk-list");
+    show.forEach(function (r) {
+      var li = el("li");
+      var left = el("span", "risk-what",
+        r.what + (r.note ? " · " + r.note : "") + "  " + money(r.amt));
+      var days = daysUntil(r.when);
+      var right = el("span", "risk-when" + (days <= 7 ? " soon" : ""),
+        countdown(r.when) + " · " + fmtDate(r.when));
+      li.appendChild(left);
+      li.appendChild(right);
+      ul.appendChild(li);
+    });
+    host.appendChild(ul);
+  }
+
+  function paintPoints() {
+    var raw = parseFloat(state.points);
+    var pts = isFinite(raw) && raw > 0 ? raw : 0;
+    document.getElementById("ptsVal").textContent = money2(pts / 100);
+  }
+
+  function paintAnniv() {
+    var note = document.getElementById("annivNote");
+    var next = nextAnniversary();
+    note.textContent = next
+      ? "Travel credit resets " + fmtDate(next) + " · " + countdown(next) + " away."
+      : "The $300 travel credit resets on this date, not Jan 1.";
+    note.className = next ? "reset-note" : "";
+  }
+
+  function paintAll() {
+    repainters.forEach(function (fn) { fn(); });
+    totals();
+    paintRisk();
+    paintAnniv();
+  }
+
+  /* ---- wire up ---- */
+  document.getElementById("yearLabel").textContent = String(YEAR);
+  loadLocal();
+  build();
+  paintAll();
+
+  var anniv = document.getElementById("anniv");
+  anniv.value = state.anniversary || "";
+  anniv.addEventListener("change", function () {
+    state.anniversary = anniv.value;
+    var period = anniversaryPeriod();
+    state.travelPeriod = period ? iso(period) : "";
+    paintAll();
+    save();
+  });
+
+  var pts = document.getElementById("pts");
+  pts.value = state.points || "";
+  pts.addEventListener("input", function () {
+    state.points = pts.value;
+    paintPoints();
+  });
+  pts.addEventListener("change", function () {
+    state.points = pts.value;
+    paintPoints();
+    save();
+  });
+  paintPoints();
+
+  document.getElementById("reset").addEventListener("click", function () {
+    if (!confirm("Clear every checkmark and start the year over?")) return;
+    var keepAnniv = state.anniversary;
+    state = blank();
+    state.anniversary = keepAnniv;
+    var period = anniversaryPeriod();
+    state.travelPeriod = period ? iso(period) : "";
+    build();
+    paintAll();
+    document.getElementById("pts").value = "";
+    paintPoints();
+    save();
+  });
+
+  // Lock in a rollover right away so the reset survives a reload untouched.
+  if (rolledYear || rolledTravel) saveLocal();
+  if (rolledYear) flash("New year — recurring credits reset");
+  else if (rolledTravel) flash("Card anniversary passed — travel credit reset");
+})();
+</script>
+</body>
+</html>
