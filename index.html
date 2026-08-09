@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Razor's Edge</title>
   <meta name="description" content="Razor's Edge — a personal collection of tools, games, and trackers for parks, family, games, home, and money.">
-  <meta name="theme-color" content="#0d0d0d">
+  <meta name="theme-color" content="#0b0d10">
   <meta property="og:title" content="Razor's Edge">
   <meta property="og:description" content="A collection of tools, games, and trackers built for everyday use.">
   <meta property="og:type" content="website">
@@ -17,14 +17,16 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0d0d0d;
-      --surface: #161616;
-      --surface2: #1e1e1e;
-      --border: #2a2a2a;
-      --accent: #c8a96e;
+      --bg: #0b0d10;
+      --surface: #14171b;
+      --surface2: #1c2026;
+      --border: #2a3038;
+      --accent: #9fb3c6;
+      --accent-bright: #d8e3ee;
       --accent2: #8fbf6a;
-      --text: #e8e4dc;
-      --muted: #888;
+      --text: #e3e8ee;
+      --muted: #8792a0;
+      --dim: #4a545e;
     }
 
     html { scroll-behavior: smooth; }
@@ -50,7 +52,17 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(200,169,110,0.12) 0%, transparent 70%);
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(150,180,210,0.13) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Cold light catching the top edge of the page. */
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(200,220,240,0.25), transparent);
       pointer-events: none;
     }
 
@@ -64,23 +76,57 @@
     }
 
     .hero h1 {
-      font-size: clamp(3.5rem, 10vw, 7rem);
+      /* min must stay small enough that "Razor's Edge" fits a 360px phone
+         on one line — an oversized min overflows and clips the last letters. */
+      font-size: clamp(2.5rem, 11.5vw, 7rem);
       font-weight: 800;
       letter-spacing: -0.03em;
-      line-height: 1;
-      background: linear-gradient(135deg, #e8e4dc 0%, var(--accent) 50%, #e8e4dc 100%);
+      /* line-height must clear the descender on "g" — background-clip:text
+         paints only inside the box, so a tight box shears the tail off. */
+      line-height: 1.18;
+      padding-bottom: 0.08em;
+      background: linear-gradient(100deg,
+        #3f4a55 0%,
+        #8496a6 12%,
+        #d7e3ee 26%,
+        #ffffff 33%,
+        #9fb0c0 41%,
+        #4a5560 52%,
+        #708294 64%,
+        #c3d2e0 76%,
+        #7d8d9c 88%,
+        #57646f 100%);
+      background-size: 220% 100%;
+      background-position: 30% 0;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
+      animation: sheen 9s ease-in-out infinite;
     }
 
+    /* Slow highlight travelling down the blade. */
+    @keyframes sheen {
+      0%, 100% { background-position: 22% 0; }
+      50%      { background-position: 78% 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero h1 { animation: none; }
+    }
+
+    /* Honed edge: bright at the centre, vanishing at both tips. */
     .hero-rule {
-      width: 60px;
-      height: 2px;
-      background: var(--accent);
+      width: 200px;
+      max-width: 60%;
+      height: 1px;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(159,179,198,0.35) 25%,
+        var(--accent-bright) 50%,
+        rgba(159,179,198,0.35) 75%,
+        transparent 100%);
       margin: 0 auto 1.5rem;
-      opacity: 0.6;
     }
 
     .hero-sub {
@@ -242,7 +288,7 @@
       bottom: 1.25rem;
       right: 1.25rem;
       font-size: 0.9rem;
-      color: var(--border);
+      color: var(--dim);
       transition: color 0.2s, transform 0.2s;
     }
 
@@ -256,7 +302,7 @@
       text-align: center;
       padding: 1.5rem;
       font-size: 0.75rem;
-      color: var(--border);
+      color: var(--dim);
       border-top: 1px solid var(--border);
     }
 
