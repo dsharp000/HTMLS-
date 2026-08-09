@@ -1,16 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-<link rel="icon" href="/sapphire-icon.png">
-<link rel="apple-touch-icon" href="/sapphire-icon.png">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Sapphire Reserve Credit Tracker</title>
+<title>Sapphire Reserve Rewards Tracker</title>
 <meta name="description" content="Track every Chase Sapphire Reserve credit against the $795 annual fee — monthly, semiannual, and annual, with deadlines." />
 <meta name="theme-color" content="#F1F3F8" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#0A1220" media="(prefers-color-scheme: dark)" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-title" content="CSR Credits" />
+<meta name="apple-mobile-web-app-title" content="CSR Rewards" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%8E%3C/text%3E%3C/svg%3E" />
 <style>
   :root{
@@ -50,9 +48,12 @@
 
   /* ── masthead ─────────────────────────────────────────────── */
   .brand{ display:flex; align-items:center; gap:13px; margin-bottom:18px; }
+  /* the card name carries the masthead, so it runs larger than section eyebrows */
+  .brand .eyebrow{ font-size:12.5px; letter-spacing:.14em; color:var(--ink-2); }
   .gem{ flex:none; width:38px; height:38px; display:block;
     filter:drop-shadow(0 4px 10px rgba(30,63,191,.34)); }
   .brand h1{ font-size:26px; font-weight:800; letter-spacing:-.035em; margin:3px 0 0; line-height:1.1; }
+  .brand .chase{ margin-left:auto; flex:none; }
 
   /* ── the card face ────────────────────────────────────────── */
   .cardface{
@@ -126,6 +127,10 @@
 
   .risk::before{ background:linear-gradient(180deg,#E9B65C,#C58A1E); }
   .risk.clear::before{ background:linear-gradient(180deg,var(--claimed),var(--claimed)); }
+  /* nothing inside 45 days — same panel, without the warning colours */
+  .risk.later::before{ background:linear-gradient(180deg,var(--sapphire-2),var(--sapphire)); }
+  .risk.later .risk-head .eyebrow, .risk.later .risk-total{ color:var(--ink-2); }
+  .risk.later .risk-when{ color:var(--ink-2); background:var(--paper); border-color:var(--line); }
   .risk-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
   .risk-head .eyebrow{ color:var(--warn); }
   .risk.clear .risk-head .eyebrow{ color:var(--claimed); }
@@ -139,6 +144,14 @@
     background:var(--warn-soft); border:1px solid var(--warn-line); border-radius:999px; padding:3px 9px; }
   .risk-when.soon{ color:#A32B1C; background:#FDECE9; border-color:#F3CFC8; }
   .risk-none{ font-size:13px; color:var(--ink-2); margin:8px 0 0; }
+  .risk-more{ font:inherit; font-size:12.5px; font-weight:650; color:var(--ink-2); cursor:pointer;
+    margin:10px 0 0; padding:6px 0 0; background:none; border:none; border-top:1px solid var(--hair);
+    width:100%; text-align:left; letter-spacing:-.01em; transition:color .15s; }
+  .risk-more:hover{ color:var(--sapphire); }
+  .risk-more::after{ content:' ▾'; font-size:10px; vertical-align:1px; }
+  .risk-more[aria-expanded="true"]::after{ content:' ▴'; }
+  /* a deadline months away shouldn't wear the warning pill once it's revealed */
+  .risk-when.far{ color:var(--ink-2); background:var(--paper); border-color:var(--line); }
   @media (prefers-color-scheme:dark){
     .risk-when.soon{ color:#FF9C8B; background:#301A16; border-color:#4A2620; }
   }
@@ -241,6 +254,11 @@
     border-radius:9px; background:var(--card); color:var(--ink-2); cursor:pointer;
     transition:border-color .15s,color .15s; }
   .reset:hover{ border-color:var(--warn); color:var(--warn); }
+  .chase{ font-size:12.5px; font-weight:650; padding:9px 15px; border-radius:9px; white-space:nowrap;
+    border:1px solid var(--sapphire); background:var(--sapphire-soft); color:var(--sapphire-ink);
+    text-decoration:none; transition:background .15s,color .15s; }
+  .chase:hover{ background:var(--sapphire); color:#fff; }
+  .chase::after{ content:' ↗'; font-size:10.5px; vertical-align:1px; opacity:.75; }
   .note{ font-size:11.5px; line-height:1.6; color:var(--ink-3); max-width:430px; margin:0; }
   .note a{ color:var(--ink-2); text-decoration-color:var(--line); }
   .note a:hover{ color:var(--sapphire); }
@@ -261,6 +279,10 @@
     .points input{ width:100%; }
     .points-out{ text-align:left; }
     .risk-list li{ flex-direction:column; align-items:flex-start; gap:4px; }
+    /* the masthead already says Chase — drop the words the button can't fit */
+    .chase-long{ display:none; }
+    .brand .chase{ padding:8px 11px; }
+    .brand h1{ font-size:23px; }
   }
 </style>
 </head>
@@ -283,8 +305,10 @@
     </svg>
     <div>
       <p class="eyebrow">Chase Sapphire Reserve &middot; <span id="yearLabel"></span></p>
-      <h1>Credit tracker</h1>
+      <h1>Rewards tracker</h1>
     </div>
+    <a class="chase" href="https://secure.chase.com/" target="_blank" rel="noopener noreferrer"
+       aria-label="Sign in to Chase — opens in a new tab">Sign in<span class="chase-long"> to Chase</span></a>
   </header>
 
   <section class="cardface">
@@ -300,7 +324,7 @@
     </div>
     <div class="ticklab">
       <span>$0</span>
-      <span>fee covered at $795</span>
+      <span id="tickLabel">fee covered at $795</span>
       <span class="num" id="totalRight"></span>
     </div>
     <p class="verdict" id="verdict"></p>
@@ -865,10 +889,19 @@
     document.getElementById("totalRight").textContent = money(TOTAL);
 
     var fill = document.getElementById("fill");
-    fill.style.width = Math.min(100, (claimed / TOTAL) * 100) + "%";
+    // Once every offer has aged out there's nothing left to divide by.
+    fill.style.width = (TOTAL > 0 ? Math.min(100, (claimed / TOTAL) * 100) : 0) + "%";
     var paid = claimed >= FEE;
     fill.className = "fill" + (paid ? " paid" : "");
-    document.getElementById("tick").style.left = ((FEE / TOTAL) * 100) + "%";
+
+    // A fee marker past the end of the bar would sit outside it, so drop the
+    // marker entirely when the credits left can't reach $795.
+    var reachable = TOTAL >= FEE;
+    var tick = document.getElementById("tick");
+    tick.style.display = reachable ? "" : "none";
+    if (reachable) tick.style.left = ((FEE / TOTAL) * 100) + "%";
+    document.getElementById("tickLabel").textContent =
+      reachable ? "fee covered at $795" : "$795 fee · more than what's left";
 
     var v = document.getElementById("verdict");
     v.className = "verdict" + (paid ? " paid" : "");
@@ -886,11 +919,17 @@
     });
     SEMI.forEach(function (s) {
       if (expired(s)) return;
-      s.slots.forEach(function (label, i) {
-        if (state.semi[s.id][i]) return;
-        if (s.halves && i !== (MONTH < 6 ? 0 : 1)) return;  // the other half isn't at risk yet
-        out.push({ what:s.name, amt:s.per, when:slotDeadline(s, i), note:label });
-      });
+      if (s.halves) {
+        var h = MONTH < 6 ? 0 : 1;  // the other half isn't at risk yet
+        if (!state.semi[s.id][h])
+          out.push({ what:s.name, amt:s.per, when:slotDeadline(s, h), note:s.slots[h] });
+        return;
+      }
+      // Booking-style slots share one deadline, so they're one line at the
+      // combined amount rather than two identical rows.
+      var open = state.semi[s.id].filter(function (v) { return !v; }).length;
+      if (open) out.push({ what:s.name, amt:s.per * open, when:slotDeadline(s, 0),
+                           note:open + (open === 1 ? " booking left" : " bookings left") });
     });
     ANNUAL.forEach(function (a) {
       if (expired(a) || state.annual[a.id]) return;
@@ -900,18 +939,28 @@
     return out;
   }
 
+  // Lives outside paintRisk so punching a credit doesn't collapse the list.
+  var riskOpen = false;
+
   function paintRisk() {
     var host = document.getElementById("risk");
     host.textContent = "";
     var items = riskList();
     var soon = items.filter(function (r) { return daysUntil(r.when) <= 45; });
-    var show = soon.length ? soon : items.slice(0, 3);
-    var atRisk = show.reduce(function (n, r) { return n + r.amt; }, 0);
+    var urgent = soon.length > 0;
+    var base = urgent ? soon : items.slice(0, 3);
+    var show = riskOpen ? items : base;
+    // The headline covers every deadline it's speaking for — when nothing is
+    // urgent the list is trimmed to three, but the money still counts them all.
+    var atRisk = (urgent ? soon : items).reduce(function (n, r) { return n + r.amt; }, 0);
 
     host.className = "panel risk" + (show.length ? "" : " clear");
     var head = el("div", "risk-head");
-    head.appendChild(el("p", "eyebrow", show.length ? "Expiring soon" : "Nothing expiring"));
-    if (show.length) head.appendChild(el("span", "risk-total num", money(atRisk) + " at risk"));
+    if (show.length && !urgent) host.className += " later";
+    head.appendChild(el("p", "eyebrow",
+      show.length ? (urgent ? "Expiring soon" : "Next up") : "Nothing expiring"));
+    if (show.length) head.appendChild(el("span", "risk-total num",
+      money(atRisk) + (urgent ? " at risk" : " unclaimed")));
     host.appendChild(head);
 
     if (!show.length) {
@@ -925,13 +974,24 @@
       var left = el("span", "risk-what",
         r.what + (r.note ? " · " + r.note : "") + "  " + money(r.amt));
       var days = daysUntil(r.when);
-      var right = el("span", "risk-when" + (days <= 7 ? " soon" : ""),
+      var right = el("span", "risk-when" + (days <= 7 ? " soon" : days > 45 ? " far" : ""),
         countdown(r.when) + " · " + fmtDate(r.when));
       li.appendChild(left);
       li.appendChild(right);
       ul.appendChild(li);
     });
     host.appendChild(ul);
+
+    var rest = items.length - base.length;
+    if (rest > 0) {
+      var more = el("button", "risk-more", riskOpen
+        ? "Show less"
+        : "+ " + rest + (rest === 1 ? " more deadline" : " more deadlines") + " further out");
+      more.type = "button";
+      more.setAttribute("aria-expanded", String(riskOpen));
+      more.addEventListener("click", function () { riskOpen = !riskOpen; paintRisk(); });
+      host.appendChild(more);
+    }
   }
 
   function paintPoints() {
@@ -954,6 +1014,7 @@
     totals();
     paintRisk();
     paintAnniv();
+    paintPoints();
   }
 
   /* ---- wire up ---- */
@@ -983,7 +1044,6 @@
     paintPoints();
     save();
   });
-  paintPoints();
 
   document.getElementById("reset").addEventListener("click", function () {
     if (!confirm("Clear every checkmark and start the year over?")) return;
@@ -992,10 +1052,9 @@
     state.anniversary = keepAnniv;
     var period = anniversaryPeriod();
     state.travelPeriod = period ? iso(period) : "";
+    document.getElementById("pts").value = "";
     build();
     paintAll();
-    document.getElementById("pts").value = "";
-    paintPoints();
     save();
   });
 
