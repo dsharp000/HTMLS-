@@ -121,6 +121,21 @@
     border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.10); color:#fff; }
   .reset-note{ color:#F2CE8B; font-weight:650; }
 
+  .switch{ display:inline-flex; align-items:center; gap:9px; font:inherit; font-size:12.5px;
+    font-weight:650; color:rgba(255,255,255,.92); background:none; border:none; padding:0;
+    cursor:pointer; letter-spacing:.01em; }
+  .track{ position:relative; flex:none; width:38px; height:22px; border-radius:999px;
+    background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.24);
+    transition:background .18s,border-color .18s; }
+  .knob{ position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%;
+    background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.45); transition:transform .18s; }
+  .switch[aria-checked="true"] .track{ background:#2C4FD8; border-color:#5C86F5; }
+  .switch[aria-checked="true"] .knob{ transform:translateX(16px); }
+  .switch:hover .track{ border-color:rgba(255,255,255,.5); }
+  .switch-note{ font-size:11.5px; color:rgba(255,255,255,.55); }
+  /* the lounge panel's own figure greys out while it's held out of the total */
+  .lounge-off .amt{ color:var(--ink-3); }
+
   /* ── panels ───────────────────────────────────────────────── */
   .panel{ position:relative; overflow:hidden; background:var(--card); border:1px solid var(--line);
     border-radius:14px; padding:17px 19px; margin-top:12px; box-shadow:var(--shadow); }
@@ -170,6 +185,29 @@
     color:var(--ink-3); margin-bottom:7px; }
   .points-note{ font-size:12px; line-height:1.55; color:var(--ink-2); margin:15px 0 0;
     padding-top:13px; border-top:1px solid var(--hair); }
+
+  /* ── lounge counter ───────────────────────────────────────── */
+  .lounge-row{ display:flex; align-items:flex-end; justify-content:space-between;
+    gap:16px; flex-wrap:wrap; margin-top:13px; }
+  .stepper{ display:flex; align-items:center; gap:14px; }
+  .step{ flex:none; width:46px; height:46px; font:inherit; font-size:23px; font-weight:700; line-height:1;
+    display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer;
+    border:1px solid var(--line); border-radius:13px; background:var(--paper); color:var(--ink-2);
+    transition:background .15s,color .15s,border-color .15s,transform .1s; }
+  .step:hover{ border-color:var(--sapphire); color:var(--sapphire); }
+  .step:active{ transform:scale(.9); }
+  .step:disabled{ opacity:.35; cursor:not-allowed; }
+  .step:disabled:hover{ border-color:var(--line); color:var(--ink-2); }
+  .lounge-count{ font-size:34px; font-weight:750; line-height:1; letter-spacing:-.035em;
+    min-width:2ch; text-align:center; }
+  .lounge-field{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:12px;
+    color:var(--ink-2); margin-top:15px; padding-top:13px; border-top:1px solid var(--hair); }
+  .lounge-field label{ font-weight:650; color:var(--ink); }
+  .lounge-field input{ font:inherit; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-variant-numeric:tabular-nums; font-size:13px; width:92px; padding:7px 10px;
+    border:1px solid var(--line); border-radius:8px; background:var(--paper); color:var(--ink); }
+  .lounge-field input:hover{ border-color:var(--sapphire); }
+  .lounge-note{ flex:1 1 210px; font-size:11.5px; line-height:1.5; color:var(--ink-3); }
 
   /* ── sections ─────────────────────────────────────────────── */
   .sec{ margin-top:30px; }
@@ -335,6 +373,13 @@
       <input type="date" id="anniv" />
       <span id="annivNote">The $300 travel credit resets on this date, not Jan 1.</span>
     </div>
+    <div class="field">
+      <button type="button" class="switch" id="lgToggle" role="switch" aria-checked="true">
+        <span class="track" aria-hidden="true"><span class="knob"></span></span>
+        Count lounge visits
+      </button>
+      <span class="switch-note" id="lgToggleNote"></span>
+    </div>
   </section>
 
   <div class="panel risk" id="risk"></div>
@@ -355,6 +400,27 @@
       Points &divide; 100. That's the floor &mdash; roughly what you'd get taking cash back. Transferred to
       Hyatt, United, or Air Canada, the same balance usually stretches well past this number.
     </p>
+  </div>
+
+  <div class="panel">
+    <p class="eyebrow">Lounge visits</p>
+    <div class="lounge-row">
+      <div class="stepper">
+        <button type="button" class="step" id="lgMinus" aria-label="Remove a lounge visit">&minus;</button>
+        <span class="num lounge-count" id="lgCount" aria-live="polite">0</span>
+        <button type="button" class="step" id="lgPlus" aria-label="Add a lounge visit">+</button>
+      </div>
+      <div class="points-out" id="lgOut">
+        <div class="cap" id="lgCap">Value counted</div>
+        <div class="amt num" id="lgVal">$0</div>
+      </div>
+    </div>
+    <div class="lounge-field">
+      <label for="lgPer">Worth per visit</label>
+      <input type="number" id="lgPer" min="0" step="5" inputmode="numeric" />
+      <span class="lounge-note">Sapphire Lounge, Priority Pass, and select Air Canada lounges. Counts
+        toward the fee above &mdash; set this to 0 to track visits without valuing them.</span>
+    </div>
   </div>
 
   <div id="sections"></div>
@@ -398,7 +464,13 @@
     { id:"peloton", name:"Peloton membership", per:10, through:"2027-12-31",
       detail:"Activation required." },
     { id:"doordash", name:"DoorDash promos", per:25,
-      detail:"One $5 restaurant promo plus two $10 non-restaurant promos. Promo value, not a statement credit." }
+      detail:"One $5 restaurant promo plus two $10 non-restaurant promos. Promo value, not a statement credit." },
+    /* Complimentary subscriptions rather than statement credits — punched for the
+       month you actually used them, valued at the standalone retail price. */
+    { id:"appletv", name:"Apple TV+", per:13, through:"2027-06-22",
+      detail:"Complimentary with the Reserve — activate once, then it renews itself. Valued at the $12.99 standalone price." },
+    { id:"applemusic", name:"Apple Music", per:11, through:"2027-06-22",
+      detail:"Complimentary with the Reserve — activate once, then it renews itself. Valued at the $10.99 standalone price." }
   ];
 
   var SEMI = [
@@ -417,9 +489,12 @@
       detail:"2026 only. Select Chase Travel hotels (IHG, Omni, Virgin), two-night minimum, book by Dec 31, 2026." }
   ];
 
+  /* `value` on a set-once item means it's worth real money the year you use it.
+     It counts only once ticked — an unused four-year benefit shouldn't inflate
+     what's theoretically available. */
   var ONCE = [
-    { id:"globalentry", name:"Global Entry / TSA PreCheck", note:"Up to $120, once every four years" },
-    { id:"apple", name:"Apple TV+ and Apple Music", note:"Activate — complimentary through Jun 22, 2027", through:"2027-06-22" },
+    { id:"globalentry", name:"Global Entry / TSA PreCheck", value:120,
+      note:"Up to $120, once every four years — counts toward the fee the year you use it" },
     { id:"dashpass", name:"DashPass membership", note:"Activate in the DoorDash app" },
     { id:"prioritypass", name:"Priority Pass enrollment", note:"Sapphire Lounges, Priority Pass, select Air Canada lounges" },
     { id:"ihg", name:"IHG One Rewards Platinum", note:"Enroll — status through Dec 31, 2027", through:"2027-12-31" }
@@ -500,12 +575,28 @@
     return t && t < endOfYear() ? t : endOfYear();
   }
 
+  // Lounge visits and set-once benefits have no fixed ceiling — they're worth
+  // whatever you've actually used, so they raise the claimed figure and the
+  // available figure by the same amount rather than sitting in a fixed pool.
+  function loungeWorth() {
+    var v = Math.max(0, state.lounge.visits) * Math.max(0, num(state.lounge.per));
+    return isFinite(v) ? v : 0;
+  }
+  // What the visits are worth vs. what the fee math is allowed to see.
+  function loungeValue() { return state.lounge.include ? loungeWorth() : 0; }
+  function onceValue() {
+    var t = 0;
+    ONCE.forEach(function (o) { if (o.value && state.once[o.id] && !expired(o)) t += o.value; });
+    return t;
+  }
+  function earned() { return loungeValue() + onceValue(); }
+
   function totalAvailable() {
     var t = 0;
     MONTHLY.forEach(function (m) { t += m.per * liveMonths(m); });
     SEMI.forEach(function (s) { if (!expired(s)) t += s.per * 2; });
     ANNUAL.forEach(function (a) { if (!expired(a)) t += a.value; });
-    return t;
+    return t + earned();
   }
 
   /* ---- anniversary ---- */
@@ -525,9 +616,12 @@
   }
 
   /* ---- state ---- */
+  var LOUNGE_PER = 50;
+
   function blank() {
     var s = { year:YEAR, monthly:{}, semi:{}, annual:{}, once:{},
-              anniversary:"", points:"", travelPeriod:"" };
+              anniversary:"", points:"", travelPeriod:"",
+              lounge:{ visits:0, per:LOUNGE_PER, include:true } };
     MONTHLY.forEach(function (m) {
       s.monthly[m.id] = [];
       for (var i = 0; i < 12; i++) s.monthly[m.id].push(false);
@@ -540,6 +634,7 @@
 
   var state = blank();
 
+  function num(v) { var n = parseFloat(v); return isFinite(n) ? n : 0; }
   function money(n) { return "$" + n.toLocaleString("en-US"); }
   function money2(n) {
     return "$" + n.toLocaleString("en-US", { minimumFractionDigits:2, maximumFractionDigits:2 });
@@ -571,6 +666,12 @@
     if (saved.anniversary) state.anniversary = saved.anniversary;
     if (saved.points) state.points = saved.points;
     if (saved.travelPeriod) state.travelPeriod = saved.travelPeriod;
+    if (saved.lounge) {
+      state.lounge.visits = Math.max(0, Math.round(num(saved.lounge.visits)));
+      if (saved.lounge.per !== undefined && saved.lounge.per !== "")
+        state.lounge.per = Math.max(0, num(saved.lounge.per));
+      if (saved.lounge.include !== undefined) state.lounge.include = !!saved.lounge.include;
+    }
     state.year = saved.year || state.year;
     rollover();
   }
@@ -584,6 +685,7 @@
       MONTHLY.forEach(function (m) { state.monthly[m.id] = boolArray(null, 12); });
       SEMI.forEach(function (s) { state.semi[s.id] = [false, false]; });
       ANNUAL.forEach(function (a) { if (!a.anniversary) state.annual[a.id] = false; });
+      state.lounge.visits = 0;   // visit count is per-year; the valuation is a preference
       state.year = YEAR;
     }
     var period = anniversaryPeriod();
@@ -839,7 +941,20 @@
 
     /* set once */
     var s4 = el("section", "sec");
-    s4.appendChild(sectionHead("Set up once, then forget", { text:"not counted above", mono:false }));
+    var s4head = el("div", "sechead");
+    var s4val = el("span", "val");
+    s4head.appendChild(el("h2", "eyebrow", "Set up once, then forget"));
+    s4head.appendChild(s4val);
+    s4.appendChild(s4head);
+    // Only the ones carrying a value count, and only once ticked.
+    function refreshOnceHead() {
+      var got = onceValue();
+      s4val.textContent = got ? money(got) + " counted" : "counted when used";
+      s4val.className = got ? "num val" : "val";
+    }
+    refreshOnceHead();
+    repainters.push(refreshOnceHead);
+
     ONCE.forEach(function (o) {
       var dead = expired(o);
       var row = el("div", "row" + (dead ? " expired" : ""));
@@ -849,16 +964,22 @@
       var box = el("span", "box", "✓");
       box.setAttribute("aria-hidden", "true");
       var grow = el("span", "grow");
-      var n = el("span", "name", o.name); n.style.display = "block";
+      var top = el("span", "rowtop");
+      var n = el("span", "name", o.name);
       if (dead) n.appendChild(tag("Expired"));
+      top.appendChild(n);
+      if (o.value) top.appendChild(el("span", "num val", money(o.value)));
       var d = el("span", "detail", o.note); d.style.display = "block";
-      grow.appendChild(n); grow.appendChild(d);
+      grow.appendChild(top); grow.appendChild(d);
       b.appendChild(box); b.appendChild(grow);
-      b.setAttribute("aria-pressed", String(!!state.once[o.id]));
+      function paint() { b.setAttribute("aria-pressed", String(!!state.once[o.id])); }
+      paint();
+      repainters.push(paint);
       if (!dead) {
         b.addEventListener("click", function () {
           state.once[o.id] = !state.once[o.id];
-          b.setAttribute("aria-pressed", String(state.once[o.id]));
+          paint();
+          paintAll();
           save();
         });
       }
@@ -879,7 +1000,7 @@
       claimed += state.semi[s.id].filter(Boolean).length * s.per;
     });
     ANNUAL.forEach(function (a) { if (state.annual[a.id] && !expired(a)) claimed += a.value; });
-    return claimed;
+    return claimed + earned();
   }
 
   function totals() {
@@ -1002,6 +1123,22 @@
     document.getElementById("ptsVal").textContent = money2(pts / 100);
   }
 
+  function paintLounge() {
+    var v = state.lounge.visits, on = state.lounge.include, worth = loungeWorth();
+    document.getElementById("lgCount").textContent = String(v);
+    document.getElementById("lgVal").textContent = money(worth);
+    document.getElementById("lgMinus").disabled = v <= 0;
+    document.getElementById("lgCap").textContent = on ? "Value counted" : "Not in the total";
+    document.getElementById("lgOut").className = "points-out" + (on ? "" : " lounge-off");
+
+    var sw = document.getElementById("lgToggle");
+    sw.setAttribute("aria-checked", String(on));
+    document.getElementById("lgToggleNote").textContent = !v
+      ? "No visits logged yet."
+      : on ? money(worth) + " from " + v + (v === 1 ? " visit" : " visits") + " is in the total."
+           : money(worth) + " from " + v + (v === 1 ? " visit" : " visits") + " is held out.";
+  }
+
   function paintAnniv() {
     var note = document.getElementById("annivNote");
     var next = nextAnniversary();
@@ -1017,6 +1154,7 @@
     paintRisk();
     paintAnniv();
     paintPoints();
+    paintLounge();
   }
 
   /* ---- wire up ---- */
@@ -1047,14 +1185,36 @@
     save();
   });
 
+  var lgPer = document.getElementById("lgPer");
+  lgPer.value = state.lounge.per;
+  function bumpLounge(d) {
+    state.lounge.visits = Math.max(0, state.lounge.visits + d);
+    paintAll();
+    save();
+  }
+  document.getElementById("lgPlus").addEventListener("click", function () { bumpLounge(1); });
+  document.getElementById("lgMinus").addEventListener("click", function () { bumpLounge(-1); });
+  document.getElementById("lgToggle").addEventListener("click", function () {
+    state.lounge.include = !state.lounge.include;
+    paintAll();
+    save();
+  });
+  function readPer() { state.lounge.per = Math.max(0, num(lgPer.value)); paintAll(); }
+  lgPer.addEventListener("input", readPer);
+  lgPer.addEventListener("change", function () { readPer(); save(); });
+
   document.getElementById("reset").addEventListener("click", function () {
     if (!confirm("Clear every checkmark and start the year over?")) return;
-    var keepAnniv = state.anniversary;
+    var keepAnniv = state.anniversary, keepPer = state.lounge.per,
+        keepInc = state.lounge.include;
     state = blank();
     state.anniversary = keepAnniv;
+    state.lounge.per = keepPer;        // valuation preferences, not a year's data
+    state.lounge.include = keepInc;
     var period = anniversaryPeriod();
     state.travelPeriod = period ? iso(period) : "";
     document.getElementById("pts").value = "";
+    lgPer.value = state.lounge.per;
     build();
     paintAll();
     save();
