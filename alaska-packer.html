@@ -476,6 +476,34 @@
 
     .gear-lbs { font-size: 0.68rem; color: var(--muted); flex-shrink: 0; }
 
+    /* Group card only — who's actually carrying this shared item */
+    .gear-carrier {
+      background: var(--surf2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.12rem 0.25rem;
+      font-family: inherit;
+      font-size: 0.68rem;
+      color: var(--muted);
+      cursor: pointer;
+      outline: none;
+      flex-shrink: 0;
+      max-width: 108px;
+      transition: border-color 0.15s;
+    }
+    .gear-carrier:focus { border-color: var(--accent); }
+    /* Nobody's claimed it yet — nudge, don't shout */
+    .gear-carrier.unassigned {
+      border-style: dashed;
+      color: var(--warn);
+    }
+    /* Nobody owns it yet — it still has to be bought, and still has to fly */
+    .gear-carrier.buy {
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+    .gear-carrier option { color: var(--text); background: var(--surf); }
+
     .gear-del {
       background: none;
       border: none;
@@ -688,6 +716,41 @@
     /* Owner deleted the underlying gear — the copy is stale, so dim it */
     .list-row.orphan .list-name,
     .list-row.orphan .list-lbs { opacity: 0.45; text-decoration: line-through; }
+
+    /* ── Wish list load line ──────────────────────────────────── */
+    /* Everything above the line fits in what's left of the 850. Below it,
+       something else has to come off first. */
+    .wish-line {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.35rem 0.25rem 0.4rem;
+      font-size: 0.63rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--wish);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .wish-line::before,
+    .wish-line::after {
+      content: '';
+      height: 0;
+      border-top: 1px dashed var(--wish);
+      opacity: 0.6;
+      flex: 1;
+    }
+    .wish-line::before { flex: 0 0 0.75rem; }
+    .wish-line.none { color: var(--warn); }
+    .wish-line.none::before, .wish-line.none::after { border-top-color: var(--warn); }
+    .wish-line.all { color: var(--ok); }
+    .wish-line.all::before, .wish-line.all::after { border-top-color: var(--ok); }
+    /* Below the line — still on the list, just doesn't fit yet */
+    .list-row.below-line .list-name,
+    .list-row.below-line .list-lbs,
+    .list-row.below-line .list-owner { opacity: 0.5; }
+    /* Already checked on its owner's card, so it costs nothing to "add" */
+    .list-row.packed .list-lbs { opacity: 0.5; }
     .list-act {
       background: none;
       border: none;
@@ -765,6 +828,11 @@
     /* ── Responsive ───────────────────────────────────────────── */
     @media (max-width: 620px) {
       .people-grid, .list-grid { grid-template-columns: 1fr; }
+      /* The Group card carries an extra control (who's bringing it), so on a phone
+         its rows wrap: name on top, carrier + weight + pills underneath. */
+      #card-group .gear-row { flex-wrap: wrap; row-gap: 0.2rem; }
+      #card-group .gear-name-input { flex: 1 1 55%; min-width: 7rem; }
+      #card-group .gear-carrier { margin-left: 1.9rem; }
       .hero { padding: 3rem 1.25rem 1.5rem; }
       .meter-wrap { padding: 0 1.25rem; }
       .people-grid { padding: 0 1.25rem 2rem; }
@@ -1010,6 +1078,7 @@ function listItems(kind) {
         name:   src ? src.name   : it.name,
         weight: Number((src ? src.weight : it.weight)) || 0,
         orphan: !src,
+        packed: !!src?.included,   // already checked on its owner's card
       };
     })
     .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
@@ -1021,6 +1090,24 @@ function listTotal(kind) {
 
 function inList(kind, slotId, gearId) {
   return !!lists[kind]?.[`${slotId}__${gearId}`];
+}
+
+// How far down the Wish List we can go on what's left of the 850. Walks the list
+// in priority order and stops at the first item that won't fit — it's a ranked
+// list, so we don't skip a heavy #2 to squeeze in a light #3.
+// An item already checked on its owner's card is inside the total already, so it
+// costs nothing here; an orphan (owner deleted the gear) is free too.
+function wishPlan() {
+  const items = listItems('wish');
+  const rem   = Math.max(0, LIMIT - grandTotal());
+  let used = 0, fits = 0;
+  for (const it of items) {
+    const cost = (it.packed || it.orphan) ? 0 : (Number(it.weight) || 0);
+    if (used + cost > rem + 1e-9) break;
+    used += cost;
+    fits++;
+  }
+  return { rem, used, fits, spare: rem - used, count: items.length };
 }
 
 function fmt(n) { return (Math.round(n * 10) / 10).toFixed(1); }
@@ -1152,6 +1239,43 @@ function renderMeter() {
 
 // ── Render one card ─────────────────────────────────────────────
 
+// Who's hauling the shared gear, by weight. Unclaimed items are called out so
+// nothing shared quietly ends up with no owner.
+function carrierSplit() {
+  const tally = {};
+  let unclaimed = 0, toBuy = 0;
+  Object.values(members.group?.gear || {}).forEach(g => {
+    if (!g.included) return;
+    const w = Number(g.weight) || 0;
+    const c = g.carrier;
+    if (c === CARRIER_BUY)   toBuy += w;
+    else if (isCarrier(c))   tally[c] = (tally[c] || 0) + w;
+    else                     unclaimed += w;
+  });
+  const parts = SLOTS.filter(s => s !== 'group' && tally[s])
+                     .map(s => `${ownerName(s)} ${fmt(tally[s])}`);
+  return { parts, unclaimed, toBuy };
+}
+
+function summaryText(slotId) {
+  const member = members[slotId];
+  const gTotal = gearTotal(member);
+  if (slotId === 'group') {
+    const { parts, unclaimed, toBuy } = carrierSplit();
+    let tail = '';
+    if (parts.length) {
+      tail = ` · carried by ${parts.join(' · ')}`
+           + (unclaimed > 0.049 ? ` · ${fmt(unclaimed)} unclaimed` : '');
+    } else if (gTotal > 0) {
+      tail = ' · nobody has claimed any of it yet';
+    }
+    if (toBuy > 0.049) tail += ` · ${fmt(toBuy)} still to buy`;
+    return `Shared gear · ${fmt(gTotal)} lbs — counts against the 850 lb load${tail}`;
+  }
+  const bw = Number(member?.bodyWeight) || 0;
+  return `Body ${fmt(bw)} lbs · Gear ${fmt(gTotal)} lbs · Total ${fmt(personTotal(member))} lbs`;
+}
+
 function renderCard(slotId, member) {
   const card = document.getElementById(`card-${slotId}`);
   if (!card) return;
@@ -1184,11 +1308,7 @@ function renderCard(slotId, member) {
   if (gSub) gSub.textContent = `${fmt(gTotal)} lbs`;
 
   const summary = document.getElementById(`summary-${slotId}`);
-  if (summary) {
-    summary.textContent = slotId === 'group'
-      ? `Shared gear · ${fmt(gTotal)} lbs — counts against the 850 lb load`
-      : `Body ${fmt(bw)} lbs · Gear ${fmt(gTotal)} lbs · Total ${fmt(pTotal)} lbs`;
-  }
+  if (summary) summary.textContent = summaryText(slotId);
 
   // Update inputs without stealing focus
   setIfNotFocused(`name-${slotId}`, member.name || '');
@@ -1196,6 +1316,33 @@ function renderCard(slotId, member) {
 
   // Rebuild gear list (preserving focus)
   renderGearList(slotId, member.gear || {});
+}
+
+// Group card only: who out of the four is actually hauling this shared item —
+// or BUY, for gear nobody owns yet that still has to fly. Stored as a slot id
+// (or 'buy') on the gear item, so renaming a traveler renames it here too.
+const CARRIER_BUY = 'buy';
+
+function isCarrier(v) {
+  return v === CARRIER_BUY || (SLOTS.includes(v) && v !== 'group');
+}
+
+function carrierColor(v) {
+  return v === CARRIER_BUY ? 'var(--text)' : (SLOT_COLORS[v]?.main || '');
+}
+
+function carrierSelectHtml(slotId, item) {
+  const cur  = isCarrier(item.carrier) ? item.carrier : '';
+  const opts = [`<option value="" ${cur ? '' : 'selected'}>— who? —</option>`].concat(
+    SLOTS.filter(s => s !== 'group').map(s =>
+      `<option value="${s}" ${cur === s ? 'selected' : ''}>${esc(ownerName(s))}</option>`),
+    [`<option value="${CARRIER_BUY}" ${cur === CARRIER_BUY ? 'selected' : ''}>BUY</option>`]
+  ).join('');
+  const color = carrierColor(cur);
+  return `<select class="gear-carrier ${cur ? '' : 'unassigned'}${cur === CARRIER_BUY ? ' buy' : ''}"
+                  id="gcarrier-${slotId}-${item.id}" title="Who's carrying this"
+                  style="${color ? `color:${color};border-color:${color}` : ''}"
+                  onchange="window._saveCarrier('${slotId}','${item.id}',this.value)">${opts}</select>`;
 }
 
 function renderGearList(slotId, gear) {
@@ -1230,6 +1377,7 @@ function renderGearList(slotId, gear) {
                id="gname-${slotId}-${item.id}" title="Click to edit name"
                onblur="window._saveGearName('${slotId}','${item.id}',this.value)"
                onkeydown="if(event.key==='Enter')this.blur()">
+        ${slotId === 'group' ? carrierSelectHtml(slotId, item) : ''}
         <input type="number" class="gear-weight-input" value="${Number(item.weight).toFixed(2)}"
                id="gweight-${slotId}-${item.id}" min="0" step="0.01"
                onblur="window._saveGearWeight('${slotId}','${item.id}',this.value)"
@@ -1340,9 +1488,7 @@ function refreshCardStats(slotId) {
     badge.style.borderColor = pTotal > 250 ? 'var(--warn)' : 'var(--border)';
   }
   if (gSub)    gSub.textContent = `${fmt(gTotal)} lbs`;
-  if (summary) summary.textContent = slotId === 'group'
-    ? `Shared gear · ${fmt(gTotal)} lbs — counts against the 850 lb load`
-    : `Body ${fmt(bw)} lbs · Gear ${fmt(gTotal)} lbs · Total ${fmt(pTotal)} lbs`;
+  if (summary) summary.textContent = summaryText(slotId);
   if (split) {
     const c = SLOT_COLORS[slotId];
     split.innerHTML = pTotal > 0
@@ -1358,6 +1504,18 @@ window._saveName = (slotId, val) => {
   if (members[slotId]) members[slotId].name = val.trim();
   set(ref(db, `alaska-trip/members/${slotId}/name`), val.trim());
   renderMeter();  // legend shows the name
+  // The Group card's carrier dropdowns and split are labeled with these names
+  if (members.group) { renderGearList('group', members.group.gear || {}); refreshCardStats('group'); }
+  renderLists();  // list rows show the owner name too
+};
+
+// Who's hauling a shared item. '' = nobody's claimed it yet.
+window._saveCarrier = (slotId, gearId, val) => {
+  const carrier = isCarrier(val) ? val : '';
+  if (members[slotId]?.gear?.[gearId]) members[slotId].gear[gearId].carrier = carrier;
+  set(ref(db, `alaska-trip/members/${slotId}/gear/${gearId}/carrier`), carrier);
+  renderGearList(slotId, members[slotId]?.gear || {});
+  refreshCardStats(slotId);  // the summary shows the per-carrier split
 };
 
 window._saveBodyWeight = (slotId, val) => {
@@ -1489,11 +1647,22 @@ function renderLists() {
     const items = listItems(kind);
     const total = listTotal(kind);
 
+    // The Wish List gets a load line: how far down it we can go on what's left.
+    const plan = kind === 'wish' ? wishPlan() : null;
+
     if (badge) badge.textContent = `${fmt(total)} lbs`;
     if (foot) {
-      foot.textContent = items.length
-        ? `${items.length} item${items.length === 1 ? '' : 's'} · ${fmt(total)} lbs — tallied on its own. These stay in each person's stash and still count toward the 850.`
-        : "Tallied on its own — copies only, nothing leaves anyone's stash.";
+      if (plan && items.length) {
+        foot.textContent =
+          `${items.length} item${items.length === 1 ? '' : 's'} · ${fmt(total)} lbs — ` +
+          (plan.fits === 0
+            ? `nothing fits in the ${fmt(plan.rem)} lbs left. Cut something first.`
+            : `top ${plan.fits} fit${plan.fits === 1 ? 's' : ''} in the ${fmt(plan.rem)} lbs left (${fmt(plan.used)} lbs used, ${fmt(plan.spare)} to spare).`);
+      } else {
+        foot.textContent = items.length
+          ? `${items.length} item${items.length === 1 ? '' : 's'} · ${fmt(total)} lbs — tallied on its own. These stay in each person's stash and still count toward the 850.`
+          : "Tallied on its own — copies only, nothing leaves anyone's stash.";
+      }
     }
 
     if (!items.length) {
@@ -1504,11 +1673,13 @@ function renderLists() {
 
     // Read-only mirrors — edit the name or weight on the owner's card and it
     // updates here too.
-    body.innerHTML = items.map((it, i) => {
+    const rows = items.map((it, i) => {
       const owner = ownerName(it.from);
       const color = SLOT_COLORS[it.from]?.main || 'var(--muted)';
+      const below = plan && i >= plan.fits ? ' below-line' : '';
+      const packed = plan && it.packed && !it.orphan ? ' packed' : '';
       return `
-      <div class="list-row ${it.orphan ? 'orphan' : ''}" id="lrow-${kind}-${it.key}">
+      <div class="list-row ${it.orphan ? 'orphan' : ''}${below}${packed}" id="lrow-${kind}-${it.key}">
         <span class="list-rank">${i + 1}</span>
         <button class="list-act move-top" title="Make this the top priority"
                 onclick="window._listMove('${kind}','${it.key}','top')" ${i === 0 ? 'disabled' : ''}>⤒</button>
@@ -1520,14 +1691,34 @@ function renderLists() {
         </span>
         <span class="list-owner-dot" style="background:${color}" title="${esc(owner)}"></span>
         <span class="list-name" title="${esc(owner)}${it.orphan ? ' — no longer in their stash' : ''}">${esc(it.name)}</span>
-        <span class="list-owner">${esc(owner)}${it.orphan ? ' · removed' : ''}</span>
+        <span class="list-owner">${esc(owner)}${it.orphan ? ' · removed' : (packed ? ' · packed' : '')}</span>
         <span class="list-lbs">${fmt(it.weight)}</span>
         <span class="gear-lbs">lbs</span>
         <button class="list-act del" title="Remove from this list (keeps the item)"
                 onclick="window._listDelete('${kind}','${it.key}')">✕</button>
       </div>`;
-    }).join('');
+    });
+
+    // Drop the load line in after the last item that fits (or above everything
+    // when nothing does).
+    if (plan) rows.splice(plan.fits, 0, wishLineHtml(plan));
+
+    body.innerHTML = rows.join('');
   });
+}
+
+// The line itself — reads as a cut line, and says what it's measuring.
+function wishLineHtml(plan) {
+  if (plan.rem <= 0) {
+    return `<div class="wish-line none">No room left · 0.0 lbs under the 850</div>`;
+  }
+  if (plan.fits === 0) {
+    return `<div class="wish-line none">${fmt(plan.rem)} lbs left — nothing below fits</div>`;
+  }
+  if (plan.fits === plan.count) {
+    return `<div class="wish-line all">All of it fits · ${fmt(plan.used)} of ${fmt(plan.rem)} lbs left · ${fmt(plan.spare)} to spare</div>`;
+  }
+  return `<div class="wish-line">↑ fits · ${fmt(plan.used)} of ${fmt(plan.rem)} lbs left · ${fmt(plan.spare)} to spare</div>`;
 }
 
 // Copy a gear item down into a list, or take the copy back out if it's already
