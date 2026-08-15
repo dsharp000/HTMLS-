@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0C171D">
+<title>Glacier Bay Sightings Log</title>
+<style>
+  :root{
+    --deep:#0C171D;
+    --hull:#132630;
+    --hull-2:#18313D;
+    --silt:#7C9AA1;
+    --silt-dim:#4E6970;
+    --ice:#6FC3DE;
+    --chalk:#E6EDEE;
+    --flare:#E9A23B;
+    --line:rgba(124,154,161,.22);
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--deep);color:var(--chalk);font-family:var(--sans)}
+  body{
+    padding-bottom:env(safe-area-inset-bottom);
+    background-image:linear-gradient(180deg,#0C171D 0%,#0E1D25 40%,#0C171D 100%);
+    min-height:100vh;
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:0 16px 120px}
+
+  /* ---- masthead ---- */
+  header{padding:28px 0 18px}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--silt-dim);margin:0 0 10px
+  }
+  h1{
+    margin:0;font-size:clamp(30px,9vw,46px);line-height:.94;font-weight:800;
+    letter-spacing:-.035em;text-transform:uppercase;color:var(--chalk)
+  }
+  h1 span{display:block;color:var(--ice)}
+  .sub{margin:12px 0 0;color:var(--silt);font-size:14px;line-height:1.5;max-width:46ch}
+
+  /* ---- picture status ---- */
+  .picstatus{
+    margin:14px 0 0;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;
+    color:var(--silt-dim);display:flex;align-items:center;gap:8px
+  }
+  .picstatus .dot{width:7px;height:7px;border-radius:50%;background:var(--silt-dim);flex:0 0 auto}
+  .picstatus.loading .dot{background:var(--flare)}
+  .picstatus.ready .dot{background:var(--ice)}
+
+  /* ---- transit strip (signature) ---- */
+  .transit{margin:22px 0 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:14px 0 12px}
+  .transit-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+  .transit-head b{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--silt-dim);font-weight:400}
+  .transit-head em{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--ice);letter-spacing:.06em}
+  .track{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .track::-webkit-scrollbar{display:none}
+  .stop{
+    flex:0 0 auto;background:none;border:0;padding:0 14px 0 0;cursor:pointer;
+    text-align:left;color:var(--silt-dim);font-family:var(--mono);font-size:10.5px;
+    letter-spacing:.04em;line-height:1.3;min-width:86px;position:relative
+  }
+  .stop .rail{display:block;height:2px;background:var(--line);margin-bottom:8px;position:relative}
+  .stop .rail::after{
+    content:"";position:absolute;left:0;top:-3px;width:8px;height:8px;border-radius:50%;
+    background:var(--deep);border:2px solid var(--silt-dim)
+  }
+  .stop[aria-pressed="true"]{color:var(--ice)}
+  .stop[aria-pressed="true"] .rail{background:var(--ice)}
+  .stop[aria-pressed="true"] .rail::after{border-color:var(--ice);background:var(--ice)}
+  .stop .pips{display:block;height:10px;margin-top:5px;color:var(--flare);font-size:9px;letter-spacing:1px}
+  .stop:focus-visible{outline:2px solid var(--ice);outline-offset:3px;border-radius:3px}
+
+  /* ---- tally ---- */
+  .tally{display:flex;gap:0;margin:20px 0 6px;border:1px solid var(--line);border-radius:2px;overflow:hidden}
+  .tally div{flex:1;padding:12px 10px;border-right:1px solid var(--line)}
+  .tally div:last-child{border-right:0}
+  .tally b{display:block;font-family:var(--mono);font-size:24px;font-weight:600;letter-spacing:-.02em;color:var(--chalk)}
+  .tally b.hot{color:var(--flare)}
+  .tally span{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--silt-dim);margin-top:4px}
+
+  /* ---- filters ---- */
+  .filters{display:flex;gap:6px;margin:18px 0 4px;flex-wrap:wrap}
+  .filters button{
+    background:transparent;border:1px solid var(--line);color:var(--silt);
+    font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    padding:8px 12px;border-radius:2px;cursor:pointer
+  }
+  .filters button[aria-pressed="true"]{background:var(--ice);border-color:var(--ice);color:var(--deep)}
+  .filters button:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
+
+  /* ---- species ---- */
+  .group-label{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--silt-dim);margin:26px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--line)
+  }
+  .card{
+    display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+    background:var(--hull);border:1px solid transparent;border-left:2px solid var(--silt-dim);
+    color:var(--chalk);padding:10px 14px 10px 10px;margin-bottom:6px;border-radius:2px;
+    cursor:pointer;font:inherit;transition:background .12s ease,border-color .12s ease
+  }
+  .card:hover{background:var(--hull-2)}
+  .card:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
+  .card.seen{border-left-color:var(--flare);background:var(--hull-2)}
+  .thumb{
+    flex:0 0 auto;width:56px;height:56px;border-radius:2px;overflow:hidden;
+    background:var(--hull-2);border:1px solid var(--line);cursor:zoom-in;
+    display:flex;align-items:center;justify-content:center;position:relative;padding:0
+  }
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb .ph{
+    font-family:var(--mono);font-size:15px;color:var(--silt-dim);letter-spacing:.05em;font-weight:600
+  }
+  .thumb:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
+  .card .name{flex:1;min-width:0}
+  .card .name strong{display:block;font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .card .name small{
+    display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+    color:var(--silt-dim);margin-top:3px;text-transform:uppercase
+  }
+  .card.seen .name small{color:var(--silt)}
+  .count{
+    font-family:var(--mono);font-size:17px;min-width:34px;text-align:right;
+    color:var(--silt-dim);font-weight:600
+  }
+  .card.seen .count{color:var(--flare)}
+  .undo{
+    flex:0 0 auto;background:transparent;border:1px solid var(--line);color:var(--silt-dim);
+    width:34px;height:34px;border-radius:2px;font-size:16px;line-height:1;cursor:pointer;font-family:var(--mono)
+  }
+  .undo:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
+
+  /* ---- lightbox ---- */
+  .lightbox{
+    position:fixed;inset:0;background:rgba(6,12,16,.94);z-index:40;display:none;
+    flex-direction:column;align-items:center;justify-content:center;padding:20px;cursor:zoom-out
+  }
+  .lightbox.on{display:flex}
+  .lightbox img{max-width:min(92vw,640px);max-height:64vh;border-radius:3px;border:1px solid var(--line)}
+  .lightbox .lb-name{font-size:18px;font-weight:700;margin:16px 0 4px;letter-spacing:-.01em}
+  .lightbox .lb-hint{font-family:var(--mono);font-size:11px;color:var(--silt);letter-spacing:.08em;text-transform:uppercase;text-align:center}
+  .lightbox .lb-credit{font-family:var(--mono);font-size:10px;color:var(--silt-dim);margin-top:14px}
+  .lightbox .lb-credit a{color:var(--silt)}
+
+  /* ---- log ---- */
+  .log{margin-top:34px;border-top:1px solid var(--line);padding-top:16px}
+  .log h2{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--silt-dim);font-weight:400;margin:0 0 12px}
+  .entry{display:flex;gap:12px;font-family:var(--mono);font-size:12px;padding:7px 0;border-bottom:1px dotted var(--line);color:var(--silt)}
+  .entry time{color:var(--flare);flex:0 0 62px}
+  .entry .sp{flex:1;color:var(--chalk)}
+  .entry .zn{color:var(--silt-dim);text-align:right;flex:0 0 auto;font-size:11px}
+  .empty{color:var(--silt-dim);font-size:13px;line-height:1.6;border:1px dashed var(--line);padding:16px;border-radius:2px}
+
+  /* ---- action bar ---- */
+  .bar{
+    position:fixed;left:0;right:0;bottom:0;background:rgba(12,23,29,.94);
+    backdrop-filter:blur(10px);border-top:1px solid var(--line);
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));z-index:20
+  }
+  .bar-inner{max-width:720px;margin:0 auto;display:flex;gap:8px}
+  .bar button{
+    flex:1;padding:14px 10px;border-radius:2px;font-family:var(--mono);font-size:11.5px;
+    letter-spacing:.14em;text-transform:uppercase;cursor:pointer;border:1px solid var(--line);
+    background:transparent;color:var(--silt)
+  }
+  .bar button.primary{background:var(--ice);border-color:var(--ice);color:var(--deep);font-weight:600}
+  .bar button:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
+
+  .toast{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:92px;background:var(--flare);
+    color:var(--deep);font-family:var(--mono);font-size:12px;letter-spacing:.06em;
+    padding:10px 16px;border-radius:2px;opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:30
+  }
+  .toast.on{opacity:1}
+  footer{margin-top:36px;font-family:var(--mono);font-size:10.5px;line-height:1.7;color:var(--silt-dim);letter-spacing:.04em}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">M/V Baranof Wind &middot; Bartlett Cove 07:15</p>
+    <h1>Glacier Bay<span>Sightings Log</span></h1>
+    <p class="sub">Set your position as the boat moves up the bay, then tap an animal each time you see one. Tap a picture to see it big. Every sighting is stamped with the time and the water you were in.</p>
+    <p class="picstatus" id="picStatus"><span class="dot"></span><span id="picMsg">Pictures load when you're online</span></p>
+  </header>
+
+  <section class="transit" aria-label="Position in the bay">
+    <div class="transit-head">
+      <b>Up the bay &rarr;</b>
+      <em id="zoneNow">Bartlett Cove</em>
+    </div>
+    <div class="track" id="track"></div>
+  </section>
+
+  <div class="tally">
+    <div><b id="tSpecies">0</b><span>Species</span></div>
+    <div><b id="tSight">0</b><span>Sightings</span></div>
+    <div><b id="tScore" class="hot">0</b><span>Rarity pts</span></div>
+  </div>
+
+  <div class="filters" id="filters"></div>
+
+  <main id="list"></main>
+
+  <section class="log">
+    <h2>Running log</h2>
+    <div id="logBody"></div>
+  </section>
+
+  <footer>
+    Rarity points: common 1 &middot; likely 2 &middot; possible 3 &middot; rare 5 &middot; jackpot 10.<br>
+    Species photos from Wikipedia (freely licensed); saved to this device after first load so they work offline on the water.<br>
+    Share sends a link that carries the whole log with it.
+  </footer>
+</div>
+
+<div class="bar"><div class="bar-inner">
+  <button id="btnShare" class="primary">Share log</button>
+  <button id="btnCopy">Copy text</button>
+  <button id="btnReset">Reset</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Species photo">
+  <img id="lbImg" alt="">
+  <div class="lb-name" id="lbName"></div>
+  <div class="lb-hint" id="lbHint"></div>
+  <div class="lb-credit">Photo via Wikipedia &middot; tap anywhere to close</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var ZONES = ["Bartlett Cove","Sitakaday Narrows","South Marble Is.","Tlingit Point","Gloomy Knob","Russell Island","Tarr Inlet / Margerie","Johns Hopkins / Lamplugh","Open water"];
+
+  var PTS = {common:1, likely:2, possible:3, rare:5, jackpot:10};
+
+  /* name, rarity, where-to-look, Wikipedia article title */
+  var SPECIES = [
+    {g:"Marine mammals", list:[
+      ["Humpback whale","likely","Sitakaday, Marble Is.","Humpback whale"],
+      ["Orca","rare","Anywhere; often mid-bay","Orca"],
+      ["Minke whale","rare","Lower bay","Common minke whale"],
+      ["Harbor porpoise","likely","Calm water, low fin","Harbour porpoise"],
+      ["Dall's porpoise","rare","Bow-rides, rooster tail","Dall's porpoise"],
+      ["Steller sea lion","likely","South Marble haulout","Steller sea lion"],
+      ["Harbor seal","likely","On bergs at the glaciers","Harbor seal"],
+      ["Sea otter","common","Rafts, lower bay","Sea otter"]
+    ]},
+    {g:"Land mammals", list:[
+      ["Mountain goat","likely","Gloomy Knob cliffs","Mountain goat"],
+      ["Brown bear","possible","Shorelines at low tide","Brown bear"],
+      ["Black bear","possible","Lower bay forest edge","American black bear"],
+      ["Moose","rare","Beach fringe, willow","Moose"],
+      ["Gray wolf","jackpot","Gloomy Knob, shoreline","Wolf"],
+      ["Sitka black-tailed deer","rare","Wooded lower bay","Sitka deer"],
+      ["Red fox","rare","Open gravel shore","Red fox"]
+    ]},
+    {g:"Birds", list:[
+      ["Bald eagle","common","Everywhere; snags","Bald eagle"],
+      ["Tufted puffin","likely","South Marble Island","Tufted puffin"],
+      ["Horned puffin","possible","South Marble Island","Horned puffin"],
+      ["Common murre","common","Rafts near Marble Is.","Common murre"],
+      ["Pigeon guillemot","common","Red feet, rock edges","Pigeon guillemot"],
+      ["Marbled murrelet","likely","Pairs on open water","Marbled murrelet"],
+      ["Kittlitz's murrelet","jackpot","Glacial meltwater","Kittlitz's murrelet"],
+      ["Black-legged kittiwake","common","Margerie face","Black-legged kittiwake"],
+      ["Glaucous-winged gull","common","Marble Is. colony","Glaucous-winged gull"],
+      ["Arctic tern","likely","Upper bay","Arctic tern"],
+      ["Pelagic cormorant","common","Cliff ledges","Pelagic cormorant"],
+      ["Harlequin duck","likely","Surf-washed rock","Harlequin duck"],
+      ["Black oystercatcher","possible","Loud, orange bill","Black oystercatcher"],
+      ["Surf scoter","possible","Lower bay flocks","Surf scoter"],
+      ["Common loon","possible","Bartlett Cove","Common loon"],
+      ["Golden eagle","rare","Ridgelines, upper bay","Golden eagle"],
+      ["Common raven","common","Bartlett Cove","Common raven"]
+    ]}
+  ];
+
+  var INDEX = {};
+  SPECIES.forEach(function(gr){ gr.list.forEach(function(s){ INDEX[s[0]] = {rarity:s[1], hint:s[2], wiki:s[3], group:gr.g}; }); });
+
+  var state = {zone:0, entries:[], filter:"All"};
+
+  /* ---------- persistence ---------- */
+  var KEY = "gb-wildlife-log-v1";
+  function save(){
+    try{ window.localStorage.setItem(KEY, JSON.stringify({zone:state.zone, entries:state.entries})); }catch(e){}
+  }
+  function load(){
+    var fromHash = readHash();
+    if(fromHash){ state.entries = fromHash.entries || []; state.zone = fromHash.zone || 0; return; }
+    try{
+      var raw = window.localStorage.getItem(KEY);
+      if(raw){ var d = JSON.parse(raw); state.entries = d.entries || []; state.zone = d.zone || 0; }
+    }catch(e){}
+  }
+  function readHash(){
+    try{
+      if(!location.hash || location.hash.length < 4) return null;
+      var json = decodeURIComponent(escape(atob(location.hash.slice(1).replace(/-/g,"+").replace(/_/g,"/"))));
+      return JSON.parse(json);
+    }catch(e){ return null; }
+  }
+  function makeHash(){
+    try{
+      var json = JSON.stringify({zone:state.zone, entries:state.entries});
+      return btoa(unescape(encodeURIComponent(json))).replace(/\+/g,"-").replace(/\//g,"_");
+    }catch(e){ return ""; }
+  }
+
+  /* ---------- picture cache ----------
+     Fetches each species' lead photo from Wikipedia's summary API,
+     converts to a data URL, and stores it locally so the pictures
+     work with no signal after the first online load. */
+  var PIC_KEY = "gb-wildlife-pics-v1";
+  var pics = {};
+  try{ pics = JSON.parse(window.localStorage.getItem(PIC_KEY) || "{}"); }catch(e){ pics = {}; }
+
+  function savePics(){
+    try{ window.localStorage.setItem(PIC_KEY, JSON.stringify(pics)); }
+    catch(e){ /* quota exceeded: keep whatever fit */ }
+  }
+
+  function allNames(){
+    var out = [];
+    SPECIES.forEach(function(gr){ gr.list.forEach(function(s){ out.push(s[0]); }); });
+    return out;
+  }
+
+  function setPicStatus(cls, msg){
+    var el = document.getElementById("picStatus");
+    el.className = "picstatus " + cls;
+    document.getElementById("picMsg").textContent = msg;
+  }
+
+  function getThumbUrl(name){
+    var title = INDEX[name].wiki.replace(/ /g, "_");
+    /* primary: REST summary API */
+    return fetch("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(title))
+      .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .then(function(j){
+        var src = j && j.thumbnail && j.thumbnail.source;
+        if(!src) throw 0;
+        return src;
+      })
+      .catch(function(){
+        /* fallback: action API with explicit CORS opt-in */
+        var u = "https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*" +
+                "&prop=pageimages&piprop=thumbnail&pithumbsize=480&titles=" + encodeURIComponent(INDEX[name].wiki);
+        return fetch(u)
+          .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+          .then(function(j){
+            var pages = j && j.query && j.query.pages;
+            if(!pages) throw 0;
+            var k = Object.keys(pages)[0];
+            var src = pages[k] && pages[k].thumbnail && pages[k].thumbnail.source;
+            if(!src) throw 0;
+            return src;
+          });
+      });
+  }
+
+  function fetchPic(name){
+    return getThumbUrl(name)
+      .then(function(src){
+        src = src.replace(/\/\d+px-/, "/480px-");
+        return fetch(src).then(function(r){ if(!r.ok) throw 0; return r.blob(); });
+      })
+      .then(function(blob){
+        return new Promise(function(res, rej){
+          var fr = new FileReader();
+          fr.onload = function(){ res(fr.result); };
+          fr.onerror = rej;
+          fr.readAsDataURL(blob);
+        });
+      })
+      .then(function(dataUrl){
+        pics[name] = dataUrl;
+        var img = document.querySelector('[data-thumb="' + cssEscape(name) + '"] img');
+        var ph = document.querySelector('[data-thumb="' + cssEscape(name) + '"] .ph');
+        if(img){ img.src = dataUrl; img.style.display = "block"; }
+        if(ph){ ph.style.display = "none"; }
+      });
+  }
+
+  function cssEscape(s){ return s.replace(/"/g, '\\"'); }
+
+  function loadPics(){
+    var missing = allNames().filter(function(n){ return !pics[n]; });
+    if(!missing.length){ setPicStatus("ready", "Pictures saved on this device \u2014 works offline"); return; }
+    if(!navigator.onLine){ setPicStatus("", "Offline \u2014 pictures will load next time you have signal"); return; }
+    setPicStatus("loading", "Loading pictures\u2026 0/" + missing.length);
+    var done = 0, failed = 0;
+    /* small concurrency pool so 32 fetches don't fire at once */
+    var queue = missing.slice();
+    function next(){
+      if(!queue.length) return Promise.resolve();
+      var name = queue.shift();
+      return fetchPic(name)
+        .catch(function(){ failed++; })
+        .then(function(){
+          done++;
+          setPicStatus("loading", "Loading pictures\u2026 " + done + "/" + missing.length);
+          if(done % 6 === 0) savePics();
+          return next();
+        });
+    }
+    Promise.all([next(), next(), next(), next()]).then(function(){
+      savePics();
+      if(failed === 0) setPicStatus("ready", "Pictures saved on this device \u2014 works offline");
+      else if(failed < missing.length) setPicStatus("loading", "Most pictures saved \u2014 tap here to retry the rest");
+      else setPicStatus("", "Couldn't reach Wikipedia \u2014 if this page is in an app preview, open it in Safari or Chrome instead. Tap here to retry.");
+    });
+  }
+  document.getElementById("picStatus").addEventListener("click", loadPics);
+  document.getElementById("picStatus").style.cursor = "pointer";
+
+  /* ---------- derived ---------- */
+  function counts(){
+    var c = {};
+    state.entries.forEach(function(e){ c[e.s] = (c[e.s]||0)+1; });
+    return c;
+  }
+  function zoneCounts(){
+    var z = {};
+    state.entries.forEach(function(e){ z[e.z] = (z[e.z]||0)+1; });
+    return z;
+  }
+  function score(){
+    var c = counts(), total = 0;
+    Object.keys(c).forEach(function(name){ total += PTS[INDEX[name].rarity] || 1; });
+    return total;
+  }
+  function stamp(){
+    var d = new Date(), h = d.getHours(), m = d.getMinutes();
+    return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;
+  }
+  function initials(name){
+    var parts = name.split(" ");
+    return (parts[0][0] + (parts[1] ? parts[1][0] : "")).toUpperCase();
+  }
+
+  /* ---------- render ---------- */
+  var track = document.getElementById("track"),
+      list = document.getElementById("list"),
+      filters = document.getElementById("filters"),
+      logBody = document.getElementById("logBody"),
+      toastEl = document.getElementById("toast");
+
+  function renderTrack(){
+    var zc = zoneCounts();
+    track.innerHTML = "";
+    ZONES.forEach(function(name, i){
+      var b = document.createElement("button");
+      b.className = "stop";
+      b.type = "button";
+      b.setAttribute("aria-pressed", i === state.zone ? "true" : "false");
+      var n = zc[name] || 0;
+      var pips = n === 0 ? "" : (n > 6 ? "\u25CF\u00D7"+n : new Array(n+1).join("\u25CF"));
+      b.innerHTML = '<span class="rail"></span>' + name + '<span class="pips">' + pips + '</span>';
+      b.addEventListener("click", function(){ state.zone = i; save(); renderTrack(); document.getElementById("zoneNow").textContent = ZONES[i]; });
+      track.appendChild(b);
+    });
+    document.getElementById("zoneNow").textContent = ZONES[state.zone];
+  }
+
+  function renderFilters(){
+    var tabs = ["All","Marine mammals","Land mammals","Birds","Seen"];
+    filters.innerHTML = "";
+    tabs.forEach(function(t){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = t === "Marine mammals" ? "Marine" : t === "Land mammals" ? "Land" : t;
+      b.setAttribute("aria-pressed", state.filter === t ? "true" : "false");
+      b.addEventListener("click", function(){ state.filter = t; renderFilters(); renderList(); });
+      filters.appendChild(b);
+    });
+  }
+
+  function renderList(){
+    var c = counts();
+    list.innerHTML = "";
+    SPECIES.forEach(function(gr){
+      if(state.filter !== "All" && state.filter !== "Seen" && state.filter !== gr.g) return;
+      var rows = gr.list.filter(function(s){ return state.filter !== "Seen" || c[s[0]]; });
+      if(!rows.length) return;
+      var h = document.createElement("div");
+      h.className = "group-label";
+      h.textContent = gr.g;
+      list.appendChild(h);
+      rows.forEach(function(s){
+        var name = s[0], n = c[name] || 0;
+        var row = document.createElement("div");
+        row.className = "card" + (n ? " seen" : "");
+
+        var thumb = document.createElement("button");
+        thumb.className = "thumb";
+        thumb.type = "button";
+        thumb.setAttribute("data-thumb", name);
+        thumb.setAttribute("aria-label", "See a photo of " + name);
+        var img = document.createElement("img");
+        img.alt = name;
+        img.loading = "lazy";
+        var ph = document.createElement("span");
+        ph.className = "ph";
+        ph.textContent = initials(name);
+        if(pics[name]){ img.src = pics[name]; ph.style.display = "none"; }
+        else { img.style.display = "none"; }
+        thumb.appendChild(img);
+        thumb.appendChild(ph);
+        thumb.addEventListener("click", function(ev){
+          ev.stopPropagation();
+          openLightbox(name);
+        });
+        row.appendChild(thumb);
+
+        var nameBox = document.createElement("div");
+        nameBox.className = "name";
+        nameBox.innerHTML = "<strong></strong><small></small>";
+        nameBox.querySelector("strong").textContent = name;
+        nameBox.querySelector("small").textContent = s[1] + " \u00B7 " + s[2];
+        row.appendChild(nameBox);
+
+        var count = document.createElement("div");
+        count.className = "count";
+        count.textContent = n ? n : "\u2013";
+        row.appendChild(count);
+
+        row.setAttribute("role","button");
+        row.setAttribute("tabindex","0");
+        row.setAttribute("aria-label","Log a "+name);
+        function add(){ logSighting(name); }
+        row.addEventListener("click", add);
+        row.addEventListener("keydown", function(ev){ if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); add(); } });
+        if(n){
+          var u = document.createElement("button");
+          u.className = "undo"; u.type = "button"; u.textContent = "\u2212";
+          u.setAttribute("aria-label","Remove last "+name+" sighting");
+          u.addEventListener("click", function(ev){ ev.stopPropagation(); removeLast(name); });
+          row.appendChild(u);
+        }
+        list.appendChild(row);
+      });
+    });
+    if(!list.children.length){
+      var e = document.createElement("p");
+      e.className = "empty";
+      e.textContent = "Nothing logged in this category yet. Tap an animal on the All tab as you spot it.";
+      list.appendChild(e);
+    }
+  }
+
+  /* ---------- lightbox ---------- */
+  var lb = document.getElementById("lightbox");
+  function openLightbox(name){
+    var img = document.getElementById("lbImg");
+    if(pics[name]){
+      img.src = pics[name];
+      img.style.display = "block";
+    } else {
+      img.style.display = "none";
+    }
+    document.getElementById("lbName").textContent = name;
+    document.getElementById("lbHint").textContent = INDEX[name].rarity + " \u00B7 " + INDEX[name].hint + (pics[name] ? "" : " \u00B7 photo loads when online");
+    lb.classList.add("on");
+  }
+  lb.addEventListener("click", function(){ lb.classList.remove("on"); });
+  document.addEventListener("keydown", function(ev){ if(ev.key === "Escape") lb.classList.remove("on"); });
+
+  function renderLog(){
+    if(!state.entries.length){
+      logBody.innerHTML = '<p class="empty">The log is empty. Sea otters usually break the ice before you clear Bartlett Cove.</p>';
+      return;
+    }
+    logBody.innerHTML = "";
+    state.entries.slice().reverse().forEach(function(e){
+      var row = document.createElement("div");
+      row.className = "entry";
+      row.innerHTML = '<time></time><span class="sp"></span><span class="zn"></span>';
+      row.querySelector("time").textContent = e.t;
+      row.querySelector(".sp").textContent = e.s;
+      row.querySelector(".zn").textContent = e.z;
+      logBody.appendChild(row);
+    });
+  }
+
+  function renderTally(){
+    document.getElementById("tSpecies").textContent = Object.keys(counts()).length;
+    document.getElementById("tSight").textContent = state.entries.length;
+    document.getElementById("tScore").textContent = score();
+  }
+
+  function renderAll(){ renderTrack(); renderList(); renderLog(); renderTally(); }
+
+  /* ---------- actions ---------- */
+  function logSighting(name){
+    state.entries.push({s:name, z:ZONES[state.zone], t:stamp()});
+    save(); renderAll();
+    toast(name + " logged");
+    if(navigator.vibrate) { try{ navigator.vibrate(12); }catch(e){} }
+  }
+  function removeLast(name){
+    for(var i = state.entries.length - 1; i >= 0; i--){
+      if(state.entries[i].s === name){ state.entries.splice(i,1); break; }
+    }
+    save(); renderAll();
+  }
+
+  var toastTimer;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("on"); }, 1400);
+  }
+
+  function summary(){
+    var c = counts(), lines = [];
+    lines.push("GLACIER BAY SIGHTINGS LOG");
+    lines.push("M/V Baranof Wind \u2014 " + new Date().toLocaleDateString());
+    lines.push("");
+    lines.push(Object.keys(c).length + " species \u00B7 " + state.entries.length + " sightings \u00B7 " + score() + " rarity pts");
+    lines.push("");
+    SPECIES.forEach(function(gr){
+      var rows = gr.list.filter(function(s){ return c[s[0]]; });
+      if(!rows.length) return;
+      lines.push(gr.g.toUpperCase());
+      rows.forEach(function(s){
+        var where = {};
+        state.entries.forEach(function(e){ if(e.s === s[0]) where[e.z] = 1; });
+        lines.push("  " + s[0] + " x" + c[s[0]] + "  (" + Object.keys(where).join(", ") + ")");
+      });
+      lines.push("");
+    });
+    var missed = [];
+    SPECIES.forEach(function(gr){ gr.list.forEach(function(s){ if(!c[s[0]] && (s[1]==="common"||s[1]==="likely")) missed.push(s[0]); }); });
+    if(missed.length){ lines.push("STILL LOOKING: " + missed.join(", ")); }
+    return lines.join("\n");
+  }
+
+  function shareURL(){
+    return location.origin + location.pathname + "#" + makeHash();
+  }
+
+  document.getElementById("btnShare").addEventListener("click", function(){
+    var text = summary();
+    if(navigator.share){
+      navigator.share({title:"Glacier Bay Sightings Log", text:text, url:shareURL()}).catch(function(){});
+    } else {
+      copy(text + "\n\n" + shareURL(), "Log copied \u2014 paste to share");
+    }
+  });
+  document.getElementById("btnCopy").addEventListener("click", function(){ copy(summary(), "Log copied"); });
+  document.getElementById("btnReset").addEventListener("click", function(){
+    if(!state.entries.length) { toast("Nothing to reset"); return; }
+    if(confirm("Clear all " + state.entries.length + " sightings? This can't be undone.")){
+      state.entries = []; state.zone = 0;
+      try{ history.replaceState(null,"",location.pathname); }catch(e){}
+      save(); renderAll(); toast("Log cleared");
+    }
+  });
+
+  function copy(text, msg){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ toast(msg); }, function(){ fallbackCopy(text, msg); });
+    } else { fallbackCopy(text, msg); }
+  }
+  function fallbackCopy(text, msg){
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly","");
+    ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); toast(msg); }catch(e){ toast("Copy blocked \u2014 select the text manually"); }
+    document.body.removeChild(ta);
+  }
+
+  load();
+  renderFilters();
+  renderAll();
+  loadPics();
+  window.addEventListener("online", loadPics);
+})();
+</script>
+</body>
+</html>
