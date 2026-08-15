@@ -317,17 +317,25 @@
     }catch(e){ return ""; }
   }
 
-  /* ---------- picture cache ----------
-     Fetches each species' lead photo from Wikipedia's summary API,
-     converts to a data URL, and stores it locally so the pictures
-     work with no signal after the first online load. */
-  var PIC_KEY = "gb-wildlife-pics-v1";
-  var pics = {};
+  /* ---------- picture module ----------
+     Step 1: one JSONP request to Wikipedia's action API gets every
+     species' thumbnail URL at once. JSONP is a plain script tag, so
+     it works even where cross-origin fetch() is blocked.
+     Step 2: images display via normal <img> tags (no CORS involved).
+     Step 3: best-effort background caching to data URLs so pictures
+     survive with no signal after one online load. */
+  var PIC_KEY = "gb-wildlife-pics-v2";
+  var URL_KEY = "gb-wildlife-picurls-v2";
+  var pics = {};    /* name -> data URL (offline-safe) */
+  var picUrls = {}; /* name -> https URL (online display) */
   try{ pics = JSON.parse(window.localStorage.getItem(PIC_KEY) || "{}"); }catch(e){ pics = {}; }
+  try{ picUrls = JSON.parse(window.localStorage.getItem(URL_KEY) || "{}"); }catch(e){ picUrls = {}; }
+
+  function picSrc(name){ return pics[name] || picUrls[name] || ""; }
 
   function savePics(){
-    try{ window.localStorage.setItem(PIC_KEY, JSON.stringify(pics)); }
-    catch(e){ /* quota exceeded: keep whatever fit */ }
+    try{ window.localStorage.setItem(PIC_KEY, JSON.stringify(pics)); }catch(e){}
+    try{ window.localStorage.setItem(URL_KEY, JSON.stringify(picUrls)); }catch(e){}
   }
 
   function allNames(){
@@ -342,83 +350,113 @@
     document.getElementById("picMsg").textContent = msg;
   }
 
-  function getThumbUrl(name){
-    var title = INDEX[name].wiki.replace(/ /g, "_");
-    /* primary: REST summary API */
-    return fetch("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(title))
-      .then(function(r){ if(!r.ok) throw 0; return r.json(); })
-      .then(function(j){
-        var src = j && j.thumbnail && j.thumbnail.source;
-        if(!src) throw 0;
-        return src;
-      })
-      .catch(function(){
-        /* fallback: action API with explicit CORS opt-in */
-        var u = "https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*" +
-                "&prop=pageimages&piprop=thumbnail&pithumbsize=480&titles=" + encodeURIComponent(INDEX[name].wiki);
-        return fetch(u)
-          .then(function(r){ if(!r.ok) throw 0; return r.json(); })
-          .then(function(j){
-            var pages = j && j.query && j.query.pages;
-            if(!pages) throw 0;
-            var k = Object.keys(pages)[0];
-            var src = pages[k] && pages[k].thumbnail && pages[k].thumbnail.source;
-            if(!src) throw 0;
-            return src;
-          });
-      });
-  }
-
-  function fetchPic(name){
-    return getThumbUrl(name)
-      .then(function(src){
-        src = src.replace(/\/\d+px-/, "/480px-");
-        return fetch(src).then(function(r){ if(!r.ok) throw 0; return r.blob(); });
-      })
-      .then(function(blob){
-        return new Promise(function(res, rej){
-          var fr = new FileReader();
-          fr.onload = function(){ res(fr.result); };
-          fr.onerror = rej;
-          fr.readAsDataURL(blob);
-        });
-      })
-      .then(function(dataUrl){
-        pics[name] = dataUrl;
-        var img = document.querySelector('[data-thumb="' + cssEscape(name) + '"] img');
-        var ph = document.querySelector('[data-thumb="' + cssEscape(name) + '"] .ph');
-        if(img){ img.src = dataUrl; img.style.display = "block"; }
-        if(ph){ ph.style.display = "none"; }
-      });
-  }
-
   function cssEscape(s){ return s.replace(/"/g, '\\"'); }
 
-  function loadPics(){
-    var missing = allNames().filter(function(n){ return !pics[n]; });
-    if(!missing.length){ setPicStatus("ready", "Pictures saved on this device \u2014 works offline"); return; }
-    if(!navigator.onLine){ setPicStatus("", "Offline \u2014 pictures will load next time you have signal"); return; }
-    setPicStatus("loading", "Loading pictures\u2026 0/" + missing.length);
-    var done = 0, failed = 0;
-    /* small concurrency pool so 32 fetches don't fire at once */
-    var queue = missing.slice();
+  function showPic(name){
+    var img = document.querySelector('[data-thumb="' + cssEscape(name) + '"] img');
+    var ph = document.querySelector('[data-thumb="' + cssEscape(name) + '"] .ph');
+    var src = picSrc(name);
+    if(img && src){ img.src = src; img.style.display = "block"; if(ph) ph.style.display = "none"; }
+  }
+
+  function jsonp(url){
+    return new Promise(function(res, rej){
+      var cb = "gbcb" + Math.random().toString(36).slice(2);
+      var s = document.createElement("script");
+      var timer = setTimeout(function(){ cleanup(); rej(new Error("timeout")); }, 15000);
+      function cleanup(){ clearTimeout(timer); try{ delete window[cb]; }catch(e){ window[cb] = undefined; } if(s.parentNode) s.parentNode.removeChild(s); }
+      window[cb] = function(data){ cleanup(); res(data); };
+      s.onerror = function(){ cleanup(); rej(new Error("script error")); };
+      s.src = url + "&callback=" + cb;
+      document.head.appendChild(s);
+    });
+  }
+
+  function discoverUrls(){
+    /* one batched request for every species */
+    var names = allNames();
+    var titles = names.map(function(n){ return INDEX[n].wiki; });
+    var titleToName = {};
+    names.forEach(function(n){ titleToName[INDEX[n].wiki] = n; });
+    var u = "https://en.wikipedia.org/w/api.php?action=query&format=json&redirects=1" +
+            "&prop=pageimages&piprop=thumbnail&pithumbsize=480" +
+            "&titles=" + encodeURIComponent(titles.join("|"));
+    return jsonp(u).then(function(j){
+      var q = j && j.query;
+      if(!q || !q.pages) throw new Error("bad response");
+      /* map normalized/redirected titles back to what we asked for */
+      var back = {};
+      (q.normalized || []).forEach(function(m){ back[m.to] = m.from; });
+      (q.redirects || []).forEach(function(m){ back[m.to] = back[m.from] || m.from; });
+      var found = 0;
+      Object.keys(q.pages).forEach(function(pid){
+        var p = q.pages[pid];
+        if(!p || !p.thumbnail || !p.thumbnail.source) return;
+        var asked = back[p.title] || p.title;
+        var name = titleToName[asked];
+        if(name){ picUrls[name] = p.thumbnail.source; found++; showPic(name); }
+      });
+      savePics();
+      return found;
+    });
+  }
+
+  function cacheOffline(){
+    /* best effort: convert URLs to data URLs so they work with no signal.
+       If fetch is blocked in this environment, images still show via <img>. */
+    var todo = allNames().filter(function(n){ return picUrls[n] && !pics[n]; });
+    if(!todo.length || typeof fetch !== "function") return Promise.resolve(0);
+    var saved = 0;
+    var queue = todo.slice();
     function next(){
       if(!queue.length) return Promise.resolve();
       var name = queue.shift();
-      return fetchPic(name)
-        .catch(function(){ failed++; })
-        .then(function(){
-          done++;
-          setPicStatus("loading", "Loading pictures\u2026 " + done + "/" + missing.length);
-          if(done % 6 === 0) savePics();
-          return next();
-        });
+      return fetch(picUrls[name])
+        .then(function(r){ if(!r.ok) throw 0; return r.blob(); })
+        .then(function(blob){
+          return new Promise(function(res, rej){
+            var fr = new FileReader();
+            fr.onload = function(){ res(fr.result); };
+            fr.onerror = rej;
+            fr.readAsDataURL(blob);
+          });
+        })
+        .then(function(dataUrl){ pics[name] = dataUrl; saved++; if(saved % 6 === 0) savePics(); })
+        .catch(function(){})
+        .then(next);
     }
-    Promise.all([next(), next(), next(), next()]).then(function(){
-      savePics();
-      if(failed === 0) setPicStatus("ready", "Pictures saved on this device \u2014 works offline");
-      else if(failed < missing.length) setPicStatus("loading", "Most pictures saved \u2014 tap here to retry the rest");
-      else setPicStatus("", "Couldn't reach Wikipedia \u2014 if this page is in an app preview, open it in Safari or Chrome instead. Tap here to retry.");
+    return Promise.all([next(), next(), next(), next()]).then(function(){ savePics(); return saved; });
+  }
+
+  function loadPics(){
+    var names = allNames();
+    var offline = names.filter(function(n){ return pics[n]; }).length;
+    if(offline === names.length){
+      setPicStatus("ready", "All pictures saved on this device \u2014 works offline");
+      names.forEach(showPic);
+      return;
+    }
+    /* show anything we already know about immediately */
+    names.forEach(showPic);
+    if(!navigator.onLine && offline === 0 && !Object.keys(picUrls).length){
+      setPicStatus("", "Offline \u2014 pictures will load next time you have signal. Tap to retry.");
+      return;
+    }
+    setPicStatus("loading", "Loading pictures\u2026");
+    discoverUrls().then(function(found){
+      if(!found){
+        setPicStatus("", "Couldn't reach Wikipedia from this network. Tap to retry.");
+        return;
+      }
+      setPicStatus("loading", "Pictures loaded \u2014 saving for offline\u2026");
+      cacheOffline().then(function(){
+        var done = names.filter(function(n){ return pics[n]; }).length;
+        if(done === names.length) setPicStatus("ready", "All pictures saved on this device \u2014 works offline");
+        else if(done > 0) setPicStatus("ready", done + "/" + names.length + " saved for offline \u2014 rest show while online. Tap to retry.");
+        else setPicStatus("ready", "Pictures showing (online only on this browser). Tap to retry offline save.");
+      });
+    }).catch(function(){
+      setPicStatus("", "Couldn't reach Wikipedia from this network. Tap to retry.");
     });
   }
   document.getElementById("picStatus").addEventListener("click", loadPics);
@@ -513,7 +551,7 @@
         var ph = document.createElement("span");
         ph.className = "ph";
         ph.textContent = initials(name);
-        if(pics[name]){ img.src = pics[name]; ph.style.display = "none"; }
+        if(picSrc(name)){ img.src = picSrc(name); ph.style.display = "none"; }
         else { img.style.display = "none"; }
         thumb.appendChild(img);
         thumb.appendChild(ph);
@@ -563,14 +601,15 @@
   var lb = document.getElementById("lightbox");
   function openLightbox(name){
     var img = document.getElementById("lbImg");
-    if(pics[name]){
-      img.src = pics[name];
+    var src = picSrc(name);
+    if(src){
+      img.src = src;
       img.style.display = "block";
     } else {
       img.style.display = "none";
     }
     document.getElementById("lbName").textContent = name;
-    document.getElementById("lbHint").textContent = INDEX[name].rarity + " \u00B7 " + INDEX[name].hint + (pics[name] ? "" : " \u00B7 photo loads when online");
+    document.getElementById("lbHint").textContent = INDEX[name].rarity + " \u00B7 " + INDEX[name].hint + (src ? "" : " \u00B7 photo loads when online");
     lb.classList.add("on");
   }
   lb.addEventListener("click", function(){ lb.classList.remove("on"); });
