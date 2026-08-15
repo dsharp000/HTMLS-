@@ -55,23 +55,35 @@
   .transit-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
   .transit-head b{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--silt-dim);font-weight:400}
   .transit-head em{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--ice);letter-spacing:.06em}
-  .track{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
-  .track::-webkit-scrollbar{display:none}
-  .stop{
-    flex:0 0 auto;background:none;border:0;padding:0 14px 0 0;cursor:pointer;
-    text-align:left;color:var(--silt-dim);font-family:var(--mono);font-size:10.5px;
-    letter-spacing:.04em;line-height:1.3;min-width:86px;position:relative
+  .map{margin:2px auto 0;max-width:360px}
+  .map svg{display:block;width:100%;height:auto}
+  .map .chan{fill:none;stroke:#1E3D4B;stroke-linecap:round;stroke-linejoin:round}
+  .map .chan-in{fill:none;stroke:#24505F;stroke-linecap:round;stroke-linejoin:round}
+  .map .zlabel{font-family:var(--mono);font-size:9.5px;fill:var(--silt-dim);letter-spacing:.02em}
+  .map .zone.on .zlabel{fill:var(--ice)}
+  .map .hit{fill:transparent;cursor:pointer}
+  .map .zone,.map .gnode{cursor:pointer}
+  .map .zdot{fill:var(--deep);stroke:var(--silt-dim);stroke-width:2}
+  .map .zone.seen .zdot{fill:var(--flare);stroke:var(--flare)}
+  .map .zone.on .zdot{stroke:var(--ice);stroke-width:2.5}
+  .map .zcount{font-family:var(--mono);font-size:9px;fill:var(--deep);font-weight:700;text-anchor:middle}
+  .map .gl{fill:#6FC3DE;opacity:.55;cursor:pointer}
+  .map .gnode.seen .gl{fill:var(--flare);opacity:1}
+  .map .gnode.here .gl{opacity:1}
+  .map .glabel{font-family:var(--mono);font-size:8px;fill:#4E7C8B;letter-spacing:.06em;pointer-events:none}
+  .map .gnode.here .glabel{fill:var(--ice)}
+  .map .gnode.seen .glabel{fill:var(--flare)}
+  .map .gnode:focus-visible .gl{stroke:var(--ice);stroke-width:2}
+  .map .ghost{font-family:var(--mono);font-size:8.5px;fill:#37535E;letter-spacing:.1em}
+  .map .zone:focus-visible .zdot{stroke:var(--ice);stroke-width:3}
+  .chiprow{display:flex;justify-content:center;margin-top:10px}
+  .chip{
+    background:transparent;border:1px solid var(--line);color:var(--silt-dim);
+    font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    padding:8px 14px;border-radius:2px;cursor:pointer
   }
-  .stop .rail{display:block;height:2px;background:var(--line);margin-bottom:8px;position:relative}
-  .stop .rail::after{
-    content:"";position:absolute;left:0;top:-3px;width:8px;height:8px;border-radius:50%;
-    background:var(--deep);border:2px solid var(--silt-dim)
-  }
-  .stop[aria-pressed="true"]{color:var(--ice)}
-  .stop[aria-pressed="true"] .rail{background:var(--ice)}
-  .stop[aria-pressed="true"] .rail::after{border-color:var(--ice);background:var(--ice)}
-  .stop .pips{display:block;height:10px;margin-top:5px;color:var(--flare);font-size:9px;letter-spacing:1px}
-  .stop:focus-visible{outline:2px solid var(--ice);outline-offset:3px;border-radius:3px}
+  .chip[aria-pressed="true"]{background:var(--ice);border-color:var(--ice);color:var(--deep)}
+  .chip:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
 
   /* ---- tally ---- */
   .tally{display:flex;gap:0;margin:20px 0 6px;border:1px solid var(--line);border-radius:2px;overflow:hidden}
@@ -104,7 +116,13 @@
   }
   .card:hover{background:var(--hull-2)}
   .card:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
+  .card.here{border-left-color:var(--ice)}
   .card.seen{border-left-color:var(--flare);background:var(--hull-2)}
+  .heretag{
+    display:inline-block;color:var(--ice);font-family:var(--mono);font-size:9px;
+    letter-spacing:.16em;border:1px solid var(--ice);border-radius:2px;
+    padding:1px 5px;margin-left:7px;vertical-align:1px
+  }
   .thumb{
     flex:0 0 auto;width:56px;height:56px;border-radius:2px;overflow:hidden;
     background:var(--hull-2);border:1px solid var(--line);cursor:zoom-in;
@@ -195,7 +213,8 @@
       <b>Up the bay &rarr;</b>
       <em id="zoneNow">Bartlett Cove</em>
     </div>
-    <div class="track" id="track"></div>
+    <div class="map" id="map"></div>
+    <div class="chiprow"><button type="button" class="chip" id="chipOpen">Open water / underway</button></div>
   </section>
 
   <div class="tally">
@@ -244,58 +263,59 @@
   var PTS = {certain:1, common:1, likely:2, possible:3, rare:5, jackpot:10};
 
   /* name, rarity, where-to-look, Wikipedia article title */
+  /* name, rarity, where-to-look, Wikipedia title, zone indices where expected */
   var SPECIES = [
     {g:"Marine mammals", list:[
-      ["Humpback whale","likely","Sitakaday, Marble Is.","Humpback whale"],
-      ["Orca","rare","Anywhere; often mid-bay","Orca"],
-      ["Minke whale","rare","Lower bay","Common minke whale"],
-      ["Harbor porpoise","likely","Calm water, low fin","Harbour porpoise"],
-      ["Dall's porpoise","rare","Bow-rides, rooster tail","Dall's porpoise"],
-      ["Steller sea lion","likely","South Marble haulout","Steller sea lion"],
-      ["Harbor seal","likely","On bergs at the glaciers","Harbor seal"],
-      ["Sea otter","common","Rafts, lower bay","Sea otter"]
+      ["Humpback whale","likely","Sitakaday, Marble Is.","Humpback whale",[1,2,3,8]],
+      ["Orca","rare","Anywhere; often mid-bay","Orca",[1,2,3,5,8]],
+      ["Minke whale","rare","Lower bay","Common minke whale",[1,2,8]],
+      ["Harbor porpoise","likely","Calm water, low fin","Harbour porpoise",[0,1,2,8]],
+      ["Dall's porpoise","rare","Bow-rides, rooster tail","Dall's porpoise",[1,2,3,8]],
+      ["Steller sea lion","likely","South Marble haulout","Steller sea lion",[2]],
+      ["Harbor seal","likely","On bergs at the glaciers","Harbor seal",[5,6,7,8]],
+      ["Sea otter","common","Rafts, lower bay","Sea otter",[0,1,2,3,8]]
     ]},
     {g:"Land mammals", list:[
-      ["Mountain goat","likely","Gloomy Knob cliffs","Mountain goat"],
-      ["Brown bear","possible","Shorelines at low tide","Brown bear"],
-      ["Black bear","possible","Lower bay forest edge","American black bear"],
-      ["Moose","rare","Beach fringe, willow","Moose"],
-      ["Gray wolf","jackpot","Gloomy Knob, shoreline","Wolf"],
-      ["Sitka black-tailed deer","rare","Wooded lower bay","Sitka deer"],
-      ["Red fox","rare","Open gravel shore","Red fox"]
+      ["Mountain goat","likely","Gloomy Knob cliffs","Mountain goat",[4,5]],
+      ["Brown bear","possible","Shorelines at low tide","Brown bear",[2,3,4,5,8]],
+      ["Black bear","possible","Lower bay forest edge","American black bear",[0,1,2]],
+      ["Moose","rare","Beach fringe, willow","Moose",[0,1]],
+      ["Gray wolf","jackpot","Gloomy Knob, shoreline","Wolf",[4,5]],
+      ["Sitka black-tailed deer","rare","Wooded lower bay","Sitka deer",[0,1]],
+      ["Red fox","rare","Open gravel shore","Red fox",[4,5]]
     ]},
     {g:"Birds", list:[
-      ["Bald eagle","common","Everywhere; snags","Bald eagle"],
-      ["Tufted puffin","likely","South Marble Island","Tufted puffin"],
-      ["Horned puffin","possible","South Marble Island","Horned puffin"],
-      ["Common murre","common","Rafts near Marble Is.","Common murre"],
-      ["Pigeon guillemot","common","Red feet, rock edges","Pigeon guillemot"],
-      ["Marbled murrelet","likely","Pairs on open water","Marbled murrelet"],
-      ["Kittlitz's murrelet","jackpot","Glacial meltwater","Kittlitz's murrelet"],
-      ["Black-legged kittiwake","common","Margerie face","Black-legged kittiwake"],
-      ["Glaucous-winged gull","common","Marble Is. colony","Glaucous-winged gull"],
-      ["Arctic tern","likely","Upper bay","Arctic tern"],
-      ["Pelagic cormorant","common","Cliff ledges","Pelagic cormorant"],
-      ["Harlequin duck","likely","Surf-washed rock","Harlequin duck"],
-      ["Black oystercatcher","possible","Loud, orange bill","Black oystercatcher"],
-      ["Surf scoter","possible","Lower bay flocks","Surf scoter"],
-      ["Common loon","possible","Bartlett Cove","Common loon"],
-      ["Golden eagle","rare","Ridgelines, upper bay","Golden eagle"],
-      ["Common raven","common","Bartlett Cove","Common raven"]
+      ["Bald eagle","common","Everywhere; snags","Bald eagle",[0,1,2,3,4,5,6,7,8]],
+      ["Tufted puffin","likely","South Marble Island","Tufted puffin",[2]],
+      ["Horned puffin","possible","South Marble Island","Horned puffin",[2]],
+      ["Common murre","common","Rafts near Marble Is.","Common murre",[1,2,3]],
+      ["Pigeon guillemot","common","Red feet, rock edges","Pigeon guillemot",[0,1,2,3,4]],
+      ["Marbled murrelet","likely","Pairs on open water","Marbled murrelet",[1,2,3,5,8]],
+      ["Kittlitz's murrelet","jackpot","Glacial meltwater","Kittlitz's murrelet",[6,7]],
+      ["Black-legged kittiwake","common","Margerie face","Black-legged kittiwake",[6,7]],
+      ["Glaucous-winged gull","common","Marble Is. colony","Glaucous-winged gull",[0,1,2,3,8]],
+      ["Arctic tern","likely","Upper bay","Arctic tern",[5,6,7]],
+      ["Pelagic cormorant","common","Cliff ledges","Pelagic cormorant",[2,4]],
+      ["Harlequin duck","likely","Surf-washed rock","Harlequin duck",[0,1,2,4]],
+      ["Black oystercatcher","possible","Loud, orange bill","Black oystercatcher",[0,2,4]],
+      ["Surf scoter","possible","Lower bay flocks","Surf scoter",[0,1,8]],
+      ["Common loon","possible","Bartlett Cove","Common loon",[0,1]],
+      ["Golden eagle","rare","Ridgelines, upper bay","Golden eagle",[4,5,6,7]],
+      ["Common raven","common","Bartlett Cove","Common raven",[0]]
     ]},
     {g:"Glaciers", list:[
-      ["Margerie Glacier","certain","Tarr Inlet \u00B7 250 ft face, calves often","Margerie Glacier"],
-      ["Grand Pacific Glacier","certain","Tarr Inlet \u00B7 dark with moraine rubble","Grand Pacific Glacier"],
-      ["Lamplugh Glacier","likely","Johns Hopkins mouth \u00B7 deep blue","Lamplugh Glacier"],
-      ["Reid Glacier","likely","Reid Inlet \u00B7 Brady Icefield outlet","Reid Glacier"],
-      ["Johns Hopkins Glacier","possible","Johns Hopkins Inlet \u00B7 advancing","Johns Hopkins Glacier"],
-      ["Rendu Glacier","rare","Rendu Inlet \u00B7 side trip only","Rendu Glacier"],
-      ["Muir Glacier","jackpot","East Arm \u00B7 off the day-tour route","Muir Glacier"]
+      ["Margerie Glacier","certain","Tarr Inlet \u00B7 250 ft face, calves often","Margerie Glacier",[6]],
+      ["Grand Pacific Glacier","certain","Tarr Inlet \u00B7 dark with moraine rubble","Grand Pacific Glacier",[6]],
+      ["Lamplugh Glacier","likely","Johns Hopkins mouth \u00B7 deep blue","Lamplugh Glacier",[7]],
+      ["Reid Glacier","likely","Reid Inlet \u00B7 Brady Icefield outlet","Reid Glacier",[7]],
+      ["Johns Hopkins Glacier","possible","Johns Hopkins Inlet \u00B7 advancing","Johns Hopkins Glacier",[7]],
+      ["Rendu Glacier","rare","Rendu Inlet \u00B7 side trip only","Rendu Glacier",[5]],
+      ["Muir Glacier","jackpot","East Arm \u00B7 off the day-tour route","Muir Glacier",[8]]
     ]}
   ];
 
   var INDEX = {};
-  SPECIES.forEach(function(gr){ gr.list.forEach(function(s){ INDEX[s[0]] = {rarity:s[1], hint:s[2], wiki:s[3], group:gr.g}; }); });
+  SPECIES.forEach(function(gr){ gr.list.forEach(function(s){ INDEX[s[0]] = {rarity:s[1], hint:s[2], wiki:s[3], zones:s[4]||[], group:gr.g}; }); });
 
   var state = {zone:0, entries:[], filter:"All"};
 
@@ -501,31 +521,146 @@
   }
 
   /* ---------- render ---------- */
-  var track = document.getElementById("track"),
-      list = document.getElementById("list"),
+  var list = document.getElementById("list"),
       filters = document.getElementById("filters"),
       logBody = document.getElementById("logBody"),
       toastEl = document.getElementById("toast");
 
+  /* Zone positions on the map, projected from real lat/lon of the bay
+     onto a 320x400 canvas. Index matches ZONES. Open water has no point. */
+  var ZXY = [
+    [283,361],  /* Bartlett Cove */
+    [256,318],  /* Sitakaday Narrows */
+    [250,252],  /* South Marble Is. */
+    [216,200],  /* Tlingit Point */
+    [170,156],  /* Gloomy Knob */
+    [134,107],  /* Russell Island */
+    [50,53],    /* Tarr Inlet / Margerie */
+    [44,135],   /* Johns Hopkins / Lamplugh */
+    null        /* Open water */
+  ];
+  var ZLAB = [
+    ["end",-14,-12],["end",-14,4],["end",-14,4],["start",14,4],
+    ["start",14,4],["start",14,4],["start",14,15],["start",14,4],null
+  ];
+
+  var ZSHORT = {
+    "Tarr Inlet / Margerie":"Tarr Inlet",
+    "Johns Hopkins / Lamplugh":"J.H. Inlet"
+  };
+
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function svgEl(tag, attrs){
+    var e = document.createElementNS(SVGNS, tag);
+    for(var k in attrs){ if(attrs.hasOwnProperty(k)) e.setAttribute(k, attrs[k]); }
+    return e;
+  }
+
   function renderTrack(){
-    var zc = zoneCounts();
-    track.innerHTML = "";
-    ZONES.forEach(function(name, i){
-      var b = document.createElement("button");
-      b.className = "stop";
-      b.type = "button";
-      b.setAttribute("aria-pressed", i === state.zone ? "true" : "false");
-      var n = zc[name] || 0;
-      var pips = n === 0 ? "" : (n > 6 ? "\u25CF\u00D7"+n : new Array(n+1).join("\u25CF"));
-      b.innerHTML = '<span class="rail"></span>' + name + '<span class="pips">' + pips + '</span>';
-      b.addEventListener("click", function(){ state.zone = i; save(); renderTrack(); document.getElementById("zoneNow").textContent = ZONES[i]; });
-      track.appendChild(b);
+    var zc = zoneCounts(), zc2 = counts();
+    var host = document.getElementById("map");
+    host.innerHTML = "";
+
+    var svg = svgEl("svg", {viewBox:"18 28 292 368", role:"img", "aria-label":"Map of Glacier Bay"});
+
+    /* the fjord system, drawn as channels rather than coastline */
+    var mainStem = "M283,361 L256,318 L250,252 L216,200 L170,156 L134,107 L96,84 L50,53";
+    var eastArm  = "M216,200 L238,150 L250,91 L246,52";
+    var jhInlet  = "M150,130 L104,135 L44,135";
+    var reidCut  = "M126,118 L112,140";
+
+    [mainStem, eastArm, jhInlet].forEach(function(d, i){
+      svg.appendChild(svgEl("path", {d:d, "class":"chan", "stroke-width": i===0 ? 26 : 18}));
+      svg.appendChild(svgEl("path", {d:d, "class":"chan-in", "stroke-width": i===0 ? 16 : 10}));
     });
+    svg.appendChild(svgEl("path", {d:reidCut, "class":"chan-in", "stroke-width":7}));
+
+    /* context labels for things that aren't tappable zones */
+    var ghosts = [
+      [232, 74, "end", "EAST ARM"],
+      [283, 384, "end", "\u2193 GUSTAVUS"]
+    ];
+    ghosts.forEach(function(g){
+      if(!g[3]) return;
+      var t = svgEl("text", {x:g[0], y:g[1], "class":"ghost", "text-anchor":g[2]});
+      t.textContent = g[3];
+      svg.appendChild(t);
+    });
+
+    /* glaciers: true positions, offset where they'd sit on a zone dot */
+    var GLAC = [
+      ["Grand Pacific Glacier", 56, 32, "start", 9, 3],
+      ["Margerie Glacier",      74, 58, "start", 9, -3],
+      ["Rendu Glacier",        152, 74, "end",  -9, 3],
+      ["Lamplugh Glacier",     128,150, "middle", 0, 16],
+      ["Reid Glacier",          96,176, "start", 9, 3],
+      ["Johns Hopkins Glacier", 32,152, "start", 9, 3],
+      ["Muir Glacier",         248, 46, "end",  -9, 3]
+    ];
+    GLAC.forEach(function(gl){
+      var full = gl[0], x = gl[1], y = gl[2];
+      var n = zc2[full] || 0;
+      var here = INDEX[full].zones.indexOf(state.zone) > -1;
+      var g = svgEl("g", {"class":"gnode" + (n ? " seen" : "") + (here ? " here" : ""),
+                          tabindex:"0", role:"button", "aria-label":"Photo of " + full});
+      g.appendChild(svgEl("circle", {cx:x, cy:y, r:14, "class":"hit"}));
+      g.appendChild(svgEl("path", {d:"M"+x+","+(y-6)+" L"+(x+5.5)+","+(y+4)+" L"+(x-5.5)+","+(y+4)+" Z",
+                                   "class":"gl"}));
+      var t = svgEl("text", {x:x + gl[4], y:y + gl[5], "class":"glabel", "text-anchor":gl[3]});
+      t.textContent = full.replace(" Glacier","");
+      g.appendChild(t);
+      g.addEventListener("click", function(){ openLightbox(full); });
+      g.addEventListener("keydown", function(ev){
+        if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); openLightbox(full); }
+      });
+      svg.appendChild(g);
+    });
+
+    ZONES.forEach(function(name, i){
+      var xy = ZXY[i];
+      if(!xy) return;
+      var n = zc[name] || 0;
+      var g = svgEl("g", {"class":"zone" + (i === state.zone ? " on" : "") + (n ? " seen" : ""),
+                          tabindex:"0", role:"button", "aria-label":"Set position to " + name});
+
+      g.appendChild(svgEl("circle", {cx:xy[0], cy:xy[1], r:20, "class":"hit"}));
+      g.appendChild(svgEl("circle", {cx:xy[0], cy:xy[1], r: n ? 8 : 6, "class":"zdot"}));
+
+      if(n){
+        var c = svgEl("text", {x:xy[0], y:xy[1] + 3.2, "class":"zcount"});
+        c.textContent = n > 99 ? "99+" : n;
+        g.appendChild(c);
+      }
+
+      var L = ZLAB[i];
+      var t = svgEl("text", {x:xy[0] + L[1], y:xy[1] + L[2], "class":"zlabel", "text-anchor":L[0]});
+      t.textContent = ZSHORT[name] || name;
+      g.appendChild(t);
+
+      function pick(){ setZone(i); }
+      g.addEventListener("click", pick);
+      g.addEventListener("keydown", function(ev){
+        if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); pick(); }
+      });
+      svg.appendChild(g);
+    });
+
+    host.appendChild(svg);
+
+    var chip = document.getElementById("chipOpen");
+    chip.setAttribute("aria-pressed", state.zone === ZONES.length - 1 ? "true" : "false");
     document.getElementById("zoneNow").textContent = ZONES[state.zone];
   }
 
+  function setZone(i){
+    state.zone = i;
+    save();
+    renderTrack();
+    renderList();
+  }
+
   function renderFilters(){
-    var tabs = ["All","Marine mammals","Land mammals","Birds","Glaciers","Seen"];
+    var tabs = ["Here","All","Marine mammals","Land mammals","Birds","Glaciers","Seen"];
     filters.innerHTML = "";
     tabs.forEach(function(t){
       var b = document.createElement("button");
@@ -541,8 +676,12 @@
     var c = counts();
     list.innerHTML = "";
     SPECIES.forEach(function(gr){
-      if(state.filter !== "All" && state.filter !== "Seen" && state.filter !== gr.g) return;
-      var rows = gr.list.filter(function(s){ return state.filter !== "Seen" || c[s[0]]; });
+      if(state.filter !== "All" && state.filter !== "Seen" && state.filter !== "Here" && state.filter !== gr.g) return;
+      var rows = gr.list.filter(function(s){
+        if(state.filter === "Seen") return !!c[s[0]];
+        if(state.filter === "Here") return (s[4] || []).indexOf(state.zone) > -1;
+        return true;
+      });
       if(!rows.length) return;
       var h = document.createElement("div");
       h.className = "group-label";
@@ -550,8 +689,9 @@
       list.appendChild(h);
       rows.forEach(function(s){
         var name = s[0], n = c[name] || 0;
+        var here = (s[4] || []).indexOf(state.zone) > -1;
         var row = document.createElement("div");
-        row.className = "card" + (n ? " seen" : "");
+        row.className = "card" + (here ? " here" : "") + (n ? " seen" : "");
 
         var thumb = document.createElement("button");
         thumb.className = "thumb";
@@ -579,6 +719,12 @@
         nameBox.innerHTML = "<strong></strong><small></small>";
         nameBox.querySelector("strong").textContent = name;
         nameBox.querySelector("small").textContent = s[1] + " \u00B7 " + s[2];
+        if(here && state.filter !== "Here"){
+          var tag = document.createElement("span");
+          tag.className = "heretag";
+          tag.textContent = "here";
+          nameBox.querySelector("strong").appendChild(tag);
+        }
         row.appendChild(nameBox);
 
         var count = document.createElement("div");
@@ -605,7 +751,9 @@
     if(!list.children.length){
       var e = document.createElement("p");
       e.className = "empty";
-      e.textContent = "Nothing logged in this category yet. Tap an animal on the All tab as you spot it.";
+      e.textContent = state.filter === "Here"
+        ? "Nothing expected at " + ZONES[state.zone] + ". Pick another spot on the map, or use the All tab."
+        : "Nothing logged in this category yet. Tap an animal on the All tab as you spot it.";
       list.appendChild(e);
     }
   }
@@ -734,6 +882,10 @@
     try{ document.execCommand("copy"); toast(msg); }catch(e){ toast("Copy blocked \u2014 select the text manually"); }
     document.body.removeChild(ta);
   }
+
+  document.getElementById("chipOpen").addEventListener("click", function(){
+    setZone(ZONES.length - 1);
+  });
 
   load();
   state.entries.forEach(function(e){ if(!e.id) e.id = uid(); });
