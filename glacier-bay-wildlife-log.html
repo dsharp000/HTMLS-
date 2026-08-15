@@ -199,7 +199,7 @@
   </section>
 
   <div class="tally">
-    <div><b id="tSpecies">0</b><span>Species</span></div>
+    <div><b id="tSpecies">0</b><span>Logged</span></div>
     <div><b id="tSight">0</b><span>Sightings</span></div>
     <div><b id="tScore" class="hot">0</b><span>Rarity pts</span></div>
   </div>
@@ -241,7 +241,7 @@
 
   var ZONES = ["Bartlett Cove","Sitakaday Narrows","South Marble Is.","Tlingit Point","Gloomy Knob","Russell Island","Tarr Inlet / Margerie","Johns Hopkins / Lamplugh","Open water"];
 
-  var PTS = {common:1, likely:2, possible:3, rare:5, jackpot:10};
+  var PTS = {certain:1, common:1, likely:2, possible:3, rare:5, jackpot:10};
 
   /* name, rarity, where-to-look, Wikipedia article title */
   var SPECIES = [
@@ -282,6 +282,15 @@
       ["Common loon","possible","Bartlett Cove","Common loon"],
       ["Golden eagle","rare","Ridgelines, upper bay","Golden eagle"],
       ["Common raven","common","Bartlett Cove","Common raven"]
+    ]},
+    {g:"Glaciers", list:[
+      ["Margerie Glacier","certain","Tarr Inlet \u00B7 250 ft face, calves often","Margerie Glacier"],
+      ["Grand Pacific Glacier","certain","Tarr Inlet \u00B7 dark with moraine rubble","Grand Pacific Glacier"],
+      ["Lamplugh Glacier","likely","Johns Hopkins mouth \u00B7 deep blue","Lamplugh Glacier"],
+      ["Reid Glacier","likely","Reid Inlet \u00B7 Brady Icefield outlet","Reid Glacier"],
+      ["Johns Hopkins Glacier","possible","Johns Hopkins Inlet \u00B7 advancing","Johns Hopkins Glacier"],
+      ["Rendu Glacier","rare","Rendu Inlet \u00B7 side trip only","Rendu Glacier"],
+      ["Muir Glacier","jackpot","East Arm \u00B7 off the day-tour route","Muir Glacier"]
     ]}
   ];
 
@@ -315,6 +324,10 @@
       var json = JSON.stringify({zone:state.zone, entries:state.entries});
       return btoa(unescape(encodeURIComponent(json))).replace(/\+/g,"-").replace(/\//g,"_");
     }catch(e){ return ""; }
+  }
+
+  function uid(){
+    return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
   }
 
   /* ---------- picture module ----------
@@ -512,7 +525,7 @@
   }
 
   function renderFilters(){
-    var tabs = ["All","Marine mammals","Land mammals","Birds","Seen"];
+    var tabs = ["All","Marine mammals","Land mammals","Birds","Glaciers","Seen"];
     filters.innerHTML = "";
     tabs.forEach(function(t){
       var b = document.createElement("button");
@@ -642,10 +655,10 @@
 
   /* ---------- actions ---------- */
   function logSighting(name){
-    state.entries.push({s:name, z:ZONES[state.zone], t:stamp()});
+    state.entries.push({id:uid(), s:name, z:ZONES[state.zone], t:stamp()});
     save(); renderAll();
     toast(name + " logged");
-    if(navigator.vibrate) { try{ navigator.vibrate(12); }catch(e){} }
+    if(navigator.vibrate) { try{ navigator.vibrate(12); }catch(e2){} }
   }
   function removeLast(name){
     for(var i = state.entries.length - 1; i >= 0; i--){
@@ -667,7 +680,7 @@
     lines.push("GLACIER BAY SIGHTINGS LOG");
     lines.push("M/V Baranof Wind \u2014 " + new Date().toLocaleDateString());
     lines.push("");
-    lines.push(Object.keys(c).length + " species \u00B7 " + state.entries.length + " sightings \u00B7 " + score() + " rarity pts");
+    lines.push(Object.keys(c).length + " logged \u00B7 " + state.entries.length + " sightings \u00B7 " + score() + " rarity pts");
     lines.push("");
     SPECIES.forEach(function(gr){
       var rows = gr.list.filter(function(s){ return c[s[0]]; });
@@ -681,7 +694,7 @@
       lines.push("");
     });
     var missed = [];
-    SPECIES.forEach(function(gr){ gr.list.forEach(function(s){ if(!c[s[0]] && (s[1]==="common"||s[1]==="likely")) missed.push(s[0]); }); });
+    SPECIES.forEach(function(gr){ gr.list.forEach(function(s){ if(!c[s[0]] && (s[1]==="certain"||s[1]==="common"||s[1]==="likely")) missed.push(s[0]); }); });
     if(missed.length){ lines.push("STILL LOOKING: " + missed.join(", ")); }
     return lines.join("\n");
   }
@@ -723,6 +736,7 @@
   }
 
   load();
+  state.entries.forEach(function(e){ if(!e.id) e.id = uid(); });
   renderFilters();
   renderAll();
   loadPics();
