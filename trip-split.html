@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Trip Split</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ---------- theme tokens ---------- */
+  :root{
+    color-scheme: light;
+    --bg:#F5F8FA;
+    --surface:#FFFFFF;
+    --surface2:#EDF2F5;
+    --ink:#0E1E27;
+    --ink2:#5B6F7A;
+    --line:#D9E2E8;
+    --teal:#0B7A68;
+    --teal-soft:#E2F3EF;
+    --rose:#BE3040;
+    --rose-soft:#FBE7E9;
+    --amber:#C8871B;
+    --shadow:0 1px 2px rgba(14,30,39,.06);
+  }
+  html[data-theme="dark"]{
+    color-scheme: dark;
+    --bg:#0D161B;
+    --surface:#152227;
+    --surface2:#1D2C33;
+    --ink:#E9F1F4;
+    --ink2:#9BAFB9;
+    --line:#2B3C44;
+    --teal:#4FD3B4;
+    --teal-soft:#12312D;
+    --rose:#FF8D96;
+    --rose-soft:#3A1D21;
+    --amber:#F0C170;
+    --shadow:none;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:18px 16px 90px}
+  h1,h2{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif;margin:0;letter-spacing:-.02em}
+  .num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+  .lbl{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink2)}
+
+  /* ---------- header ---------- */
+  header{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:6px}
+  .topbar{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .topbar .lbl{flex:1}
+  .icon{
+    border:1px solid var(--line);background:var(--surface);color:var(--ink);
+    border-radius:8px;width:36px;height:32px;font-size:15px;line-height:1;cursor:pointer;
+  }
+  .icon:hover{background:var(--surface2)}
+  #tripName{
+    font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif;
+    font-size:clamp(27px,7vw,38px);font-weight:800;letter-spacing:-.03em;
+    width:100%;border:0;background:transparent;color:var(--ink);padding:2px 0;margin:0 0 12px;
+  }
+  #tripName:focus{outline:2px solid var(--teal);outline-offset:3px;border-radius:4px}
+  .totals{display:flex;gap:20px;flex-wrap:wrap;align-items:baseline}
+  .totals .big{font-size:21px;font-weight:600;display:block}
+  .spine{display:flex;height:12px;margin-top:16px;border-radius:3px;overflow:hidden;background:var(--surface2)}
+  .spine div{transition:flex-grow .35s ease}
+  .spine-key{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px}
+  .spine-key span{font-size:11px;color:var(--ink2);font-family:"IBM Plex Mono",monospace;display:flex;align-items:center;gap:5px}
+  .dot{width:8px;height:8px;border-radius:2px;display:inline-block;flex:0 0 auto}
+
+  /* ---------- sync pill ---------- */
+  .sync{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0 0}
+  .pill{
+    display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);
+    border-radius:999px;padding:5px 11px;font-size:12px;font-family:"IBM Plex Mono",monospace;color:var(--ink2);
+  }
+  .pill b{color:var(--ink);letter-spacing:.06em}
+  .led{width:7px;height:7px;border-radius:50%;background:var(--ink2)}
+  .led.live{background:var(--teal)}
+  .led.err{background:var(--rose)}
+
+  /* ---------- structure ---------- */
+  section{margin-top:26px}
+  section > h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;color:var(--ink2)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+  .empty{color:var(--ink2);font-size:14px;padding:12px 0}
+
+  /* ---------- controls ---------- */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .chip{
+    display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);
+    border-radius:999px;padding:6px 8px 6px 12px;font-size:14px;font-weight:500;color:var(--ink);
+  }
+  .chip .x{border:0;background:transparent;color:var(--ink2);font-size:16px;line-height:1;cursor:pointer;padding:2px 5px;border-radius:50%}
+  .chip .x:hover{color:var(--rose)}
+  .row{display:flex;gap:8px}
+  input[type=text],input[type=number],input[type=password],select{
+    font-family:inherit;font-size:16px;color:var(--ink);background:var(--surface);
+    border:1px solid var(--line);border-radius:9px;padding:10px 12px;width:100%;
+  }
+  input::placeholder{color:var(--ink2);opacity:.8}
+  input:focus,select:focus,button:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+  label.f{display:block;margin-bottom:12px}
+  label.f .lbl{display:block;margin-bottom:5px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  button{font-family:inherit;font-size:15px;cursor:pointer}
+  .btn{background:var(--teal);color:var(--bg);border:0;border-radius:9px;padding:12px 18px;font-weight:600}
+  html[data-theme="dark"] .btn{color:#08201C}
+  .btn:hover{filter:brightness(1.06)}
+  .btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+  .btn.ghost:hover{background:var(--surface2)}
+  .btn.sm{padding:8px 12px;font-size:13px}
+  .toggles{display:flex;flex-wrap:wrap;gap:6px}
+  .tog{border:1px solid var(--line);background:var(--surface);color:var(--ink2);border-radius:999px;padding:7px 13px;font-size:14px}
+  .tog[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:var(--bg)}
+  html[data-theme="dark"] .tog[aria-pressed="true"]{color:#08201C}
+  .mini{font-size:12px;color:var(--ink2);margin-top:6px}
+  .mini.warn{color:var(--rose);font-weight:500}
+  .custom-rows{margin-top:10px;display:none}
+  .custom-rows.on{display:block}
+  .crow{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .crow span{flex:1;font-size:14px}
+  .crow input{width:118px}
+
+  /* ---------- balances ---------- */
+  .bal{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .bal:last-of-type{border-bottom:0}
+  .bal .who{width:76px;font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .track{flex:1;position:relative;height:22px}
+  .track::before{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--line)}
+  .track i{position:absolute;top:4px;height:14px;border-radius:2px;transition:width .35s ease,left .35s ease}
+  .bal .amt{width:92px;text-align:right;font-size:14px;font-weight:600}
+  .pos{color:var(--teal)} .neg{color:var(--rose)} .zero{color:var(--ink2)}
+
+  /* ---------- settle ---------- */
+  .pay{display:flex;align-items:baseline;gap:10px;padding:12px 0;border-bottom:1px solid var(--line);font-size:16px}
+  .pay:last-of-type{border-bottom:0}
+  .pay b{font-weight:600}
+  .pay .arrow{color:var(--amber);font-weight:700}
+  .pay .v{margin-left:auto;font-weight:600;white-space:nowrap}
+
+  /* ---------- log ---------- */
+  .exp{display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+  .exp:last-of-type{border-bottom:0}
+  .exp .d{flex:1;min-width:0}
+  .exp .t{font-weight:600;font-size:15px;word-break:break-word;display:block}
+  .exp .s{font-size:12px;color:var(--ink2);margin-top:2px;display:block}
+  .exp .v{font-weight:600;white-space:nowrap}
+  .exp .del{border:0;background:transparent;color:var(--ink2);cursor:pointer;font-size:15px;padding:2px 5px}
+  .exp .del:hover{color:var(--rose)}
+
+  footer{margin-top:32px;padding-top:16px;border-top:1px solid var(--line)}
+  .footrow{display:flex;flex-wrap:wrap;gap:8px}
+  .note{font-size:12px;color:var(--ink2);margin-top:12px}
+  .panel{display:none;margin-top:14px}
+  .panel.on{display:block}
+  .toast{
+    position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);
+    padding:10px 16px;border-radius:9px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10
+  }
+  .toast.on{opacity:1}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="topbar">
+      <span class="lbl">Trip Split</span>
+      <button class="icon" id="themeBtn" title="Switch theme" aria-label="Switch theme">◐</button>
+    </div>
+    <input id="tripName" value="Our Trip" aria-label="Trip name" spellcheck="false">
+    <div class="totals">
+      <div><span class="lbl">Total spent</span><span class="big num" id="tTotal">$0.00</span></div>
+      <div><span class="lbl">Even share</span><span class="big num" id="tShare">$0.00</span></div>
+      <div><span class="lbl">Expenses</span><span class="big num" id="tCount">0</span></div>
+    </div>
+    <div class="spine" id="spine" aria-hidden="true"></div>
+    <div class="spine-key" id="spineKey"></div>
+  </header>
+
+  <div class="sync">
+    <span class="pill"><i class="led" id="led"></i><span id="syncText">Local only</span></span>
+    <span class="pill">Code <b id="codeText">——————</b></span>
+    <button class="btn ghost sm" id="shareBtn">Copy invite link</button>
+  </div>
+
+  <section>
+    <h2>Who's on the trip</h2>
+    <div class="chips" id="chips"></div>
+    <div class="row">
+      <input type="text" id="personName" placeholder="Add a name" maxlength="24" autocomplete="off">
+      <button class="btn" id="addPerson">Add</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Add an expense</h2>
+    <div class="card">
+      <label class="f"><span class="lbl">What was it</span>
+        <input type="text" id="expDesc" placeholder="Gas, cabin, dinner…" maxlength="60" autocomplete="off">
+      </label>
+      <div class="two">
+        <label class="f"><span class="lbl">Amount</span>
+          <input type="number" id="expAmt" placeholder="0.00" inputmode="decimal" step="0.01" min="0">
+        </label>
+        <label class="f"><span class="lbl">Paid by</span>
+          <select id="expPayer"></select>
+        </label>
+      </div>
+      <span class="lbl" style="display:block;margin-bottom:6px">Split between</span>
+      <div class="toggles" id="expWho"></div>
+      <div style="margin-top:10px">
+        <button class="tog" id="modeBtn" aria-pressed="false">Custom amounts</button>
+      </div>
+      <div class="custom-rows" id="customRows"></div>
+      <div class="mini" id="splitNote"></div>
+      <button class="btn" id="addExpense" style="margin-top:14px;width:100%">Add expense</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Where it stands</h2>
+    <div class="card" id="balances"></div>
+  </section>
+
+  <section>
+    <h2>Settle up</h2>
+    <div class="card" id="settle"></div>
+  </section>
+
+  <section>
+    <h2>Every expense</h2>
+    <div class="card" id="log"></div>
+  </section>
+
+  <footer>
+    <div class="footrow">
+      <button class="btn ghost sm" id="copyBtn">Copy summary</button>
+      <button class="btn ghost sm" id="saveBtn">Save file</button>
+      <button class="btn ghost sm" id="loadBtn">Load file</button>
+      <button class="btn ghost sm" id="dbBtn">Database</button>
+      <button class="btn ghost sm" id="resetBtn">Start over</button>
+      <input type="file" id="fileIn" accept=".json,application/json" hidden>
+    </div>
+
+    <div class="panel card" id="dbPanel">
+      <label class="f"><span class="lbl">Supabase project URL</span>
+        <input type="text" id="dbUrl" placeholder="https://xxxx.supabase.co" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="f"><span class="lbl">Anon public key</span>
+        <input type="password" id="dbKey" placeholder="eyJhbGci…" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="f"><span class="lbl">Trip code</span>
+        <input type="text" id="dbCode" placeholder="Blank makes a new one" maxlength="8" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="row">
+        <button class="btn" id="dbConnect">Connect</button>
+        <button class="btn ghost" id="dbOff">Go local</button>
+      </div>
+      <p class="note">Anyone with the link and code can read and edit this trip. Last edit wins, so avoid two people typing at once.</p>
+    </div>
+
+    <p class="note" id="footNote"></p>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= CONFIG =================
+     Fill these in before you host the file and it connects on load.
+     Leave blank to configure from the Database panel instead.        */
+  var CONFIG = {
+    url: "",          // e.g. "https://abcdefgh.supabase.co"
+    key: "",          // anon public key
+    table: "trips"
+  };
+  /* ========================================== */
+
+  var COLORS = ["#0B7A68","#C2762A","#6C5CA8","#BE3040","#2E7D5B","#2A6E9B","#8A6A3C","#9C4B77"];
+  var DARKC  = ["#4FD3B4","#F0AE5C","#A99AE6","#FF8D96","#67C48F","#6FB6E8","#D3AE79","#E695BE"];
+
+  var state = { trip:"Our Trip", people:[], expenses:[], seq:1 };
+  var custom = false, included = {};
+  var cloud = { on:false, url:"", key:"", table:"trips", code:"", stamp:null, timer:null, saveTimer:null, busy:false };
+
+  // ---------- tiny utils ----------
+  function el(id){ return document.getElementById(id); }
+  function ls(k,v){
+    try{
+      if(v===undefined) return localStorage.getItem(k);
+      if(v===null) localStorage.removeItem(k); else localStorage.setItem(k,v);
+    }catch(e){ return null; }
+  }
+  function money(c){
+    var n = Math.abs(c)/100;
+    return (c<0?"-$":"$") + n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  function cents(v){ var n=parseFloat(v); return isFinite(n)?Math.round(n*100):0; }
+  function byId(id){ for(var i=0;i<state.people.length;i++){ if(state.people[i].id===id) return state.people[i]; } return null; }
+  function nameOf(id){ var p=byId(id); return p?p.name:"—"; }
+  function palette(){ return document.documentElement.getAttribute("data-theme")==="dark" ? DARKC : COLORS; }
+  function toast(m){
+    var t=el("toast"); t.textContent=m; t.classList.add("on");
+    clearTimeout(t._h); t._h=setTimeout(function(){ t.classList.remove("on"); },2200);
+  }
+  function code6(){
+    var a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789", s="";
+    for(var i=0;i<6;i++) s += a[Math.floor(Math.random()*a.length)];
+    return s;
+  }
+
+  // ---------- theme ----------
+  function setTheme(t){
+    document.documentElement.setAttribute("data-theme", t);
+    ls("tripsplit.theme", t);
+    el("themeBtn").textContent = t==="dark" ? "☀" : "☾";
+    renderHeader();
+  }
+  (function initTheme(){
+    var saved = ls("tripsplit.theme");
+    var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    setTheme(saved || (prefersDark ? "dark" : "light"));
+  })();
+
+  // ---------- math ----------
+  function evenShares(total, ids){
+    var out={}, n=ids.length;
+    if(!n) return out;
+    var base=Math.floor(total/n), rem=total-base*n;
+    for(var i=0;i<n;i++) out[ids[i]] = base + (i<rem?1:0);
+    return out;
+  }
+  function balances(){
+    var b={};
+    state.people.forEach(function(p){ b[p.id]=0; });
+    state.expenses.forEach(function(e){
+      if(b[e.payer]!==undefined) b[e.payer]+=e.amount;
+      for(var id in e.shares){ if(b[id]!==undefined) b[id]-=e.shares[id]; }
+    });
+    return b;
+  }
+  function settlements(){
+    var b=balances(), owe=[], get=[];
+    state.people.forEach(function(p){
+      var v=b[p.id];
+      if(v<0) owe.push({id:p.id,v:-v});
+      else if(v>0) get.push({id:p.id,v:v});
+    });
+    owe.sort(function(a,c){return c.v-a.v;});
+    get.sort(function(a,c){return c.v-a.v;});
+    var out=[], i=0, j=0;
+    while(i<owe.length && j<get.length){
+      var amt=Math.min(owe[i].v,get[j].v);
+      if(amt>0) out.push({from:owe[i].id,to:get[j].id,amt:amt});
+      owe[i].v-=amt; get[j].v-=amt;
+      if(owe[i].v<=0) i++;
+      if(get[j].v<=0) j++;
+    }
+    return out;
+  }
+
+  // ---------- persistence ----------
+  function localSave(){
+    ls("tripsplit.state", JSON.stringify(state));
+  }
+  function localLoad(){
+    var raw = ls("tripsplit.state");
+    if(!raw) return false;
+    try{
+      var d = JSON.parse(raw);
+      if(!d || !d.people || !d.expenses) return false;
+      state = { trip:d.trip||"Our Trip", people:d.people, expenses:d.expenses, seq:d.seq||1000 };
+      return true;
+    }catch(e){ return false; }
+  }
+
+  function headers(){
+    return { "apikey":cloud.key, "Authorization":"Bearer "+cloud.key, "Content-Type":"application/json" };
+  }
+  function setSync(kind, text){
+    var led = el("led");
+    led.className = "led" + (kind==="live" ? " live" : kind==="err" ? " err" : "");
+    el("syncText").textContent = text;
+    el("codeText").textContent = cloud.on && cloud.code ? cloud.code : "——————";
+  }
+
+  function cloudPull(){
+    if(!cloud.on || cloud.busy) return;
+    var u = cloud.url + "/rest/v1/" + cloud.table + "?id=eq." + encodeURIComponent(cloud.code) + "&select=data,updated_at";
+    fetch(u, { headers: headers() })
+      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function(rows){
+        if(!rows.length){ setSync("live","Live · new trip"); return cloudPush(true); }
+        var row = rows[0];
+        if(row.updated_at !== cloud.stamp && row.data){
+          cloud.stamp = row.updated_at;
+          var d = row.data;
+          state = { trip:d.trip||"Our Trip", people:d.people||[], expenses:d.expenses||[], seq:d.seq||1000 };
+          el("tripName").value = state.trip;
+          render();
+        }
+        setSync("live","Live");
+      })
+      .catch(function(err){ setSync("err","Offline — retrying"); });
+  }
+
+  function cloudPush(silent){
+    if(!cloud.on) return;
+    cloud.busy = true;
+    var now = new Date().toISOString();
+    var body = [{ id:cloud.code, data:state, updated_at:now }];
+    fetch(cloud.url + "/rest/v1/" + cloud.table, {
+      method:"POST",
+      headers: Object.assign({}, headers(), { "Prefer":"resolution=merge-duplicates,return=minimal" }),
+      body: JSON.stringify(body)
+    })
+    .then(function(r){
+      if(!r.ok) throw new Error(r.status);
+      cloud.stamp = now;
+      setSync("live","Live · saved");
+      if(!silent) setTimeout(function(){ if(cloud.on) setSync("live","Live"); }, 1500);
+    })
+    .catch(function(err){ setSync("err","Save failed"); })
+    .then(function(){ cloud.busy = false; });
+  }
+
+  function persist(){
+    localSave();
+    if(cloud.on){
+      clearTimeout(cloud.saveTimer);
+      cloud.saveTimer = setTimeout(function(){ cloudPush(); }, 700);
+    }
+  }
+
+  function cloudStart(url, key, codeIn, table){
+    cloud.url = url.replace(/\/+$/,"");
+    cloud.key = key;
+    cloud.table = table || CONFIG.table || "trips";
+    cloud.code = (codeIn || "").toUpperCase() || code6();
+    cloud.on = true;
+    ls("tripsplit.db", JSON.stringify({url:cloud.url,key:cloud.key,code:cloud.code,table:cloud.table}));
+    if(history.replaceState) history.replaceState(null,"","#"+cloud.code);
+    setSync("live","Connecting…");
+    cloudPull();
+    clearInterval(cloud.timer);
+    cloud.timer = setInterval(function(){
+      if(!document.hidden) cloudPull();
+    }, 8000);
+    updateFootNote();
+  }
+  function cloudStop(){
+    cloud.on = false;
+    clearInterval(cloud.timer);
+    ls("tripsplit.db", null);
+    setSync("off","Local only");
+    updateFootNote();
+  }
+  function updateFootNote(){
+    el("footNote").textContent = cloud.on
+      ? "Everyone on the link sees the same trip. Changes save automatically."
+      : "Saved on this device only. Connect a database to share it with the group.";
+  }
+
+  // ---------- render ----------
+  function render(){ renderHeader(); renderPeople(); renderForm(); renderBalances(); renderSettle(); renderLog(); }
+
+  function renderHeader(){
+    var C = palette();
+    var total = state.expenses.reduce(function(s,e){ return s+e.amount; },0);
+    el("tTotal").textContent = money(total);
+    el("tShare").textContent = state.people.length ? money(Math.round(total/state.people.length)) : "$0.00";
+    el("tCount").textContent = String(state.expenses.length);
+
+    var paid = {};
+    state.people.forEach(function(p){ paid[p.id]=0; });
+    state.expenses.forEach(function(e){ if(paid[e.payer]!==undefined) paid[e.payer]+=e.amount; });
+
+    var spine = el("spine"), key = el("spineKey");
+    spine.innerHTML=""; key.innerHTML="";
+    if(total>0){
+      state.people.forEach(function(p,i){
+        if(paid[p.id]<=0) return;
+        var d=document.createElement("div");
+        d.style.flex = paid[p.id]+" 0 0";
+        d.style.background = C[i%C.length];
+        d.title = p.name+" fronted "+money(paid[p.id]);
+        spine.appendChild(d);
+        var s=document.createElement("span");
+        var dot=document.createElement("i");
+        dot.className="dot"; dot.style.background=C[i%C.length];
+        s.appendChild(dot);
+        s.appendChild(document.createTextNode(p.name+" fronted "+money(paid[p.id])));
+        key.appendChild(s);
+      });
+    }
+  }
+
+  function renderPeople(){
+    var C = palette(), c = el("chips");
+    c.innerHTML="";
+    if(!state.people.length){
+      c.innerHTML='<span class="empty">Start by adding everyone who is chipping in.</span>';
+      return;
+    }
+    state.people.forEach(function(p,i){
+      var chip=document.createElement("span");
+      chip.className="chip";
+      var dot=document.createElement("i");
+      dot.className="dot"; dot.style.background=C[i%C.length];
+      var nm=document.createElement("span"); nm.textContent=p.name;
+      var x=document.createElement("button");
+      x.className="x"; x.innerHTML="&times;"; x.setAttribute("aria-label","Remove "+p.name);
+      x.onclick=function(){ removePerson(p.id); };
+      chip.appendChild(dot); chip.appendChild(nm); chip.appendChild(x);
+      c.appendChild(chip);
+    });
+  }
+
+  function renderForm(){
+    var sel=el("expPayer"), keep=sel.value;
+    sel.innerHTML="";
+    state.people.forEach(function(p){
+      var o=document.createElement("option");
+      o.value=p.id; o.textContent=p.name;
+      sel.appendChild(o);
+    });
+    if(keep && byId(keep)) sel.value=keep;
+
+    var who=el("expWho"); who.innerHTML="";
+    if(!state.people.length) who.innerHTML='<span class="empty">Add people first.</span>';
+    state.people.forEach(function(p){
+      if(included[p.id]===undefined) included[p.id]=true;
+      var b=document.createElement("button");
+      b.className="tog"; b.type="button"; b.textContent=p.name;
+      b.setAttribute("aria-pressed", included[p.id]?"true":"false");
+      b.onclick=function(){ included[p.id]=!included[p.id]; renderForm(); };
+      who.appendChild(b);
+    });
+
+    el("modeBtn").setAttribute("aria-pressed", custom?"true":"false");
+    var rows=el("customRows");
+    rows.className="custom-rows"+(custom?" on":"");
+    if(custom){
+      var prev={};
+      Array.prototype.forEach.call(rows.querySelectorAll("input"), function(i){ prev[i.dataset.id]=i.value; });
+      rows.innerHTML="";
+      state.people.forEach(function(p){
+        if(!included[p.id]) return;
+        var r=document.createElement("div");
+        r.className="crow";
+        var s=document.createElement("span"); s.textContent=p.name;
+        var inp=document.createElement("input");
+        inp.type="number"; inp.step="0.01"; inp.min="0"; inp.inputMode="decimal";
+        inp.placeholder="0.00"; inp.dataset.id=p.id;
+        if(prev[p.id]) inp.value=prev[p.id];
+        inp.oninput=updateNote;
+        r.appendChild(s); r.appendChild(inp);
+        rows.appendChild(r);
+      });
+    }
+    updateNote();
+  }
+
+  function updateNote(){
+    var note=el("splitNote");
+    var ids=state.people.filter(function(p){ return included[p.id]; }).map(function(p){ return p.id; });
+    var total=cents(el("expAmt").value);
+    if(!custom){
+      note.className="mini";
+      note.textContent = ids.length
+        ? "Split evenly between "+ids.length+" — "+money(Math.floor(total/ids.length))+" each"
+        : "Pick at least one person.";
+      return;
+    }
+    var sum=0;
+    Array.prototype.forEach.call(el("customRows").querySelectorAll("input"), function(i){ sum+=cents(i.value); });
+    var diff=total-sum;
+    if(diff===0 && total>0){ note.className="mini"; note.textContent="Adds up."; }
+    else if(diff>0){ note.className="mini warn"; note.textContent=money(diff)+" still unassigned."; }
+    else { note.className="mini warn"; note.textContent=money(-diff)+" over the expense amount."; }
+  }
+
+  function renderBalances(){
+    var box=el("balances"); box.innerHTML="";
+    if(!state.people.length || !state.expenses.length){
+      box.innerHTML='<div class="empty">Balances appear once there is an expense on the books.</div>';
+      return;
+    }
+    var b=balances(), max=1;
+    state.people.forEach(function(p){ max=Math.max(max,Math.abs(b[p.id])); });
+    state.people.forEach(function(p){
+      var v=b[p.id], pct=Math.abs(v)/max*50;
+      var row=document.createElement("div");
+      row.className="bal";
+      var who=document.createElement("span"); who.className="who"; who.textContent=p.name;
+      var tr=document.createElement("span"); tr.className="track";
+      var bar=document.createElement("i");
+      bar.style.background = v>0 ? "var(--teal)" : "var(--rose)";
+      if(v>=0){ bar.style.left="50%"; bar.style.width=pct+"%"; }
+      else { bar.style.left=(50-pct)+"%"; bar.style.width=pct+"%"; }
+      tr.appendChild(bar);
+      var amt=document.createElement("span");
+      amt.className="amt num "+(v>0?"pos":v<0?"neg":"zero");
+      amt.textContent = v===0 ? "settled" : (v>0 ? "+"+money(v) : money(v));
+      row.appendChild(who); row.appendChild(tr); row.appendChild(amt);
+      box.appendChild(row);
+    });
+    var hint=document.createElement("div");
+    hint.className="mini"; hint.style.marginTop="10px";
+    hint.textContent="Right of the line means the trip owes them. Left means they owe the trip.";
+    box.appendChild(hint);
+  }
+
+  function renderSettle(){
+    var box=el("settle"); box.innerHTML="";
+    var s=settlements();
+    if(!s.length){
+      box.innerHTML='<div class="empty">'+(state.expenses.length?"Everyone is square.":"Nothing to settle yet.")+'</div>';
+      return;
+    }
+    s.forEach(function(t){
+      var d=document.createElement("div"); d.className="pay";
+      var a=document.createElement("b"); a.textContent=nameOf(t.from);
+      var ar=document.createElement("span"); ar.className="arrow"; ar.innerHTML="&rarr;";
+      var c=document.createElement("b"); c.textContent=nameOf(t.to);
+      var v=document.createElement("span"); v.className="v num"; v.textContent=money(t.amt);
+      d.appendChild(a); d.appendChild(ar); d.appendChild(c); d.appendChild(v);
+      box.appendChild(d);
+    });
+    var hint=document.createElement("div");
+    hint.className="mini"; hint.style.marginTop="10px";
+    hint.textContent = s.length + (s.length===1?" payment clears it.":" payments clear it.");
+    box.appendChild(hint);
+  }
+
+  function renderLog(){
+    var box=el("log"); box.innerHTML="";
+    if(!state.expenses.length){
+      box.innerHTML='<div class="empty">No expenses yet.</div>';
+      return;
+    }
+    state.expenses.slice().reverse().forEach(function(e){
+      var names=Object.keys(e.shares).map(nameOf);
+      var row=document.createElement("div"); row.className="exp";
+      var d=document.createElement("span"); d.className="d";
+      var t=document.createElement("span"); t.className="t"; t.textContent=e.desc;
+      var s=document.createElement("span"); s.className="s";
+      s.textContent = nameOf(e.payer)+" paid · split "+
+        (names.length===state.people.length ? "all round" : "between "+names.join(", "));
+      d.appendChild(t); d.appendChild(s);
+      var v=document.createElement("span"); v.className="v num"; v.textContent=money(e.amount);
+      var del=document.createElement("button");
+      del.className="del"; del.innerHTML="&times;"; del.setAttribute("aria-label","Delete "+e.desc);
+      del.onclick=function(){
+        state.expenses=state.expenses.filter(function(x){ return x.id!==e.id; });
+        render(); persist();
+      };
+      row.appendChild(d); row.appendChild(v); row.appendChild(del);
+      box.appendChild(row);
+    });
+  }
+
+  // ---------- actions ----------
+  function addPerson(){
+    var inp=el("personName"), name=inp.value.trim();
+    if(!name){ inp.focus(); return; }
+    if(state.people.some(function(p){ return p.name.toLowerCase()===name.toLowerCase(); })){
+      toast("That name is already on the list"); return;
+    }
+    state.people.push({ id:"p"+(state.seq++)+"-"+Math.random().toString(36).slice(2,6), name:name });
+    inp.value=""; inp.focus();
+    render(); persist();
+  }
+  function removePerson(id){
+    var used=state.expenses.some(function(e){ return e.payer===id || e.shares[id]!==undefined; });
+    if(used){ toast(nameOf(id)+" is tied to an expense — delete it first"); return; }
+    state.people=state.people.filter(function(p){ return p.id!==id; });
+    delete included[id];
+    render(); persist();
+  }
+  function addExpense(){
+    var desc=el("expDesc").value.trim()||"Expense";
+    var amount=cents(el("expAmt").value);
+    var payer=el("expPayer").value;
+    if(state.people.length<2){ toast("Add at least two people"); return; }
+    if(amount<=0){ toast("Enter an amount"); el("expAmt").focus(); return; }
+    if(!payer){ toast("Pick who paid"); return; }
+    var ids=state.people.filter(function(p){ return included[p.id]; }).map(function(p){ return p.id; });
+    if(!ids.length){ toast("Pick who it's split between"); return; }
+
+    var shares;
+    if(custom){
+      shares={}; var sum=0;
+      Array.prototype.forEach.call(el("customRows").querySelectorAll("input"), function(i){
+        var v=cents(i.value);
+        if(v>0){ shares[i.dataset.id]=v; sum+=v; }
+      });
+      if(sum!==amount){ toast("Custom amounts must add up to "+money(amount)); return; }
+    } else {
+      shares=evenShares(amount, ids);
+    }
+    state.expenses.push({ id:"e"+(state.seq++)+"-"+Math.random().toString(36).slice(2,6), desc:desc, amount:amount, payer:payer, shares:shares, at:Date.now() });
+    el("expDesc").value=""; el("expAmt").value="";
+    Array.prototype.forEach.call(el("customRows").querySelectorAll("input"), function(i){ i.value=""; });
+    render(); persist();
+    toast("Added "+desc);
+  }
+
+  function summaryText(){
+    var lines=[state.trip,""];
+    var total=state.expenses.reduce(function(s,e){ return s+e.amount; },0);
+    lines.push("Total: "+money(total)+" across "+state.expenses.length+" expenses","");
+    var b=balances();
+    state.people.forEach(function(p){
+      lines.push(p.name+": "+(b[p.id]>0?"owed "+money(b[p.id]):b[p.id]<0?"owes "+money(-b[p.id]):"settled"));
+    });
+    lines.push("","Settle up:");
+    var s=settlements();
+    if(!s.length) lines.push("  Everyone is square.");
+    s.forEach(function(t){ lines.push("  "+nameOf(t.from)+" pays "+nameOf(t.to)+" "+money(t.amt)); });
+    return lines.join("\n");
+  }
+  function copyText(text, ok){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ toast(ok); }, function(){ fallbackCopy(text, ok); });
+    } else fallbackCopy(text, ok);
+  }
+  function fallbackCopy(text, ok){
+    var ta=document.createElement("textarea");
+    ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); toast(ok); }
+    catch(e){ toast("Couldn't copy — select the text manually"); }
+    document.body.removeChild(ta);
+  }
+
+  function saveFile(){
+    var blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download=state.trip.replace(/[^\w\-]+/g,"-").toLowerCase()+"-split.json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); },1000);
+    toast("Saved");
+  }
+  function loadFile(ev){
+    var f=ev.target.files && ev.target.files[0];
+    if(!f) return;
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var d=JSON.parse(r.result);
+        if(!d.people||!d.expenses) throw new Error("bad");
+        state={ trip:d.trip||"Our Trip", people:d.people, expenses:d.expenses, seq:d.seq||1000 };
+        included={};
+        el("tripName").value=state.trip;
+        render(); persist();
+        toast("Loaded "+state.trip);
+      }catch(e){ toast("That file isn't a saved trip"); }
+    };
+    r.readAsText(f);
+    ev.target.value="";
+  }
+
+  // ---------- wiring ----------
+  el("themeBtn").onclick=function(){
+    setTheme(document.documentElement.getAttribute("data-theme")==="dark" ? "light" : "dark");
+    renderPeople();
+  };
+  el("addPerson").onclick=addPerson;
+  el("personName").addEventListener("keydown",function(e){ if(e.key==="Enter") addPerson(); });
+  el("addExpense").onclick=addExpense;
+  el("expAmt").addEventListener("input",updateNote);
+  el("expAmt").addEventListener("keydown",function(e){ if(e.key==="Enter") addExpense(); });
+  el("modeBtn").onclick=function(){ custom=!custom; renderForm(); };
+  el("tripName").addEventListener("input",function(){ state.trip=this.value||"Our Trip"; persist(); });
+  el("copyBtn").onclick=function(){ copyText(summaryText(),"Summary copied"); };
+  el("shareBtn").onclick=function(){
+    if(!cloud.on){ toast("Connect a database first"); return; }
+    copyText(location.origin+location.pathname+"#"+cloud.code, "Invite link copied");
+  };
+  el("saveBtn").onclick=saveFile;
+  el("loadBtn").onclick=function(){ el("fileIn").click(); };
+  el("fileIn").addEventListener("change",loadFile);
+  el("dbBtn").onclick=function(){ el("dbPanel").classList.toggle("on"); };
+  el("dbConnect").onclick=function(){
+    var u=el("dbUrl").value.trim(), k=el("dbKey").value.trim(), c=el("dbCode").value.trim();
+    if(!u||!k){ toast("Paste the project URL and anon key"); return; }
+    cloudStart(u,k,c);
+    el("dbPanel").classList.remove("on");
+  };
+  el("dbOff").onclick=function(){ cloudStop(); toast("Back to local only"); };
+  el("resetBtn").onclick=function(){
+    if(!confirm("Clear everyone and every expense?")) return;
+    state={ trip:"Our Trip", people:[], expenses:[], seq:1 };
+    included={}; custom=false;
+    el("tripName").value=state.trip;
+    render(); persist();
+  };
+  document.addEventListener("visibilitychange",function(){ if(!document.hidden) cloudPull(); });
+
+  // ---------- boot ----------
+  (function boot(){
+    localLoad();
+    el("tripName").value = state.trip;
+    setSync("off","Local only");
+    updateFootNote();
+    render();
+
+    var saved = null;
+    try{ saved = JSON.parse(ls("tripsplit.db")||"null"); }catch(e){}
+    var url = CONFIG.url || (saved && saved.url) || "";
+    var key = CONFIG.key || (saved && saved.key) || "";
+    var hash = (location.hash||"").replace("#","").toUpperCase();
+    var code = hash || (saved && saved.code) || "";
+    if(url && key){
+      el("dbUrl").value = url; el("dbKey").value = key; el("dbCode").value = code;
+      cloudStart(url, key, code, (saved && saved.table) || CONFIG.table);
+    }
+  })();
+})();
+</script>
+</body>
+</html>
