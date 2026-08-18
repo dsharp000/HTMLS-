@@ -248,26 +248,20 @@
       <button class="btn ghost sm" id="copyBtn">Copy summary</button>
       <button class="btn ghost sm" id="saveBtn">Save file</button>
       <button class="btn ghost sm" id="loadBtn">Load file</button>
-      <button class="btn ghost sm" id="dbBtn">Database</button>
+      <button class="btn ghost sm" id="dbBtn">Sync</button>
       <button class="btn ghost sm" id="resetBtn">Start over</button>
       <input type="file" id="fileIn" accept=".json,application/json" hidden>
     </div>
 
     <div class="panel card" id="dbPanel">
-      <label class="f"><span class="lbl">Supabase project URL</span>
-        <input type="text" id="dbUrl" placeholder="https://xxxx.supabase.co" autocomplete="off" spellcheck="false">
-      </label>
-      <label class="f"><span class="lbl">Anon public key</span>
-        <input type="password" id="dbKey" placeholder="eyJhbGci…" autocomplete="off" spellcheck="false">
-      </label>
       <label class="f"><span class="lbl">Trip code</span>
-        <input type="text" id="dbCode" placeholder="Blank makes a new one" maxlength="8" autocomplete="off" spellcheck="false">
+        <input type="text" id="dbCode" placeholder="Blank starts a new shared trip" maxlength="8" autocomplete="off" spellcheck="false">
       </label>
       <div class="row">
         <button class="btn" id="dbConnect">Connect</button>
         <button class="btn ghost" id="dbOff">Go local</button>
       </div>
-      <p class="note">Anyone with the link and code can read and edit this trip. Last edit wins, so avoid two people typing at once.</p>
+      <p class="note">Anyone with the invite link and code can read and edit this trip. Last edit wins, so avoid two people typing at once.</p>
     </div>
 
     <p class="note" id="footNote"></p>
@@ -275,26 +269,34 @@
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getDatabase, ref, set, onValue } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
 (function(){
   "use strict";
 
-  /* ================= CONFIG =================
-     Fill these in before you host the file and it connects on load.
-     Leave blank to configure from the Database panel instead.        */
-  var CONFIG = {
-    url: "",          // e.g. "https://abcdefgh.supabase.co"
-    key: "",          // anon public key
-    table: "trips"
+  /* ---------- shared Firebase project (same account as the other apps) ---------- */
+  var FIREBASE_CONFIG = {
+    apiKey:            "AIzaSyCp2PBbqdj_g6NPR9iYQb7Z6tgXbqLtHIA",
+    authDomain:        "lunch-f7021.firebaseapp.com",
+    databaseURL:       "https://lunch-f7021-default-rtdb.firebaseio.com",
+    projectId:         "lunch-f7021",
+    storageBucket:     "lunch-f7021.firebasestorage.app",
+    messagingSenderId: "1053755216064",
+    appId:             "1:1053755216064:web:14b749200f825a4e9bdd25",
   };
-  /* ========================================== */
+  var fbApp = initializeApp(FIREBASE_CONFIG);
+  var db = getDatabase(fbApp);
+  signInAnonymously(getAuth(fbApp)).catch(function(e){ console.warn("anon auth:", e); });
 
   var COLORS = ["#0B7A68","#C2762A","#6C5CA8","#BE3040","#2E7D5B","#2A6E9B","#8A6A3C","#9C4B77"];
   var DARKC  = ["#4FD3B4","#F0AE5C","#A99AE6","#FF8D96","#67C48F","#6FB6E8","#D3AE79","#E695BE"];
 
   var state = { trip:"Our Trip", people:[], expenses:[], seq:1 };
   var custom = false, included = {};
-  var cloud = { on:false, url:"", key:"", table:"trips", code:"", stamp:null, timer:null, saveTimer:null, busy:false };
+  var cloud = { on:false, code:"", tripRef:null, unsub:null, saveTimer:null, busy:false };
 
   // ---------- tiny utils ----------
   function el(id){ return document.getElementById(id); }
@@ -387,9 +389,6 @@
     }catch(e){ return false; }
   }
 
-  function headers(){
-    return { "apikey":cloud.key, "Authorization":"Bearer "+cloud.key, "Content-Type":"application/json" };
-  }
   function setSync(kind, text){
     var led = el("led");
     led.className = "led" + (kind==="live" ? " live" : kind==="err" ? " err" : "");
@@ -397,81 +396,62 @@
     el("codeText").textContent = cloud.on && cloud.code ? cloud.code : "——————";
   }
 
-  function cloudPull(){
-    if(!cloud.on || cloud.busy) return;
-    var u = cloud.url + "/rest/v1/" + cloud.table + "?id=eq." + encodeURIComponent(cloud.code) + "&select=data,updated_at";
-    fetch(u, { headers: headers() })
-      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function(rows){
-        if(!rows.length){ setSync("live","Live · new trip"); return cloudPush(true); }
-        var row = rows[0];
-        if(row.updated_at !== cloud.stamp && row.data){
-          cloud.stamp = row.updated_at;
-          var d = row.data;
-          state = { trip:d.trip||"Our Trip", people:d.people||[], expenses:d.expenses||[], seq:d.seq||1000 };
-          el("tripName").value = state.trip;
-          render();
-        }
-        setSync("live","Live");
-      })
-      .catch(function(err){ setSync("err","Offline — retrying"); });
-  }
-
-  function cloudPush(silent){
-    if(!cloud.on) return;
+  function cloudPush(){
+    if(!cloud.on || !cloud.tripRef) return;
     cloud.busy = true;
-    var now = new Date().toISOString();
-    var body = [{ id:cloud.code, data:state, updated_at:now }];
-    fetch(cloud.url + "/rest/v1/" + cloud.table, {
-      method:"POST",
-      headers: Object.assign({}, headers(), { "Prefer":"resolution=merge-duplicates,return=minimal" }),
-      body: JSON.stringify(body)
-    })
-    .then(function(r){
-      if(!r.ok) throw new Error(r.status);
-      cloud.stamp = now;
-      setSync("live","Live · saved");
-      if(!silent) setTimeout(function(){ if(cloud.on) setSync("live","Live"); }, 1500);
-    })
-    .catch(function(err){ setSync("err","Save failed"); })
-    .then(function(){ cloud.busy = false; });
+    set(cloud.tripRef, state)
+      .then(function(){
+        setSync("live","Live · saved");
+        setTimeout(function(){ if(cloud.on) setSync("live","Live"); }, 1500);
+      })
+      .catch(function(err){ setSync("err","Save failed"); })
+      .then(function(){ cloud.busy = false; });
   }
 
   function persist(){
     localSave();
     if(cloud.on){
       clearTimeout(cloud.saveTimer);
-      cloud.saveTimer = setTimeout(function(){ cloudPush(); }, 700);
+      cloud.saveTimer = setTimeout(cloudPush, 700);
     }
   }
 
-  function cloudStart(url, key, codeIn, table){
-    cloud.url = url.replace(/\/+$/,"");
-    cloud.key = key;
-    cloud.table = table || CONFIG.table || "trips";
-    cloud.code = (codeIn || "").toUpperCase() || code6();
+  function cloudStart(codeIn){
+    if(cloud.unsub){ cloud.unsub(); cloud.unsub = null; }
+    cloud.code = (codeIn || "").toUpperCase().replace(/[^A-Z0-9]/g,"") || code6();
     cloud.on = true;
-    ls("tripsplit.db", JSON.stringify({url:cloud.url,key:cloud.key,code:cloud.code,table:cloud.table}));
+    ls("tripsplit.code", cloud.code);
     if(history.replaceState) history.replaceState(null,"","#"+cloud.code);
     setSync("live","Connecting…");
-    cloudPull();
-    clearInterval(cloud.timer);
-    cloud.timer = setInterval(function(){
-      if(!document.hidden) cloudPull();
-    }, 8000);
+    cloud.tripRef = ref(db, "trip-split/"+cloud.code);
+    cloud.unsub = onValue(cloud.tripRef, function(snap){
+      var d = snap.val();
+      if(d===null){
+        setSync("live","Live · new trip");
+        cloudPush();
+        return;
+      }
+      state = { trip:d.trip||"Our Trip", people:d.people||[], expenses:d.expenses||[], seq:d.seq||1000 };
+      if(document.activeElement !== el("tripName")) el("tripName").value = state.trip;
+      render();
+      setSync("live","Live");
+    }, function(err){
+      setSync("err","Offline — retrying");
+    });
     updateFootNote();
   }
   function cloudStop(){
     cloud.on = false;
-    clearInterval(cloud.timer);
-    ls("tripsplit.db", null);
+    if(cloud.unsub){ cloud.unsub(); cloud.unsub = null; }
+    cloud.tripRef = null;
+    ls("tripsplit.code", null);
     setSync("off","Local only");
     updateFootNote();
   }
   function updateFootNote(){
     el("footNote").textContent = cloud.on
       ? "Everyone on the link sees the same trip. Changes save automatically."
-      : "Saved on this device only. Connect a database to share it with the group.";
+      : "Saved on this device only. Connect to share it with the group.";
   }
 
   // ---------- render ----------
@@ -797,10 +777,10 @@
   el("fileIn").addEventListener("change",loadFile);
   el("dbBtn").onclick=function(){ el("dbPanel").classList.toggle("on"); };
   el("dbConnect").onclick=function(){
-    var u=el("dbUrl").value.trim(), k=el("dbKey").value.trim(), c=el("dbCode").value.trim();
-    if(!u||!k){ toast("Paste the project URL and anon key"); return; }
-    cloudStart(u,k,c);
+    var c=el("dbCode").value.trim();
+    cloudStart(c);
     el("dbPanel").classList.remove("on");
+    toast(c ? "Joined trip "+cloud.code : "Started a new shared trip");
   };
   el("dbOff").onclick=function(){ cloudStop(); toast("Back to local only"); };
   el("resetBtn").onclick=function(){
@@ -810,7 +790,6 @@
     el("tripName").value=state.trip;
     render(); persist();
   };
-  document.addEventListener("visibilitychange",function(){ if(!document.hidden) cloudPull(); });
 
   // ---------- boot ----------
   (function boot(){
@@ -820,15 +799,11 @@
     updateFootNote();
     render();
 
-    var saved = null;
-    try{ saved = JSON.parse(ls("tripsplit.db")||"null"); }catch(e){}
-    var url = CONFIG.url || (saved && saved.url) || "";
-    var key = CONFIG.key || (saved && saved.key) || "";
     var hash = (location.hash||"").replace("#","").toUpperCase();
-    var code = hash || (saved && saved.code) || "";
-    if(url && key){
-      el("dbUrl").value = url; el("dbKey").value = key; el("dbCode").value = code;
-      cloudStart(url, key, code, (saved && saved.table) || CONFIG.table);
+    var code = hash || ls("tripsplit.code") || "";
+    if(code){
+      el("dbCode").value = code;
+      cloudStart(code);
     }
   })();
 })();
