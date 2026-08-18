@@ -24,21 +24,35 @@
     --rose-soft:#FBE7E9;
     --amber:#C8871B;
     --shadow:0 1px 2px rgba(14,30,39,.06);
+    /* pills, chips and toggles get their own tokens so they stay
+       readable as standalone shapes in both themes */
+    --pill-bg:#FFFFFF;
+    --pill-line:#7C8F9C;
+    --pill-ink:#0E1E27;
+    --pill-ink2:#4A5D68;
+    --on-accent:#FFFFFF;
   }
   html[data-theme="dark"]{
     color-scheme: dark;
     --bg:#0D161B;
-    --surface:#152227;
-    --surface2:#1D2C33;
+    --surface:#18272E;
+    --surface2:#22343C;
     --ink:#E9F1F4;
-    --ink2:#9BAFB9;
-    --line:#2B3C44;
+    --ink2:#A6BAC4;
+    --line:#354A54;
     --teal:#4FD3B4;
     --teal-soft:#12312D;
     --rose:#FF8D96;
     --rose-soft:#3A1D21;
     --amber:#F0C170;
     --shadow:none;
+    /* #22343C on #0D161B reads as a real surface, and the #55727F rim
+       clears 3:1 against the page so the pill shape is visible */
+    --pill-bg:#22343C;
+    --pill-line:#55727F;
+    --pill-ink:#F2F7F9;
+    --pill-ink2:#C2D2DA;
+    --on-accent:#08201C;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
@@ -76,16 +90,24 @@
   .spine-key span{font-size:11px;color:var(--ink2);font-family:"IBM Plex Mono",monospace;display:flex;align-items:center;gap:5px}
   .dot{width:8px;height:8px;border-radius:2px;display:inline-block;flex:0 0 auto}
 
-  /* ---------- sync pill ---------- */
-  .sync{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0 0}
+  /* ---------- sync bar ---------- */
+  .sync{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 0 0}
   .pill{
-    display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);
-    border-radius:999px;padding:5px 11px;font-size:12px;font-family:"IBM Plex Mono",monospace;color:var(--ink2);
+    display:inline-flex;align-items:center;gap:7px;border:1px solid var(--pill-line);background:var(--pill-bg);
+    border-radius:999px;padding:6px 12px;font-size:12px;font-family:"IBM Plex Mono",monospace;color:var(--pill-ink2);
   }
-  .pill b{color:var(--ink);letter-spacing:.06em}
-  .led{width:7px;height:7px;border-radius:50%;background:var(--ink2)}
-  .led.live{background:var(--teal)}
-  .led.err{background:var(--rose)}
+  .pill b{color:var(--pill-ink);letter-spacing:.06em;font-weight:600}
+  button.pill{cursor:pointer}
+  button.pill:hover{background:var(--surface2);border-color:var(--teal)}
+  .led{width:8px;height:8px;border-radius:50%;background:var(--pill-ink2);flex:0 0 auto}
+  .led.live{background:var(--teal);box-shadow:0 0 0 3px color-mix(in srgb,var(--teal) 22%,transparent)}
+  .led.err{background:var(--rose);box-shadow:0 0 0 3px color-mix(in srgb,var(--rose) 22%,transparent)}
+  .setup{
+    margin-top:12px;border:1px solid var(--pill-line);background:var(--pill-bg);
+    border-left:4px solid var(--amber);border-radius:10px;padding:12px 14px;
+  }
+  .setup p{margin:0 0 10px;font-size:13px;color:var(--pill-ink2)}
+  .setup strong{color:var(--pill-ink)}
 
   /* ---------- structure ---------- */
   section{margin-top:26px}
@@ -96,10 +118,10 @@
   /* ---------- controls ---------- */
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
   .chip{
-    display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);
-    border-radius:999px;padding:6px 8px 6px 12px;font-size:14px;font-weight:500;color:var(--ink);
+    display:inline-flex;align-items:center;gap:8px;background:var(--pill-bg);border:1px solid var(--pill-line);
+    border-radius:999px;padding:6px 8px 6px 12px;font-size:14px;font-weight:500;color:var(--pill-ink);
   }
-  .chip .x{border:0;background:transparent;color:var(--ink2);font-size:16px;line-height:1;cursor:pointer;padding:2px 5px;border-radius:50%}
+  .chip .x{border:0;background:transparent;color:var(--pill-ink2);font-size:16px;line-height:1;cursor:pointer;padding:2px 5px;border-radius:50%}
   .chip .x:hover{color:var(--rose)}
   .row{display:flex;gap:8px}
   input[type=text],input[type=number],input[type=password],select{
@@ -112,16 +134,14 @@
   label.f .lbl{display:block;margin-bottom:5px}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   button{font-family:inherit;font-size:15px;cursor:pointer}
-  .btn{background:var(--teal);color:var(--bg);border:0;border-radius:9px;padding:12px 18px;font-weight:600}
-  html[data-theme="dark"] .btn{color:#08201C}
+  .btn{background:var(--teal);color:var(--on-accent);border:0;border-radius:9px;padding:12px 18px;font-weight:600}
   .btn:hover{filter:brightness(1.06)}
-  .btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+  .btn.ghost{background:var(--pill-bg);color:var(--pill-ink);border:1px solid var(--pill-line)}
   .btn.ghost:hover{background:var(--surface2)}
   .btn.sm{padding:8px 12px;font-size:13px}
   .toggles{display:flex;flex-wrap:wrap;gap:6px}
-  .tog{border:1px solid var(--line);background:var(--surface);color:var(--ink2);border-radius:999px;padding:7px 13px;font-size:14px}
-  .tog[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:var(--bg)}
-  html[data-theme="dark"] .tog[aria-pressed="true"]{color:#08201C}
+  .tog{border:1px solid var(--pill-line);background:var(--pill-bg);color:var(--pill-ink2);border-radius:999px;padding:7px 13px;font-size:14px}
+  .tog[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:var(--on-accent);font-weight:600}
   .mini{font-size:12px;color:var(--ink2);margin-top:6px}
   .mini.warn{color:var(--rose);font-weight:500}
   .custom-rows{margin-top:10px;display:none}
@@ -189,9 +209,32 @@
   </header>
 
   <div class="sync">
-    <span class="pill"><i class="led" id="led"></i><span id="syncText">Local only</span></span>
-    <span class="pill">Code <b id="codeText">——————</b></span>
-    <button class="btn ghost sm" id="shareBtn">Copy invite link</button>
+    <span class="pill"><i class="led" id="led"></i><span id="syncText">Not syncing</span></span>
+    <button class="pill" id="codePill" title="Copy the trip code">Code <b id="codeText">——————</b></button>
+    <button class="btn sm" id="shareBtn">Invite friends</button>
+    <button class="btn ghost sm" id="joinBtn">Join a trip</button>
+    <button class="btn ghost sm" id="syncBtn">Sync settings</button>
+  </div>
+
+  <div class="setup" id="setupBanner" hidden>
+    <p><strong>Nobody else can see this trip yet.</strong> Trip Split keeps everything on this
+    device until you point it at a database. One-time setup, then invite links just work.</p>
+    <button class="btn sm" id="setupOpen">Set up syncing</button>
+  </div>
+
+  <div class="panel card" id="dbPanel">
+    <label class="f"><span class="lbl">Firebase Realtime Database URL</span>
+      <input type="text" id="dbUrl" placeholder="https://your-project-default-rtdb.firebaseio.com" autocomplete="off" spellcheck="false">
+    </label>
+    <label class="f"><span class="lbl">Trip code — blank makes a new one</span>
+      <input type="text" id="dbCode" placeholder="e.g. K4M7QP" maxlength="8" autocomplete="off" spellcheck="false">
+    </label>
+    <div class="row">
+      <button class="btn" id="dbConnect">Turn on syncing</button>
+      <button class="btn ghost" id="dbOff">Go local</button>
+    </div>
+    <p class="note">Anyone with the invite link can read and edit this trip. Changes save a moment
+    after you stop typing, and last edit wins — so avoid two people editing the same expense at once.</p>
   </div>
 
   <section>
@@ -248,26 +291,8 @@
       <button class="btn ghost sm" id="copyBtn">Copy summary</button>
       <button class="btn ghost sm" id="saveBtn">Save file</button>
       <button class="btn ghost sm" id="loadBtn">Load file</button>
-      <button class="btn ghost sm" id="dbBtn">Database</button>
       <button class="btn ghost sm" id="resetBtn">Start over</button>
       <input type="file" id="fileIn" accept=".json,application/json" hidden>
-    </div>
-
-    <div class="panel card" id="dbPanel">
-      <label class="f"><span class="lbl">Supabase project URL</span>
-        <input type="text" id="dbUrl" placeholder="https://xxxx.supabase.co" autocomplete="off" spellcheck="false">
-      </label>
-      <label class="f"><span class="lbl">Anon public key</span>
-        <input type="password" id="dbKey" placeholder="eyJhbGci…" autocomplete="off" spellcheck="false">
-      </label>
-      <label class="f"><span class="lbl">Trip code</span>
-        <input type="text" id="dbCode" placeholder="Blank makes a new one" maxlength="8" autocomplete="off" spellcheck="false">
-      </label>
-      <div class="row">
-        <button class="btn" id="dbConnect">Connect</button>
-        <button class="btn ghost" id="dbOff">Go local</button>
-      </div>
-      <p class="note">Anyone with the link and code can read and edit this trip. Last edit wins, so avoid two people typing at once.</p>
     </div>
 
     <p class="note" id="footNote"></p>
@@ -280,12 +305,12 @@
   "use strict";
 
   /* ================= CONFIG =================
-     Fill these in before you host the file and it connects on load.
-     Leave blank to configure from the Database panel instead.        */
+     Paste your Firebase Realtime Database URL between the quotes, save,
+     and push. After that every invite link works with zero setup for
+     whoever opens it — no key, no account, no panel.                  */
   var CONFIG = {
-    url: "",          // e.g. "https://abcdefgh.supabase.co"
-    key: "",          // anon public key
-    table: "trips"
+    db: "",                 // e.g. "https://trip-split-default-rtdb.firebaseio.com"
+    path: "tripsplit"       // top-level key the trips live under
   };
   /* ========================================== */
 
@@ -294,7 +319,7 @@
 
   var state = { trip:"Our Trip", people:[], expenses:[], seq:1 };
   var custom = false, included = {};
-  var cloud = { on:false, url:"", key:"", table:"trips", code:"", stamp:null, timer:null, saveTimer:null, busy:false };
+  var cloud = { on:false, url:"", path:"tripsplit", code:"", stamp:null, timer:null, saveTimer:null, busy:false };
 
   // ---------- tiny utils ----------
   function el(id){ return document.getElementById(id); }
@@ -387,24 +412,25 @@
     }catch(e){ return false; }
   }
 
-  function headers(){
-    return { "apikey":cloud.key, "Authorization":"Bearer "+cloud.key, "Content-Type":"application/json" };
+  function tripURL(){
+    return cloud.url + "/" + cloud.path + "/" + encodeURIComponent(cloud.code) + ".json";
   }
   function setSync(kind, text){
     var led = el("led");
     led.className = "led" + (kind==="live" ? " live" : kind==="err" ? " err" : "");
     el("syncText").textContent = text;
     el("codeText").textContent = cloud.on && cloud.code ? cloud.code : "——————";
+    el("setupBanner").hidden = cloud.on || !!cloud.url;
+    el("shareBtn").textContent = cloud.on ? "Invite friends" : "Turn on syncing";
   }
 
   function cloudPull(){
     if(!cloud.on || cloud.busy) return;
-    var u = cloud.url + "/rest/v1/" + cloud.table + "?id=eq." + encodeURIComponent(cloud.code) + "&select=data,updated_at";
-    fetch(u, { headers: headers() })
+    fetch(tripURL(), { cache:"no-store" })
       .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function(rows){
-        if(!rows.length){ setSync("live","Live · new trip"); return cloudPush(true); }
-        var row = rows[0];
+      .then(function(row){
+        // null means nobody has written this code yet — seed it with what we have
+        if(!row){ setSync("live","Live · new trip"); return cloudPush(true); }
         if(row.updated_at !== cloud.stamp && row.data){
           cloud.stamp = row.updated_at;
           var d = row.data;
@@ -412,28 +438,27 @@
           el("tripName").value = state.trip;
           render();
         }
-        setSync("live","Live");
+        setSync("live","Live · "+(state.people.length||0)+" on the trip");
       })
-      .catch(function(err){ setSync("err","Offline — retrying"); });
+      .catch(function(){ setSync("err","Offline — retrying"); });
   }
 
   function cloudPush(silent){
     if(!cloud.on) return;
     cloud.busy = true;
     var now = new Date().toISOString();
-    var body = [{ id:cloud.code, data:state, updated_at:now }];
-    fetch(cloud.url + "/rest/v1/" + cloud.table, {
-      method:"POST",
-      headers: Object.assign({}, headers(), { "Prefer":"resolution=merge-duplicates,return=minimal" }),
-      body: JSON.stringify(body)
+    fetch(tripURL(), {
+      method:"PUT",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ data:state, updated_at:now })
     })
     .then(function(r){
       if(!r.ok) throw new Error(r.status);
       cloud.stamp = now;
       setSync("live","Live · saved");
-      if(!silent) setTimeout(function(){ if(cloud.on) setSync("live","Live"); }, 1500);
+      if(!silent) setTimeout(function(){ if(cloud.on) cloudPull(); }, 1500);
     })
-    .catch(function(err){ setSync("err","Save failed"); })
+    .catch(function(){ setSync("err","Save failed — will retry"); })
     .then(function(){ cloud.busy = false; });
   }
 
@@ -445,33 +470,36 @@
     }
   }
 
-  function cloudStart(url, key, codeIn, table){
-    cloud.url = url.replace(/\/+$/,"");
-    cloud.key = key;
-    cloud.table = table || CONFIG.table || "trips";
-    cloud.code = (codeIn || "").toUpperCase() || code6();
+  function cloudStart(url, codeIn, path){
+    cloud.url = String(url||"").trim().replace(/\/+$/,"");
+    cloud.path = path || CONFIG.path || "tripsplit";
+    cloud.code = (codeIn || "").toUpperCase().replace(/[^A-Z0-9]/g,"") || code6();
     cloud.on = true;
-    ls("tripsplit.db", JSON.stringify({url:cloud.url,key:cloud.key,code:cloud.code,table:cloud.table}));
+    ls("tripsplit.db", JSON.stringify({url:cloud.url,code:cloud.code,path:cloud.path}));
     if(history.replaceState) history.replaceState(null,"","#"+cloud.code);
     setSync("live","Connecting…");
     cloudPull();
     clearInterval(cloud.timer);
     cloud.timer = setInterval(function(){
       if(!document.hidden) cloudPull();
-    }, 8000);
+    }, 6000);
     updateFootNote();
   }
   function cloudStop(){
     cloud.on = false;
     clearInterval(cloud.timer);
     ls("tripsplit.db", null);
-    setSync("off","Local only");
+    if(history.replaceState) history.replaceState(null,"",location.pathname);
+    setSync("off","Not syncing");
     updateFootNote();
+  }
+  function inviteLink(){
+    return location.origin + location.pathname + "#" + cloud.code;
   }
   function updateFootNote(){
     el("footNote").textContent = cloud.on
-      ? "Everyone on the link sees the same trip. Changes save automatically."
-      : "Saved on this device only. Connect a database to share it with the group.";
+      ? "Live. Anyone who opens the invite link sees this same trip and can add expenses."
+      : "This trip lives on this device only. Turn on syncing to share it with the group.";
   }
 
   // ---------- render ----------
@@ -788,21 +816,47 @@
   el("modeBtn").onclick=function(){ custom=!custom; renderForm(); };
   el("tripName").addEventListener("input",function(){ state.trip=this.value||"Our Trip"; persist(); });
   el("copyBtn").onclick=function(){ copyText(summaryText(),"Summary copied"); };
+  function openPanel(){
+    el("dbPanel").classList.add("on");
+    el("dbUrl").value = cloud.url || CONFIG.db || "";
+    el("dbCode").value = cloud.code || "";
+    el("dbPanel").scrollIntoView({behavior:"smooth",block:"nearest"});
+  }
   el("shareBtn").onclick=function(){
-    if(!cloud.on){ toast("Connect a database first"); return; }
-    copyText(location.origin+location.pathname+"#"+cloud.code, "Invite link copied");
+    if(!cloud.on){ openPanel(); return; }
+    if(navigator.share){
+      navigator.share({ title:state.trip, text:"Join "+state.trip+" on Trip Split", url:inviteLink() })
+        .catch(function(){ copyText(inviteLink(), "Invite link copied"); });
+    } else {
+      copyText(inviteLink(), "Invite link copied");
+    }
   };
+  el("codePill").onclick=function(){
+    if(!cloud.on){ openPanel(); return; }
+    copyText(cloud.code, "Trip code copied");
+  };
+  el("joinBtn").onclick=function(){
+    var base = cloud.url || CONFIG.db;
+    if(!base){ openPanel(); return; }
+    var c = prompt("Enter the 6-character trip code your friend sent you:");
+    if(!c) return;
+    if(state.expenses.length && !confirm("Joining replaces what's on this screen. Continue?")) return;
+    cloudStart(base, c, cloud.path);
+    toast("Joining "+c.toUpperCase()+"…");
+  };
+  el("setupOpen").onclick=openPanel;
+  el("syncBtn").onclick=function(){ el("dbPanel").classList.toggle("on"); };
   el("saveBtn").onclick=saveFile;
   el("loadBtn").onclick=function(){ el("fileIn").click(); };
   el("fileIn").addEventListener("change",loadFile);
-  el("dbBtn").onclick=function(){ el("dbPanel").classList.toggle("on"); };
   el("dbConnect").onclick=function(){
-    var u=el("dbUrl").value.trim(), k=el("dbKey").value.trim(), c=el("dbCode").value.trim();
-    if(!u||!k){ toast("Paste the project URL and anon key"); return; }
-    cloudStart(u,k,c);
+    var u=el("dbUrl").value.trim(), c=el("dbCode").value.trim();
+    if(!/^https?:\/\//.test(u)){ toast("Paste your Firebase database URL"); el("dbUrl").focus(); return; }
+    cloudStart(u,c);
     el("dbPanel").classList.remove("on");
+    toast("Syncing on — code "+cloud.code);
   };
-  el("dbOff").onclick=function(){ cloudStop(); toast("Back to local only"); };
+  el("dbOff").onclick=function(){ cloudStop(); el("dbPanel").classList.remove("on"); toast("Back to local only"); };
   el("resetBtn").onclick=function(){
     if(!confirm("Clear everyone and every expense?")) return;
     state={ trip:"Our Trip", people:[], expenses:[], seq:1 };
@@ -816,20 +870,26 @@
   (function boot(){
     localLoad();
     el("tripName").value = state.trip;
-    setSync("off","Local only");
-    updateFootNote();
-    render();
 
     var saved = null;
     try{ saved = JSON.parse(ls("tripsplit.db")||"null"); }catch(e){}
-    var url = CONFIG.url || (saved && saved.url) || "";
-    var key = CONFIG.key || (saved && saved.key) || "";
-    var hash = (location.hash||"").replace("#","").toUpperCase();
+    var url  = CONFIG.db || (saved && saved.url) || "";
+    var path = CONFIG.path || (saved && saved.path) || "tripsplit";
+    var hash = (location.hash||"").replace("#","").toUpperCase().replace(/[^A-Z0-9]/g,"");
     var code = hash || (saved && saved.code) || "";
-    if(url && key){
-      el("dbUrl").value = url; el("dbKey").value = key; el("dbCode").value = code;
-      cloudStart(url, key, code, (saved && saved.table) || CONFIG.table);
-    }
+
+    cloud.url = url; cloud.path = path;
+    setSync("off","Not syncing");
+    updateFootNote();
+    render();
+
+    el("dbUrl").value = url;
+    el("dbCode").value = code;
+
+    // An invite link (#CODE) joins straight away. Otherwise reconnect to
+    // whatever trip this device was last on.
+    if(url && code) cloudStart(url, code, path);
+    else if(url && hash) cloudStart(url, hash, path);
   })();
 })();
 </script>
