@@ -70,6 +70,98 @@
     }
     .stat-pill span { color: #7eb8a0; font-weight: 700; font-size: 1rem; }
 
+    /* Whose list + sync state */
+    .owner-bar {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 0.9rem;
+    }
+    .owner-btn {
+      background: #232b3e;
+      border: 1px solid #3a4a68;
+      color: #e8ecf0;
+      border-radius: 20px;
+      padding: 6px 16px;
+      font: inherit;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .owner-btn:hover { background: #2a3448; }
+    .owner-btn .who { color: #7eb8a0; font-weight: 700; }
+    .sync-state {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: #6b8090;
+    }
+    .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; }
+
+    /* Name picker */
+    .owner-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 14, 22, 0.78);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 2000;
+    }
+    .owner-modal.hidden { display: none; }
+    .owner-card {
+      background: #1e2638;
+      border: 1px solid #2a3448;
+      border-radius: 12px;
+      width: min(420px, 100%);
+      padding: 1.25rem;
+    }
+    .owner-card h2 { font-family: 'Oswald', sans-serif; font-size: 1.2rem; margin-bottom: 0.35rem; }
+    .owner-card p { font-size: 0.8rem; color: #8b9bb0; margin-bottom: 0.9rem; }
+    .owner-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+    .owner-list button {
+      background: #232b3e;
+      border: 1px solid #2a3448;
+      color: #e8ecf0;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .owner-list button:hover { background: #2a3448; border-color: #7eb8a0; }
+    .owner-hint { font-size: 0.78rem; color: #6b8090; }
+    .owner-row { display: flex; gap: 8px; }
+    .owner-row input {
+      flex: 1;
+      background: #161d2b;
+      border: 1px solid #2a3448;
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: #e8ecf0;
+      font: inherit;
+      font-size: 0.9rem;
+    }
+    .owner-row input:focus { outline: none; border-color: #7eb8a0; }
+    .owner-go, .owner-cancel {
+      background: #7eb8a0;
+      border: 0;
+      color: #0f1623;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .owner-cancel { background: #2a3448; color: #e8ecf0; margin-top: 0.75rem; width: 100%; }
+
     /* Progress bar */
     .progress-wrap {
       max-width: 400px;
@@ -257,9 +349,26 @@
 </head>
 <body>
 
+<div class="owner-modal hidden" id="owner-modal">
+  <div class="owner-card">
+    <h2>Whose list is this?</h2>
+    <p>Pick a name to load that list, or add a new one. Each name keeps its own parks and syncs across every device.</p>
+    <div class="owner-list" id="owner-list"></div>
+    <div class="owner-row">
+      <input id="owner-input" placeholder="New name" autocomplete="off">
+      <button class="owner-go" onclick="createOwner()">Start</button>
+    </div>
+    <button class="owner-cancel" id="owner-cancel" onclick="closeOwnerModal()">Cancel</button>
+  </div>
+</div>
+
 <div class="header">
   <p class="header-eyebrow">National Park Service</p>
   <h1>63 National Parks</h1>
+  <div class="owner-bar">
+    <button class="owner-btn" id="owner-btn" onclick="openOwnerModal()">Whose list?</button>
+    <span class="sync-state"><i class="sync-dot" id="sync-dot"></i><span id="sync-label">Local only</span></span>
+  </div>
   <div class="stats-bar">
     <div class="stat-pill">Visited: <span id="stat-visited">0</span></div>
     <div class="stat-pill">Remaining: <span id="stat-remaining">63</span></div>
@@ -415,18 +524,63 @@ const PARKS = [
 ];
 
 // ── STORAGE ──────────────────────────────────────────────────────────────────
-const STORAGE_KEY = 'national-parks-visited';
+// Each name owns its own list, in the cloud and in this device's cache, so one
+// browser can hold several people's lists without them mixing.
+const STORAGE_KEY  = 'national-parks-visited';   // pre-names cache, kept for migration
+const OWNER_PREF   = 'national-parks-owner';
+const MIGRATED_KEY = 'national-parks-migrated';
+
+let owner   = localStorage.getItem(OWNER_PREF) || '';
 let visited = {};
-try { visited = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) {}
+
+const ownerKey   = name => name.trim().toLowerCase().replace(/[.#$\[\]\/\s]+/g, '-');
+const storageKey = () => STORAGE_KEY + '::' + ownerKey(owner);
+const cacheKey   = () => owner ? storageKey() : STORAGE_KEY;
+
+try { visited = JSON.parse(localStorage.getItem(cacheKey())) || {}; } catch(e) {}
+
+let remoteReady = false;
+let saveTimer   = null;
 
 // Visited park ids as an array (ids are clean slugs — safe as RTDB array values).
 function visitedArray() { return Object.keys(visited).filter(id => visited[id]); }
 
 function saveVisited() {          // local cache (also works offline / before sync)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(visited));
+  localStorage.setItem(cacheKey(), JSON.stringify(visited));
 }
+
 function pushRemote() {           // fire-and-forget cloud sync (no-op if unavailable)
-  if (window._npSet) window._npSet(visitedArray());
+  if (!owner || !window._npSaveOwner || !remoteReady) return;
+  try {
+    window._npSaveOwner(ownerKey(owner), { name: owner, visited: visitedArray(), updatedAt: Date.now() })
+      .then(() => setSyncDot('synced'))
+      .catch(() => setSyncDot('offline'));
+  } catch (e) {
+    setSyncDot('offline');
+  }
+}
+
+// A toggle writes locally at once and batches the cloud write, so rattling
+// through a dozen parks is one save rather than a dozen.
+function saveAndSync() {
+  saveVisited();
+  if (!owner) return;
+  setSyncDot('saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(pushRemote, 600);
+}
+
+function setSyncDot(state) {
+  const styles = {
+    saving:  ['#fb923c', 'Saving…'],
+    synced:  ['#4ade80', 'Synced'],
+    offline: ['#64748b', 'Local only'],
+  };
+  const [color, label] = styles[state] || styles.offline;
+  const dot = document.getElementById('sync-dot');
+  const lab = document.getElementById('sync-label');
+  if (dot) dot.style.background = color;
+  if (lab) lab.textContent = label;
 }
 
 // ── STATS ────────────────────────────────────────────────────────────────────
@@ -519,8 +673,7 @@ function initMaps() {
 // ── TOGGLE ───────────────────────────────────────────────────────────────────
 function togglePark(id) {
   visited[id] = !visited[id];
-  saveVisited();
-  pushRemote();
+  saveAndSync();
   updateStats();
 
   // Update marker styles
@@ -603,18 +756,129 @@ function refreshAll() {
   });
 }
 
-// Called by the Firebase bridge (below) whenever the shared list changes.
+// Called by the Firebase bridge whenever this name's list changes anywhere.
 window.npApplyRemote = function(val) {
-  if (val && Array.isArray(val.visited)) {
-    visited = {};
-    val.visited.forEach(id => { visited[id] = true; });
-    saveVisited();               // refresh local cache; do NOT re-push (avoids a loop)
-    refreshAll();
-  } else if (val === null) {
-    // Cloud is empty — seed it once from this device's existing local progress.
+  const firstSync = !remoteReady;
+  remoteReady = true;
+  if (!val) {
+    // Nothing stored under this name yet — seed it from whatever this device has.
     if (visitedArray().length) pushRemote();
+    else setSyncDot('synced');
+    return;
   }
+  if (Array.isArray(val.visited)) {
+    // A name claimed on a blank device leaves an empty list in the cloud. When the
+    // device that actually holds the parks syncs later, it uploads them rather than
+    // letting the empty list erase it.
+    if (firstSync && !val.visited.length && visitedArray().length) { pushRemote(); return; }
+    const remote = {};
+    val.visited.forEach(id => { if (typeof id === 'string') remote[id] = true; });
+    if (visitedArray().sort().join() !== Object.keys(remote).sort().join()) {
+      visited = remote;
+      saveVisited();             // refresh local cache; do NOT re-push (avoids a loop)
+      refreshAll();
+    }
+  }
+  setSyncDot('synced');
 };
+
+// ── WHOSE LIST ───────────────────────────────────────────────────────────────
+let watchTries = 0;
+function startSync() {
+  if (!owner) return;
+  if (!window._npWatchOwner) {
+    if (++watchTries > 40) { setSyncDot('offline'); return; }
+    setTimeout(startSync, 250);
+    return;
+  }
+  window._npWatchOwner(ownerKey(owner), window.npApplyRemote, () => setSyncDot('offline'));
+}
+
+function setOwner(name) {
+  owner = name.trim();
+  if (!owner) return;
+  localStorage.setItem(OWNER_PREF, owner);
+  remoteReady = false;
+  watchTries  = 0;
+
+  let data = localStorage.getItem(storageKey());
+  if (data == null && !localStorage.getItem(MIGRATED_KEY)) {
+    // The first name used on this device inherits the old un-named list.
+    data = localStorage.getItem(STORAGE_KEY);
+    localStorage.setItem(MIGRATED_KEY, '1');
+  }
+  try { visited = JSON.parse(data || '{}') || {}; } catch(e) { visited = {}; }
+
+  saveVisited();
+  refreshAll();
+  document.getElementById('owner-btn').innerHTML = 'List: <span class="who"></span>';
+  document.getElementById('owner-btn').querySelector('.who').textContent = owner;
+  setSyncDot('saving');
+  startSync();
+}
+
+function openOwnerModal() {
+  document.getElementById('owner-modal').classList.remove('hidden');
+  document.getElementById('owner-cancel').style.display = owner ? '' : 'none';
+  const list = document.getElementById('owner-list');
+  list.innerHTML = '<span class="owner-hint">Loading names…</span>';
+
+  const fill = names => {
+    list.innerHTML = '';
+    if (!names.length) {
+      list.innerHTML = '<span class="owner-hint">No lists yet — add a name below</span>';
+      return;
+    }
+    names.forEach(n => {
+      const b = document.createElement('button');
+      b.textContent = n;
+      b.addEventListener('click', () => { closeOwnerModal(); setOwner(n); });
+      list.appendChild(b);
+    });
+  };
+
+  const tryLoad = tries => {
+    if (!window._npListOwners) {
+      if (tries > 20) { fill([]); return; }
+      setTimeout(() => tryLoad(tries + 1), 250);
+      return;
+    }
+    let settled = false;
+    const stalled = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      list.innerHTML = '<span class="owner-hint">Can\u2019t reach sync — type a name to work on this device</span>';
+    }, 6000);
+    window._npListOwners()
+      .then(data => {
+        if (settled) return;
+        settled = true; clearTimeout(stalled);
+        fill(data ? Object.values(data).map(d => d && d.name).filter(Boolean).sort() : []);
+      })
+      .catch(() => {
+        if (settled) return;
+        settled = true; clearTimeout(stalled);
+        list.innerHTML = '<span class="owner-hint">Can\u2019t reach sync — type a name to work on this device</span>';
+      });
+  };
+  tryLoad(0);
+}
+
+function closeOwnerModal() {
+  document.getElementById('owner-modal').classList.add('hidden');
+  document.getElementById('owner-input').value = '';
+}
+
+function createOwner() {
+  const name = document.getElementById('owner-input').value.trim();
+  if (!name) return;
+  closeOwnerModal();
+  setOwner(name);
+}
+
+document.getElementById('owner-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') createOwner();
+});
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 renderLegend();
@@ -622,12 +886,15 @@ renderChecklist();
 updateStats();
 renderRemaining();
 initMaps();
+
+if (owner) setOwner(owner);
+else openOwnerModal();
 </script>
 
 <!-- ── Firebase sync bridge (shared DB lunch-f7021; see SECURITY.md auth model) ── -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
   const firebaseConfig = {
@@ -644,17 +911,21 @@ initMaps();
   const db    = getDatabase(fbApp);
   signInAnonymously(getAuth(fbApp)).catch(e => console.warn('anon auth:', e));
 
-  const npRef = ref(db, "national-parks");
+  // One child per name: national-parks/<key> = { name, visited:[ids], updatedAt }.
+  const BASE = "national-parks";
+  let unsub = null;
 
-  // App -> cloud: store the visited list as { visited: [ids] }.
-  window._npSet = arr => set(npRef, { visited: arr })
-    .catch(e => console.warn('national-parks sync write skipped:', e.message));
+  // Every name that has a list, for the picker.
+  window._npListOwners = () => get(ref(db, BASE)).then(snap => snap.val());
 
-  // Cloud -> app: apply remote changes. Silently stays local-only if the read is
-  // denied (e.g. the "national-parks" rule hasn't been published yet).
-  onValue(npRef,
-    snap => { if (window.npApplyRemote) window.npApplyRemote(snap.val()); },
-    err  => console.warn('national-parks sync read skipped:', err.message));
+  // Cloud -> app: follow one name, dropping any name watched before it.
+  window._npWatchOwner = (key, cb, errCb) => {
+    if (unsub) { unsub(); unsub = null; }
+    unsub = onValue(ref(db, BASE + "/" + key), snap => cb(snap.val()), errCb);
+  };
+
+  // App -> cloud.
+  window._npSaveOwner = (key, data) => set(ref(db, BASE + "/" + key), data);
 </script>
 
 </body>
