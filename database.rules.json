@@ -5,6 +5,7 @@
 
     "worldcup":                   { ".read": true,           ".write": true },
     "alaska-trip":                { ".read": true,           ".write": true },
+    "tripsplit":                  { ".read": true,           ".write": true },
 
     "soccer":                     { ".read": "auth != null", ".write": "auth != null" },
     "calls":                      { ".read": "auth != null", ".write": "auth != null" },
