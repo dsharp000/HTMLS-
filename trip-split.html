@@ -213,6 +213,7 @@
     <button class="pill" id="codePill" title="Copy the trip code">Code <b id="codeText">——————</b></button>
     <button class="btn sm" id="shareBtn">Invite friends</button>
     <button class="btn ghost sm" id="joinBtn">Join a trip</button>
+    <button class="btn ghost sm" id="newBtn">New trip</button>
     <button class="btn ghost sm" id="syncBtn">Sync settings</button>
   </div>
 
@@ -340,6 +341,21 @@
   function toast(m){
     var t=el("toast"); t.textContent=m; t.classList.add("on");
     clearTimeout(t._h); t._h=setTimeout(function(){ t.classList.remove("on"); },2200);
+  }
+  // Roll codes until one is unclaimed, so a new trip can never land on top
+  // of somebody else's. Falls back to a plain random code if the DB is unreachable.
+  function freshCode(base, path, done){
+    var tries = 0;
+    function attempt(){
+      var c = code6();
+      if(++tries > 5) return done(c);
+      var u = String(base).replace(/\/+$/,"") + "/" + (path || CONFIG.path) + "/" + c + ".json";
+      fetch(u, { cache:"no-store" })
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(row){ if(row) attempt(); else done(c); })
+        .catch(function(){ done(c); });
+    }
+    attempt();
   }
   function code6(){
     var a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789", s="";
@@ -843,6 +859,23 @@
     if(state.expenses.length && !confirm("Joining replaces what's on this screen. Continue?")) return;
     cloudStart(base, c, cloud.path);
     toast("Joining "+c.toUpperCase()+"…");
+  };
+  el("newBtn").onclick=function(){
+    var base = cloud.url || CONFIG.db;
+    if(!base){ openPanel(); return; }
+    if(!confirm("Start a fresh trip with its own code?\n\nThis trip stays exactly where it is — anyone holding its link or code still has it.")) return;
+    // A debounced save from the trip we're leaving must not land on the new code.
+    clearTimeout(cloud.saveTimer);
+    state={ trip:"Our Trip", people:[], expenses:[], seq:1 };
+    included={}; custom=false;
+    el("tripName").value=state.trip;
+    render();
+    toast("Making a new trip…");
+    freshCode(base, cloud.path, function(c){
+      cloudStart(base, c, cloud.path);
+      toast("New trip — code "+cloud.code);
+      el("tripName").focus();
+    });
   };
   el("setupOpen").onclick=openPanel;
   el("syncBtn").onclick=function(){ el("dbPanel").classList.toggle("on"); };
