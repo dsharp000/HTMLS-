@@ -450,7 +450,7 @@
   .sub-empty { color: #4a7a4a; font-size: 10px; font-style: italic; }
 
   /* ── MODAL ── */
-  #modal-overlay {
+  #modal-overlay, #season-modal-overlay {
     display: none;
     position: fixed;
     inset: 0;
@@ -459,7 +459,25 @@
     align-items: center;
     justify-content: center;
   }
-  #modal-overlay.open { display: flex; }
+  #modal-overlay.open, #season-modal-overlay.open { display: flex; }
+  .season-radio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e8f5e0;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    margin-bottom: 6px;
+    cursor: pointer;
+  }
+  .season-radio input { accent-color: #7fff7f; }
+  .modal-note {
+    font-size: 10px;
+    color: #4a7a4a;
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
   #modal-box {
     background: #0d2010;
     border: 1px solid #2a6a2a;
@@ -659,6 +677,87 @@
   .sub-row:first-child .sub-col-off .sub-row-name { color: #ff9a9a; }
   .sub-empty-msg { font-size: 10px; color: #2a4a2a; font-style: italic; }
 
+  /* ── SEASON PICKER ── */
+  #season-picker-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  #season-picker-row label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #4a7a4a;
+  }
+  #season-select {
+    flex: 1;
+    min-width: 140px;
+    background: #0d2010;
+    border: 1px solid #1e4a20;
+    border-radius: 6px;
+    color: #e8f5e0;
+    font-family: inherit;
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+  #season-badge {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: #0a1a0f;
+    background: #7fff7f;
+    border-radius: 10px;
+    padding: 3px 8px;
+    font-weight: bold;
+  }
+  #season-badge:empty { display: none; }
+
+  /* ── ROSTER EDITOR ── */
+  #roster-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .roster-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #0d2010;
+    border: 1px solid #1e4a20;
+    border-radius: 6px;
+    padding: 6px 10px;
+  }
+  .roster-row .roster-num { color: #4a7a4a; font-size: 10px; min-width: 18px; }
+  .roster-row input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: #e8f5e0;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 2px 0;
+  }
+  .roster-row input:focus { outline: none; border-bottom: 1px solid #7fff7f; }
+  .roster-add-row { display: flex; gap: 8px; }
+  .roster-add-row input {
+    flex: 1;
+    background: #0d2010;
+    border: 1px solid #1e4a20;
+    border-radius: 6px;
+    color: #e8f5e0;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+  #season-current-label {
+    font-size: 12px;
+    color: #7fff7f;
+    margin-bottom: 4px;
+    font-weight: bold;
+  }
+  #season-roster-count { font-size: 10px; color: #4a7a4a; letter-spacing: 1px; }
+
   /* ── PITCH WARNING ── */
   #pitch-warning {
     display: none;
@@ -742,6 +841,11 @@
 
 <div id="screen-season" class="screen">
   <h2>Season</h2>
+  <div id="season-picker-row">
+    <label for="season-select">SEASON</label>
+    <select id="season-select" onchange="selectViewSeason(this.value)"></select>
+    <span id="season-badge"></span>
+  </div>
   <div id="season-tabs">
     <button class="season-tab active" onclick="switchSeasonTab('history')">Match History</button>
     <button class="season-tab" onclick="switchSeasonTab('stats')">Season Stats</button>
@@ -779,6 +883,32 @@
     </div>
     <div class="setting-group" style="margin-top:20px;">
       <button class="btn-danger" onclick="clearLiveMatch()">⚠ Clear Live Match</button>
+    </div>
+  </div>
+
+  <h2 style="margin-top:22px;">Season &amp; Roster</h2>
+  <div class="card">
+    <div class="setting-group">
+      <label>Current Season</label>
+      <div id="season-current-label">—</div>
+      <div id="season-roster-count"></div>
+    </div>
+    <div class="setting-group">
+      <label>Season Name</label>
+      <input type="text" id="season-name-input" placeholder="e.g. Fall 2026"
+        onblur="saveSeasonName()" onkeydown="if(event.key==='Enter')this.blur()">
+    </div>
+    <div class="setting-group">
+      <label>Roster</label>
+      <div id="roster-list"></div>
+      <div class="roster-add-row">
+        <input type="text" id="roster-add-input" placeholder="Add player…"
+          onkeydown="if(event.key==='Enter')addRosterPlayer()">
+        <button class="btn-primary btn-sm" onclick="addRosterPlayer()">＋ Add</button>
+      </div>
+    </div>
+    <div class="setting-group" style="margin-top:20px;">
+      <button class="btn-primary" onclick="openNewSeasonModal()">🗓 Start New Season</button>
     </div>
     <div id="conn-status">
       <div id="conn-dot"></div>
@@ -831,6 +961,36 @@
   </div>
 </div>
 
+<!-- NEW SEASON MODAL -->
+<div id="season-modal-overlay">
+  <div id="modal-box">
+    <h3>Start New Season</h3>
+    <div class="form-group">
+      <label>Season Name</label>
+      <input type="text" id="season-modal-name" placeholder="e.g. Fall 2026">
+    </div>
+    <div class="form-group">
+      <label>Roster</label>
+      <label class="season-radio">
+        <input type="radio" name="season-roster-mode" value="carry" checked>
+        Carry over current roster
+      </label>
+      <label class="season-radio">
+        <input type="radio" name="season-roster-mode" value="blank">
+        Start with an empty roster
+      </label>
+    </div>
+    <p class="modal-note">
+      Past seasons and their match records are kept — you can switch back to them
+      any time from the Season tab.
+    </p>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closeSeasonModal()">Cancel</button>
+      <button class="btn-primary" onclick="createNewSeason()">Create Season</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div id="toast"></div>
 
@@ -865,11 +1025,20 @@ const db  = getDatabase(app);
 signInAnonymously(getAuth(app)).catch(e => console.warn('anon auth:', e));
 
 // ── CONSTANTS ──────────────────────────────────────────────────────────────
-const ROSTER_NAMES = ['Abel','Anthony','Blake','Braxton','Graham','Louis','Luis','Maddox','Roman','Sila','Xavier'];
+// Fallback roster, used only if no season has been created yet.
+const DEFAULT_ROSTER = ['Abel','Andrew','Anthony','Blake','Braxton','Daniel','Gavin',
+                        'Graham','Isaac','Jake','Logan','Max','Ryan','Sebastian','Xavier'];
 const POSITIONS    = ['','GK','DEF','MID','FOR'];
 
-function makePlayers() {
-  return ROSTER_NAMES.map((name, i) => ({
+// The active roster always comes from the current season.
+function roster() {
+  const season = seasonsReady ? state.seasons[state.currentSeason] : null;
+  const r = season && Array.isArray(season.roster) ? season.roster : null;
+  return (r && r.length) ? r : DEFAULT_ROSTER;
+}
+
+function blankPlayer(name, i) {
+  return {
     id: i,
     name,
     position: '',
@@ -880,13 +1049,23 @@ function makePlayers() {
     subLog: [],
     unavailable: false,
     stintStart: null
-  }));
+  };
+}
+
+function makePlayers() {
+  return roster().map((name, i) => blankPlayer(name, i));
 }
 
 // ── STATE ──────────────────────────────────────────────────────────────────
+// `state` is a `let`, so anything running during its initialiser (makePlayers →
+// roster) must not touch it. This flag stays false until the binding exists.
+let seasonsReady = false;
+
 let state = {
   teamName: 'My Team',
   matchDuration: 60,   // minutes
+  seasons: {},         // seasonId -> { id, name, roster[], createdAt }
+  currentSeason: null, // seasonId of the season new matches are saved into
   live: {
     matchId: null,
     opponent: '',
@@ -900,6 +1079,13 @@ let state = {
   },
   matches: {}
 };
+
+seasonsReady = true;
+
+// Declared up here because the Firebase listeners below render on their first
+// snapshot, which can arrive before the Season-screen section is evaluated.
+let viewSeason = null;       // season the Season screen is showing; null = follow current
+let seasonTab  = 'history';  // 'history' | 'stats'
 
 let localTickInterval = null;
 let ignoreFirebase = false; // brief flag to avoid echo on local writes
@@ -920,22 +1106,24 @@ onValue(ref(db, 'soccer/live'), snap => {
   // Merge into state.live
   const prev = state.live;
   state.live = { ...makeLiveDefaults(), ...v };
-  // Deserialise player arrays (Firebase drops undefined keys)
+  // Deserialise player arrays (Firebase drops undefined keys).
+  // Length is driven by what was stored, so a live match keeps the roster it
+  // was created with even if the season roster has since changed.
   if (v.players) {
-    state.live.players = ROSTER_NAMES.map((name, i) => {
-      const p = v.players[i] || {};
-      return {
-        id: i, name: p.name || name,
-        position: p.position || '',
-        onPitch: !!p.onPitch,
-        totalTime: p.totalTime || 0,
-        startedAt: p.startedAt || null,
-        goals: p.goals || 0,
-        subLog: p.subLog || [],
-        unavailable: !!p.unavailable,
-        stintStart: p.stintStart || null
-      };
-    });
+    const stored = Object.values(v.players);
+    const names  = roster();
+    state.live.players = stored.map((p, i) => ({
+      id: i,
+      name: (p && p.name) || names[i] || `Player ${i + 1}`,
+      position: (p && p.position) || '',
+      onPitch: !!(p && p.onPitch),
+      totalTime: (p && p.totalTime) || 0,
+      startedAt: (p && p.startedAt) || null,
+      goals: (p && p.goals) || 0,
+      subLog: (p && p.subLog) || [],
+      unavailable: !!(p && p.unavailable),
+      stintStart: (p && p.stintStart) || null
+    }));
   }
   setupLocalTick();
   renderAll();
@@ -944,6 +1132,25 @@ onValue(ref(db, 'soccer/live'), snap => {
 onValue(ref(db, 'soccer/matches'), snap => {
   state.matches = snap.val() || {};
   renderSeasonScreen();
+});
+
+onValue(ref(db, 'soccer/seasons'), snap => {
+  state.seasons = snap.val() || {};
+  // Normalise: Firebase drops empty arrays, so roster may come back undefined
+  Object.values(state.seasons).forEach(s => {
+    if (!Array.isArray(s.roster)) s.roster = s.roster ? Object.values(s.roster) : [];
+  });
+  renderSeasonPicker();
+  renderSeasonScreen();
+  renderSettingsSeason();
+});
+
+onValue(ref(db, 'soccer/current-season'), snap => {
+  state.currentSeason = snap.val() || null;
+  renderSeasonPicker();
+  renderSeasonScreen();
+  renderSettingsSeason();
+  renderMatchHeader();
 });
 
 // Connection status
@@ -1427,6 +1634,7 @@ window.endMatch = function() {
   const matchId  = state.live.matchId;
   const snapshot = {
     matchId,
+    season:    state.currentSeason || null,
     opponent:  state.live.opponent,
     date:      state.live.date,
     scoreHome: state.live.scoreHome,
@@ -1565,7 +1773,6 @@ window.clearLiveMatch = function() {
 };
 
 // ── SEASON SCREEN ──────────────────────────────────────────────────────────
-let seasonTab = 'history';
 
 window.switchSeasonTab = function(tab) {
   seasonTab = tab;
@@ -1577,23 +1784,77 @@ window.switchSeasonTab = function(tab) {
   if (tab === 'stats') renderStatsTable();
 };
 
+function activeViewSeason() {
+  if (viewSeason && state.seasons[viewSeason]) return viewSeason;
+  if (state.currentSeason && state.seasons[state.currentSeason]) return state.currentSeason;
+  const ids = seasonIdsNewestFirst();
+  return ids.length ? ids[0] : null;
+}
+
+function seasonIdsNewestFirst() {
+  return Object.values(state.seasons)
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+    .map(s => s.id);
+}
+
+function seasonName(id) {
+  const s = state.seasons[id];
+  return s ? s.name : 'Unassigned';
+}
+
+// Matches belonging to one season. Matches saved before seasons existed have no
+// `season` field; they fall into whichever season is oldest so nothing is lost.
+function matchesForSeason(id) {
+  const all = Object.values(state.matches);
+  const known = new Set(Object.keys(state.seasons));
+  const oldest = seasonIdsNewestFirst().slice(-1)[0] || null;
+  return all.filter(m => {
+    const sid = m.season && known.has(m.season) ? m.season : oldest;
+    return sid === id;
+  });
+}
+
+window.selectViewSeason = function(id) {
+  viewSeason = id || null;
+  renderSeasonScreen();
+};
+
+function renderSeasonPicker() {
+  const sel = document.getElementById('season-select');
+  if (!sel) return;
+  const ids = seasonIdsNewestFirst();
+  const active = activeViewSeason();
+  sel.innerHTML = ids.length
+    ? ids.map(id => {
+        const n = matchesForSeason(id).length;
+        return `<option value="${id}" ${id === active ? 'selected' : ''}>` +
+               `${escapeHtml(seasonName(id))} (${n} match${n === 1 ? '' : 'es'})</option>`;
+      }).join('')
+    : '<option value="">No seasons yet</option>';
+
+  const badge = document.getElementById('season-badge');
+  if (badge) badge.textContent = (active && active === state.currentSeason) ? 'CURRENT' : '';
+}
+
 function renderSeasonScreen() {
+  renderSeasonPicker();
   renderMatchHistory();
   if (seasonTab === 'stats') renderStatsTable();
 }
 
 function renderMatchHistory() {
   const listEl = document.getElementById('match-list');
-  const matches = Object.values(state.matches).sort((a,b) => (b.date||'').localeCompare(a.date||''));
+  const matches = matchesForSeason(activeViewSeason())
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''));
   if (matches.length === 0) {
-    listEl.innerHTML = '<p style="color:#4a7a4a;font-size:12px;">No saved matches yet.</p>';
+    listEl.innerHTML = '<p style="color:#4a7a4a;font-size:12px;">No saved matches in this season yet.</p>';
     return;
   }
   listEl.innerHTML = matches.map(m => {
     const totalMins = m.players
-      ? Math.round(m.players.reduce((s,p) => s + (p.totalTime||0), 0) / 60)
+      ? Math.round(Object.values(m.players).reduce((s,p) => s + (p.totalTime||0), 0) / 60)
       : 0;
-    const playerRows = m.players ? m.players.map(p => {
+    const playerRows = m.players ? Object.values(m.players).map(p => {
       const mins = Math.round((p.totalTime||0)/60);
       const subStr = (p.subLog||[]).map(e => {
         const sec = Math.round(e.matchMinute||0);
@@ -1633,15 +1894,17 @@ window.toggleMatchDetail = function(matchId) {
   if (el) el.classList.toggle('open');
 };
 
-function renderStatsTable() {
-  const matches = Object.values(state.matches);
-  // Aggregate per player
-  const stats = {};
-  ROSTER_NAMES.forEach(name => { stats[name] = { name, matches: 0, totalTime: 0, goals: 0 }; });
+// Aggregate per-player totals across one season's matches. Seeded with that
+// season's roster so players who haven't played yet still show a zero row.
+function aggregateStats(seasonId) {
+  const season = state.seasons[seasonId];
+  const names  = (season && Array.isArray(season.roster)) ? season.roster : [];
+  const stats  = {};
+  names.forEach(name => { stats[name] = { name, matches: 0, totalTime: 0, goals: 0 }; });
 
-  matches.forEach(m => {
+  matchesForSeason(seasonId).forEach(m => {
     if (!m.players) return;
-    m.players.forEach(p => {
+    Object.values(m.players).forEach(p => {
       const key = p.name;
       if (!stats[key]) stats[key] = { name: key, matches: 0, totalTime: 0, goals: 0 };
       if ((p.totalTime||0) > 0) stats[key].matches++;
@@ -1649,8 +1912,11 @@ function renderStatsTable() {
       stats[key].goals     += (p.goals||0);
     });
   });
+  return Object.values(stats).sort((a,b) => b.totalTime - a.totalTime);
+}
 
-  const sorted = Object.values(stats).sort((a,b) => b.totalTime - a.totalTime);
+function renderStatsTable() {
+  const sorted = aggregateStats(activeViewSeason());
   const tbody = document.getElementById('stats-tbody');
   tbody.innerHTML = sorted.map(s => `
     <tr>
@@ -1663,35 +1929,194 @@ function renderStatsTable() {
 }
 
 window.exportCSV = function() {
-  const matches = Object.values(state.matches);
-  const stats   = {};
-  ROSTER_NAMES.forEach(name => { stats[name] = { name, matches: 0, totalTime: 0, goals: 0 }; });
-  matches.forEach(m => {
-    if (!m.players) return;
-    m.players.forEach(p => {
-      const key = p.name;
-      if (!stats[key]) stats[key] = { name: key, matches: 0, totalTime: 0, goals: 0 };
-      if ((p.totalTime||0) > 0) stats[key].matches++;
-      stats[key].totalTime += (p.totalTime||0);
-      stats[key].goals     += (p.goals||0);
-    });
-  });
-
+  const sid  = activeViewSeason();
   const rows = [['Player','Matches','Minutes','Goals']];
-  Object.values(stats)
-    .sort((a,b) => b.totalTime - a.totalTime)
-    .forEach(s => rows.push([s.name, s.matches, Math.round(s.totalTime/60), s.goals]));
+  aggregateStats(sid).forEach(s =>
+    rows.push([s.name, s.matches, Math.round(s.totalTime/60), s.goals]));
 
   const csv = rows.map(r => r.join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
+  const slug = seasonName(sid).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   a.href = url;
-  a.download = `soccer-season-stats-${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = `soccer-stats-${slug || 'season'}-${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('CSV exported!');
 };
+
+// ── SEASON MANAGEMENT ──────────────────────────────────────────────────────
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+function currentSeasonObj() {
+  return state.seasons[state.currentSeason] || null;
+}
+
+function writeSeason(season) {
+  // Roster is stored as an array of plain strings — names are values, never keys,
+  // so punctuation in a name can't break the write.
+  return set(ref(db, `soccer/seasons/${season.id}`), {
+    id:        season.id,
+    name:      season.name,
+    roster:    (season.roster || []).map(String),
+    createdAt: season.createdAt || Date.now()
+  });
+}
+
+function renderSettingsSeason() {
+  const label = document.getElementById('season-current-label');
+  if (!label) return;
+  const s = currentSeasonObj();
+  label.textContent = s ? s.name : 'No season yet';
+
+  const count = document.getElementById('season-roster-count');
+  const n = s && s.roster ? s.roster.length : 0;
+  count.textContent = s ? `${n} player${n === 1 ? '' : 's'} on the roster` : '';
+
+  const nameInput = document.getElementById('season-name-input');
+  if (nameInput && document.activeElement !== nameInput) {
+    nameInput.value = s ? s.name : '';
+  }
+
+  renderRosterEditor();
+}
+
+function renderRosterEditor() {
+  const wrap = document.getElementById('roster-list');
+  if (!wrap) return;
+  const s = currentSeasonObj();
+  if (!s) {
+    wrap.innerHTML = '<p style="color:#4a7a4a;font-size:11px;">Create a season to set up a roster.</p>';
+    return;
+  }
+  const names = s.roster || [];
+  if (!names.length) {
+    wrap.innerHTML = '<p style="color:#4a7a4a;font-size:11px;">No players yet — add them below.</p>';
+    return;
+  }
+  wrap.innerHTML = names.map((name, i) => `
+    <div class="roster-row">
+      <span class="roster-num">${i + 1}</span>
+      <input type="text" value="${escapeHtml(name)}"
+        onblur="renameRosterPlayer(${i}, this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()">
+      <button class="icon-btn" title="Remove ${escapeHtml(name)}"
+        onclick="removeRosterPlayer(${i})">✕</button>
+    </div>`).join('');
+}
+
+window.saveSeasonName = function() {
+  const s = currentSeasonObj();
+  if (!s) return;
+  const val = document.getElementById('season-name-input').value.trim();
+  if (!val || val === s.name) return;
+  s.name = val;
+  writeSeason(s);
+  showToast('Season renamed.');
+};
+
+window.addRosterPlayer = function() {
+  const s = currentSeasonObj();
+  if (!s) { showToast('Create a season first.'); return; }
+  const input = document.getElementById('roster-add-input');
+  const name  = input.value.trim();
+  if (!name) return;
+  if ((s.roster || []).some(n => n.toLowerCase() === name.toLowerCase())) {
+    showToast(`${name} is already on the roster.`);
+    return;
+  }
+  s.roster = [...(s.roster || []), name];
+  writeSeason(s);
+  input.value = '';
+  showToast(`${name} added.`);
+};
+
+window.renameRosterPlayer = function(i, value) {
+  const s = currentSeasonObj();
+  if (!s || !s.roster || !s.roster[i]) return;
+  const name = String(value).trim();
+  if (!name || name === s.roster[i]) { renderRosterEditor(); return; }
+  s.roster = s.roster.map((n, idx) => idx === i ? name : n);
+  writeSeason(s);
+  showToast('Roster updated.');
+};
+
+window.removeRosterPlayer = function(i) {
+  const s = currentSeasonObj();
+  if (!s || !s.roster || !s.roster[i]) return;
+  const name = s.roster[i];
+  if (!confirm(`Remove ${name} from the roster?\n\nSaved match records keep their stats.`)) return;
+  s.roster = s.roster.filter((_, idx) => idx !== i);
+  writeSeason(s);
+  showToast(`${name} removed.`);
+};
+
+window.openNewSeasonModal = function() {
+  const year = new Date().getFullYear();
+  const month = new Date().getMonth();
+  const guess = month >= 6 ? `Fall ${year}` : `Spring ${year}`;
+  document.getElementById('season-modal-name').value = guess;
+  document.querySelector('input[name="season-roster-mode"][value="carry"]').checked = true;
+  document.getElementById('season-modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('season-modal-name').select(), 100);
+};
+
+window.closeSeasonModal = function() {
+  document.getElementById('season-modal-overlay').classList.remove('open');
+};
+
+window.createNewSeason = function() {
+  const name = document.getElementById('season-modal-name').value.trim();
+  if (!name) { showToast('Give the season a name.'); return; }
+  const mode = document.querySelector('input[name="season-roster-mode"]:checked').value;
+  const prev = currentSeasonObj();
+
+  if (state.live.matchId) {
+    if (!confirm('There is a match in progress. Starting a new season will clear it. Continue?')) return;
+  }
+
+  const season = {
+    id:        'season_' + Date.now(),
+    name,
+    roster:    mode === 'carry' && prev ? [...(prev.roster || [])] : [],
+    createdAt: Date.now()
+  };
+
+  writeSeason(season).then(() => set(ref(db, 'soccer/current-season'), season.id)).then(() => {
+    state.seasons[season.id] = season;
+    state.currentSeason = season.id;
+    viewSeason = season.id;
+    // Fresh live slate built from the new roster
+    state.live = makeLiveDefaults();
+    writeLive();
+    setupLocalTick();
+    renderAll();
+    renderSeasonScreen();
+    renderSettingsSeason();
+    closeSeasonModal();
+    showToast(`${name} started!`);
+  }).catch(e => {
+    console.error(e);
+    showToast('Could not create the season.');
+  });
+};
+
+// If the database has no seasons yet (first run after this update), create one
+// from the default roster so the app always has somewhere to save matches.
+function ensureSeasonBootstrap() {
+  if (Object.keys(state.seasons).length > 0 || state.currentSeason) return;
+  const season = {
+    id:        'season_' + Date.now(),
+    name:      `Fall ${new Date().getFullYear()}`,
+    roster:    [...DEFAULT_ROSTER],
+    createdAt: Date.now()
+  };
+  writeSeason(season).then(() => set(ref(db, 'soccer/current-season'), season.id));
+}
 
 // ── TOAST ──────────────────────────────────────────────────────────────────
 let toastTimer = null;
@@ -1707,6 +2132,12 @@ function showToast(msg) {
 // Initialise date default for modal
 document.getElementById('modal-date').value = new Date().toISOString().slice(0,10);
 
+// Make sure a season exists to save matches into
+get(ref(db, 'soccer/seasons')).then(snap => {
+  const seasons = snap.val();
+  if (!seasons || Object.keys(seasons).length === 0) ensureSeasonBootstrap();
+});
+
 // Load persisted team name
 get(ref(db, 'soccer/team-name')).then(snap => {
   if (snap.exists()) {
@@ -1718,6 +2149,8 @@ get(ref(db, 'soccer/team-name')).then(snap => {
 
 // Initial render
 renderAll();
+renderSeasonPicker();
+renderSettingsSeason();
 
 // Expose globals needed by inline handlers
 window.adjustScore   = adjustScore;
@@ -1742,6 +2175,14 @@ window.switchSeasonTab   = switchSeasonTab;
 window.toggleMatchDetail = toggleMatchDetail;
 window.exportCSV         = exportCSV;
 window.toggleUnavailable = toggleUnavailable;
+window.selectViewSeason    = selectViewSeason;
+window.saveSeasonName      = saveSeasonName;
+window.addRosterPlayer     = addRosterPlayer;
+window.renameRosterPlayer  = renameRosterPlayer;
+window.removeRosterPlayer  = removeRosterPlayer;
+window.openNewSeasonModal  = openNewSeasonModal;
+window.closeSeasonModal    = closeSeasonModal;
+window.createNewSeason     = createNewSeason;
 </script>
 </body>
 </html>
