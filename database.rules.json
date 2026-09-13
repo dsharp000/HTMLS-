@@ -19,6 +19,7 @@
     "parks-checklist-audubon":    { ".read": "auth != null", ".write": "auth != null" },
     "screen-time":                { ".read": "auth != null", ".write": "auth != null" },
     "bathroom-designer":          { ".read": "auth != null", ".write": "auth != null" },
-    "kitchen-designer":           { ".read": "auth != null", ".write": "auth != null" }
+    "kitchen-designer":           { ".read": "auth != null", ".write": "auth != null" },
+    "stokes-trails":              { ".read": "auth != null", ".write": "auth != null" }
   }
 }
