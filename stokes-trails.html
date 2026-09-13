@@ -4,101 +4,120 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%A5%BE%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap">
 <style>
 :root{
-  --paper:#EAEDE6; --surface:#F6F8F3; --surface-2:#E1E6DA; --sunk:#DFE4D8;
-  --ink:#1B2A21; --ink-2:#41544733; --muted:#5E6E62; --faint:#8A9990;
-  --line:#C7D0C2; --line-soft:#D5DCCF;
-  --accent:#8A5A2B; --accent-soft:#8A5A2B1A; --contour:#8A5A2B;
-  --easy:#3F7D5C; --mod:#A8761B; --hard:#A8442C;
-  --done:#3E7A55; --done-soft:#3E7A5518;
-  --shadow:0 1px 2px #1b2a2112, 0 8px 24px #1b2a210a;
-  --white-blaze-edge:#9AA79E;
+  /* palette sampled from the NJ DEP brochure "Trails of Stokes State Forest" (CMY 9/23) */
+  --chestnut:#492108; --chestnut-2:#63340F; --gold:#E3CB7B; --gold-2:#F0E2B6;
+  --dep-green:#2D6030;
+
+  --paper:#FBF7ED; --surface:#FFFFFF; --surface-2:#F7F0DC; --sunk:#F8F2E1;
+  --ink:#2A1608; --muted:#6E573C; --faint:#9A8467; --ink-2:#49210822;
+  --line:#DFD0AC; --line-soft:#ECE1C4;
+  --accent:#492108; --accent-soft:#4921081a; --contour:#E3CB7B;
+  --easy:#2D6030; --mod:#A0701A; --hard:#8C3A1E;
+  --done:#2D6030; --done-soft:#2D603014;
+  --white-blaze-edge:#B9A67F;
+  --shadow:0 1px 2px #49210814, 0 8px 24px #4921080d;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --paper:#141A16; --surface:#1C241E; --surface-2:#232D26; --sunk:#101511;
-    --ink:#E7EDE4; --ink-2:#E7EDE41f; --muted:#9DAB9F; --faint:#71806F;
-    --line:#2E3A31; --line-soft:#26302A;
-    --accent:#CD9257; --accent-soft:#CD925722; --contour:#CD9257;
-    --easy:#6FB98C; --mod:#DDA83F; --hard:#E0765A;
-    --done:#6FB98C; --done-soft:#6FB98C1f;
-    --shadow:0 1px 2px #0000004d, 0 10px 28px #00000033;
-    --white-blaze-edge:#5E6E62;
+    --paper:#17100A; --surface:#241810; --surface-2:#302114; --sunk:#1C130C;
+    --ink:#F3E8D3; --muted:#BCA689; --faint:#8D7A62; --ink-2:#E3CB7B26;
+    --line:#3F2E1D; --line-soft:#33251700;
+    --accent:#E3CB7B; --accent-soft:#E3CB7B1f; --contour:#E3CB7B;
+    --easy:#7CB97F; --mod:#D9A945; --hard:#DE7B58;
+    --done:#7CB97F; --done-soft:#7CB97F1c;
+    --white-blaze-edge:#6E573C;
+    --shadow:0 1px 2px #00000059, 0 10px 28px #0000003b;
   }
 }
 :root[data-theme="dark"]{
-  --paper:#141A16; --surface:#1C241E; --surface-2:#232D26; --sunk:#101511;
-  --ink:#E7EDE4; --ink-2:#E7EDE41f; --muted:#9DAB9F; --faint:#71806F;
-  --line:#2E3A31; --line-soft:#26302A;
-  --accent:#CD9257; --accent-soft:#CD925722; --contour:#CD9257;
-  --easy:#6FB98C; --mod:#DDA83F; --hard:#E0765A;
-  --done:#6FB98C; --done-soft:#6FB98C1f;
-  --shadow:0 1px 2px #0000004d, 0 10px 28px #00000033;
-  --white-blaze-edge:#5E6E62;
+  --paper:#17100A; --surface:#241810; --surface-2:#302114; --sunk:#1C130C;
+  --ink:#F3E8D3; --muted:#BCA689; --faint:#8D7A62; --ink-2:#E3CB7B26;
+  --line:#3F2E1D; --line-soft:#332517;
+  --accent:#E3CB7B; --accent-soft:#E3CB7B1f; --contour:#E3CB7B;
+  --easy:#7CB97F; --mod:#D9A945; --hard:#DE7B58;
+  --done:#7CB97F; --done-soft:#7CB97F1c;
+  --white-blaze-edge:#6E573C;
+  --shadow:0 1px 2px #00000059, 0 10px 28px #0000003b;
 }
 
 *{box-sizing:border-box}
 body{
   background:var(--paper); color:var(--ink);
-  font-family:"Public Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  font-size:15px; line-height:1.55; margin:0;
-  -webkit-font-smoothing:antialiased;
+  font-family:"EB Garamond",Georgia,"Times New Roman",serif;
+  font-size:17px; line-height:1.5; margin:0; -webkit-font-smoothing:antialiased;
 }
-.wrap{max-width:920px; margin:0 auto; padding:0 20px 72px}
+.wrap{max-width:940px; margin:0 auto; padding:0 20px 72px}
 
-/* ---------- masthead ---------- */
-.mast{position:relative; overflow:hidden; border-bottom:1px solid var(--line); background:var(--surface)}
-#contours{position:absolute; inset:0; width:100%; height:100%; opacity:.17; pointer-events:none}
-.mast-in{position:relative; max-width:920px; margin:0 auto; padding:34px 20px 26px}
+/* utility label — Franklin Gothic, the brochure's signage voice */
+.glab,.k,.diff,.mapfoot,.sync,.bar-cap,.eyebrow,.stat .v,.mi,.g,.chip,.pdfbtn,.reset,.mk-t{
+  font-family:"Libre Franklin",Franklin Gothic Medium,Arial,sans-serif;
+}
+
+/* ---------- cover ---------- */
+.mast{position:relative; overflow:hidden; background:var(--chestnut); border-bottom:4px solid var(--gold)}
+#contours{position:absolute; inset:0; width:100%; height:100%; opacity:.13; pointer-events:none}
+.mast-in{position:relative; max-width:940px; margin:0 auto; padding:26px 20px 24px}
 .eyebrow{
-  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; font-weight:500;
-  letter-spacing:.16em; text-transform:uppercase; color:var(--accent); margin:0 0 8px;
+  font-size:10.5px; font-weight:600; letter-spacing:.13em; text-transform:uppercase;
+  color:#C9AE71; margin:0 0 14px; line-height:1.5;
 }
 h1{
-  font-family:"Zilla Slab",Georgia,serif; font-weight:700; font-size:clamp(30px,5.4vw,44px);
-  line-height:1.04; letter-spacing:-.015em; margin:0; text-wrap:balance;
+  font-family:"Libre Franklin",Arial,sans-serif; font-weight:800; text-transform:uppercase;
+  font-size:clamp(46px,10vw,88px); line-height:.86; letter-spacing:-.025em;
+  color:var(--gold); margin:0; text-wrap:balance;
 }
-.sub{color:var(--muted); margin:10px 0 0; max-width:62ch; font-size:14.5px}
-.sub b{color:var(--ink); font-weight:600}
+.rule{height:2px; background:var(--gold); opacity:.55; margin:14px 0 12px}
+.forest{
+  font-family:"Libre Franklin",Arial,sans-serif; font-weight:700; color:#fff;
+  font-size:clamp(19px,3.4vw,26px); line-height:1.15; margin:0; letter-spacing:-.01em;
+}
+.sub{color:#DCC79B; margin:11px 0 0; max-width:60ch; font-size:16.5px; line-height:1.45}
+.sub b{color:var(--gold); font-weight:600}
 
-/* ---------- stats ---------- */
-.stats{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line);
-  border:1px solid var(--line); border-radius:3px; overflow:hidden; margin-top:24px}
-.stat{background:var(--surface); padding:12px 14px 13px}
-.stat .k{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.13em;
-  text-transform:uppercase; color:var(--faint); display:block; margin-bottom:5px}
-.stat .v{font-family:"Zilla Slab",Georgia,serif; font-size:26px; font-weight:600;
-  line-height:1; font-variant-numeric:tabular-nums; display:block}
-.stat .v small{font-size:13px; color:var(--faint); font-weight:500}
-.stat.is-gpa .v{color:var(--accent)}
+/* ---------- gold facts band (the brochure's intro panel) ---------- */
+.band{background:var(--gold); border-top:2px solid var(--chestnut)}
+.band-in{max-width:940px; margin:0 auto; padding:16px 20px 15px}
+.stats{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#C4A85F;
+  border:1px solid #C4A85F; border-radius:2px; overflow:hidden}
+.stat{background:var(--gold); padding:10px 13px 11px}
+.stat .k{font-size:9.5px; font-weight:600; letter-spacing:.13em; text-transform:uppercase;
+  color:#7A5A18; display:block; margin-bottom:5px}
+.stat .v{font-size:27px; font-weight:800; line-height:1; color:var(--chestnut);
+  font-variant-numeric:tabular-nums; display:block; letter-spacing:-.02em}
+.stat .v small{font-size:13px; font-weight:600; color:#8A6820}
 @media(max-width:620px){.stats{grid-template-columns:repeat(2,1fr)}}
 
-.bar{height:5px; background:var(--sunk); border-radius:3px; overflow:hidden; margin-top:14px;
-  border:1px solid var(--line-soft)}
-.bar i{display:block; height:100%; background:var(--done); width:0; transition:width .45s cubic-bezier(.4,0,.2,1)}
-.bar-cap{display:flex; justify-content:space-between; gap:12px; margin-top:7px;
-  font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--faint)}
+.bar{height:6px; background:#C9AE6A; border-radius:3px; overflow:hidden; margin-top:12px}
+.bar i{display:block; height:100%; background:var(--chestnut); width:0;
+  transition:width .45s cubic-bezier(.4,0,.2,1)}
+.bar-cap{display:flex; justify-content:space-between; gap:12px; margin-top:6px;
+  font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#7A5A18}
 
 /* ---------- controls ---------- */
 .controls{display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center;
-  padding:16px 0 14px; border-bottom:1px solid var(--line); margin-bottom:2px; position:sticky; top:0;
-  background:var(--paper); z-index:5}
+  padding:16px 0 14px; border-bottom:2px solid var(--chestnut); margin-bottom:2px;
+  position:sticky; top:0; background:var(--paper); z-index:5}
+:root[data-theme="dark"] .controls,
+:root:not([data-theme="light"]) .controls{border-bottom-color:var(--line)}
 .grp{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
-.glab{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.12em;
-  text-transform:uppercase; color:var(--faint)}
+.glab{font-size:9.5px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--faint)}
 .chip{
-  font:inherit; font-size:12.5px; padding:3px 10px; border-radius:2px; cursor:pointer;
+  font-size:12px; font-weight:600; padding:4px 11px; border-radius:2px; cursor:pointer;
   border:1px solid var(--line); background:transparent; color:var(--muted); transition:.13s;
 }
 .chip:hover{border-color:var(--accent); color:var(--ink)}
-.chip[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:var(--paper); font-weight:600}
-select.chip{padding:4px 8px; color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--paper)}
+:root[data-theme="dark"] .chip[aria-pressed="true"],
+:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:#241810}
+select.chip{padding:5px 8px; color:var(--ink)}
 :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:2px}
 
-/* ---------- trail rows ---------- */
-.list{border-bottom:1px solid var(--line)}
+/* ---------- trail entries ---------- */
+.list{border-bottom:2px solid var(--chestnut)}
+:root[data-theme="dark"] .list,:root:not([data-theme="light"]) .list{border-bottom-color:var(--line)}
 .trail{border-bottom:1px solid var(--line-soft)}
 .trail:last-child{border-bottom:0}
 .trail[open]{background:var(--surface)}
@@ -117,10 +136,8 @@ select.chip{padding:4px 8px; color:var(--ink)}
 }
 .tick:hover{border-color:var(--done)}
 .tick:checked{background:var(--done); border-color:var(--done)}
-.tick:checked::after{
-  content:""; position:absolute; left:5.5px; top:1.5px; width:5px; height:10px;
-  border:solid #fff; border-width:0 2px 2px 0; transform:rotate(42deg);
-}
+.tick:checked::after{content:""; position:absolute; left:5.5px; top:1.5px; width:5px; height:10px;
+  border:solid #fff; border-width:0 2px 2px 0; transform:rotate(42deg)}
 
 .blaze{width:14px; height:26px; border-radius:1px; overflow:hidden; display:flex;
   flex-direction:column; box-shadow:0 0 0 1px var(--ink-2); flex:none}
@@ -129,24 +146,23 @@ select.chip{padding:4px 8px; color:var(--ink)}
 .blaze svg{display:block}
 
 .nm{min-width:0}
-.nm b{font-family:"Zilla Slab",Georgia,serif; font-size:17px; font-weight:600; letter-spacing:-.005em;
-  display:block; line-height:1.2}
-.nm span{font-size:12px; color:var(--faint); display:block; margin-top:1px}
+.nm b{font-family:"EB Garamond",Georgia,serif; font-size:21px; font-weight:600;
+  display:block; line-height:1.15; color:var(--accent)}
+:root[data-theme="dark"] .nm b,:root:not([data-theme="light"]) .nm b{color:var(--ink)}
+.nm span{font-size:15px; font-style:italic; color:var(--muted); display:block; margin-top:0}
 .trail.done .nm b{color:var(--done)}
 
-.mi{font-family:"IBM Plex Mono",monospace; font-size:13px; font-variant-numeric:tabular-nums;
-  color:var(--muted); white-space:nowrap}
-.mi b{color:var(--ink); font-weight:600}
+.mi{font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--muted); white-space:nowrap}
+.mi b{color:var(--ink); font-weight:700}
 
-.diff{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em;
-  text-transform:uppercase; padding:2px 7px; border-radius:2px; white-space:nowrap;
-  border:1px solid currentColor}
+.diff{font-size:9.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  padding:3px 7px; border-radius:2px; white-space:nowrap; border:1px solid currentColor}
 .diff.easy{color:var(--easy)} .diff.mod{color:var(--mod)} .diff.hard{color:var(--hard)}
 .diff.none{color:var(--faint)}
 
-.gr{font-family:"Zilla Slab",Georgia,serif; font-weight:700; font-size:17px; color:var(--accent);
+.gr{font-family:"EB Garamond",Georgia,serif; font-weight:700; font-size:21px; color:var(--accent);
   min-width:30px; text-align:right; font-variant-numeric:tabular-nums}
-.gr:empty::before{content:"·"; color:var(--line)}
+.gr:empty::before{content:"\00B7"; color:var(--line)}
 
 @media(max-width:600px){
   .row{grid-template-columns:22px 26px 1fr auto; gap:11px; row-gap:5px}
@@ -156,92 +172,100 @@ select.chip{padding:4px 8px; color:var(--ink)}
   .diff{grid-row:2; grid-column:4; justify-self:end}
 }
 
-/* ---------- panel ---------- */
-.panel{padding:2px 10px 22px 65px; display:grid; gap:16px; max-width:70ch}
+/* ---------- expanded entry ---------- */
+.panel{padding:2px 10px 22px 65px; display:grid; gap:15px; max-width:66ch}
 @media(max-width:600px){.panel{padding-left:14px}}
-.desc{margin:0; font-size:14.5px; color:var(--ink)}
-.meta{display:grid; gap:7px; padding:12px 14px; background:var(--sunk); border-radius:3px;
-  border:1px solid var(--line-soft)}
-.meta div{display:grid; grid-template-columns:104px 1fr; gap:12px; font-size:13.5px; align-items:baseline}
-.meta dt,.meta .dt{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.11em;
-  text-transform:uppercase; color:var(--faint)}
+.desc{margin:0; font-size:17px; color:var(--ink)}
+.meta{display:grid; gap:6px; padding:13px 15px; background:var(--sunk); border-radius:2px;
+  border:1px solid var(--line-soft); border-left:3px solid var(--gold)}
+.meta div{display:grid; grid-template-columns:104px 1fr; gap:12px; font-size:15.5px; align-items:baseline}
+.meta .dt{font-family:"Libre Franklin",Arial,sans-serif; font-size:9.5px; font-weight:700;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--faint)}
 .meta .dd{color:var(--ink)}
-.est{color:var(--faint); font-size:11.5px}
+.est{color:var(--faint); font-size:13.5px; font-style:italic}
 @media(max-width:520px){.meta div{grid-template-columns:1fr; gap:1px}}
 
 .field > .glab{display:block; margin-bottom:7px}
 .grades{display:flex; flex-wrap:wrap; gap:4px}
-.g{font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:500; width:34px; padding:5px 0;
-  text-align:center; border:1px solid var(--line); background:var(--surface); color:var(--muted);
+.g{font-size:12px; font-weight:600; width:34px; padding:6px 0; text-align:center;
+  border:1px solid var(--line); background:var(--surface); color:var(--muted);
   border-radius:2px; cursor:pointer; transition:.12s}
 .g:hover{border-color:var(--accent); color:var(--ink)}
-.g[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600}
-.g.clr{width:auto; padding:5px 9px; color:var(--faint)}
+.g[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--paper)}
+:root[data-theme="dark"] .g[aria-pressed="true"],
+:root:not([data-theme="light"]) .g[aria-pressed="true"]{color:#241810}
+.g.clr{width:auto; padding:6px 10px; color:var(--faint)}
 
 textarea{
-  width:100%; min-height:74px; resize:vertical; font:inherit; font-size:14px; color:var(--ink);
-  background:var(--surface); border:1px solid var(--line); border-radius:3px; padding:9px 11px;
-  line-height:1.5;
+  width:100%; min-height:76px; resize:vertical; font-family:"EB Garamond",Georgia,serif;
+  font-size:16.5px; color:var(--ink); background:var(--surface); border:1px solid var(--line);
+  border-radius:2px; padding:9px 11px; line-height:1.45;
 }
-textarea::placeholder{color:var(--faint)}
+textarea::placeholder{color:var(--faint); font-style:italic}
 textarea:focus{border-color:var(--accent); outline:none; box-shadow:0 0 0 3px var(--accent-soft)}
 
-/* ---------- footer ---------- */
+/* ---------- colophon ---------- */
 .foot{margin-top:26px; padding-top:18px; border-top:1px solid var(--line);
-  font-size:12.5px; color:var(--muted); display:grid; gap:9px}
-.foot p{margin:0; max-width:74ch}
+  font-size:15px; color:var(--muted); display:grid; gap:9px}
+.foot p{margin:0; max-width:72ch}
 .foot a{color:var(--accent)}
 .foot-row{display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap}
-.sync{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em;
-  text-transform:uppercase; color:var(--faint); display:flex; align-items:center; gap:6px}
+.sync{font-size:10px; font-weight:700; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--faint); display:flex; align-items:center; gap:6px}
 .dot{width:6px; height:6px; border-radius:50%; background:var(--faint); flex:none}
 .sync.on .dot{background:var(--done)}
-.reset{font:inherit; font-size:12px; background:none; border:1px solid var(--line);
-  color:var(--muted); padding:4px 10px; border-radius:2px; cursor:pointer}
+.reset{font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+  background:none; border:1px solid var(--line); color:var(--muted); padding:5px 11px;
+  border-radius:2px; cursor:pointer}
 .reset:hover{border-color:var(--hard); color:var(--hard)}
-.empty{padding:34px 10px; text-align:center; color:var(--faint); font-size:14px}
+.empty{padding:34px 10px; text-align:center; color:var(--faint); font-size:16px; font-style:italic}
 @media(prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
 
 /* ---------- map ---------- */
-:root{ --map-land:#DFE5D6; --map-water:#B7CBD6; --map-edge:#A9B7A2; --map-ground:#F1F3EC; }
+:root{ --map-land:#EFE6CE; --map-water:#A9C4D2; --map-edge:#C0A671; --map-ground:#FBF7ED; --map-casing:#8E7B52; }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --map-land:#1E2720; --map-water:#24404C; --map-edge:#3A4A3E; --map-ground:#161C18; } }
-:root[data-theme="dark"]{ --map-land:#1E2720; --map-water:#24404C; --map-edge:#3A4A3E; --map-ground:#161C18; }
+  --map-land:#241811; --map-water:#2C4653; --map-edge:#4E3A22; --map-ground:#17100A; --map-casing:#0C0805; } }
+:root[data-theme="dark"]{ --map-land:#241811; --map-water:#2C4653; --map-edge:#4E3A22; --map-ground:#17100A; --map-casing:#0C0805; }
 
-.mapwrap{margin:22px 0 4px; border:1px solid var(--line); border-radius:3px; overflow:hidden;
+.mapwrap{margin:22px 0 4px; border:1px solid var(--line); border-top:3px solid var(--gold); border-radius:3px; overflow:hidden;
   background:var(--map-ground); position:relative}
 .maphead{display:flex; justify-content:space-between; align-items:baseline; gap:14px; flex-wrap:wrap;
   padding:11px 14px; border-bottom:1px solid var(--line); background:var(--surface)}
-.maphead h2{font-family:"Zilla Slab",Georgia,serif; font-size:16px; font-weight:600; margin:0}
-.maphead p{margin:0; font-size:12px; color:var(--faint)}
+.maphead h2{font-family:"Libre Franklin",Arial,sans-serif; font-size:13px; font-weight:700; margin:0;
+  text-transform:uppercase; letter-spacing:.11em; color:var(--accent)}
+.maphead p{margin:0; font-size:15px; font-style:italic; color:var(--muted)}
 .maphead a{color:var(--accent)}
 #map{display:block; width:100%; height:auto}
 .mb{fill:var(--map-land); stroke:var(--map-edge); stroke-width:1.1; vector-effect:non-scaling-stroke}
 .mw{fill:var(--map-water); stroke:none}
 .hit{fill:none; stroke:transparent; stroke-width:13; vector-effect:non-scaling-stroke; cursor:pointer;
   stroke-linecap:round; stroke-linejoin:round}
-.ln{fill:none; stroke-width:1.7; vector-effect:non-scaling-stroke; opacity:.44; stroke-linecap:round;
+.ln{fill:none; stroke-width:1.7; vector-effect:non-scaling-stroke; opacity:.48; stroke-linecap:round;
   stroke-linejoin:round; pointer-events:none; transition:stroke-width .14s, opacity .14s}
 .ln.alt{stroke-dasharray:5 6}
+.cas{fill:none; stroke:var(--map-casing); stroke-width:3.2; vector-effect:non-scaling-stroke;
+  opacity:.3; stroke-linecap:round; stroke-linejoin:round; pointer-events:none;
+  transition:stroke-width .14s, opacity .14s}
+.mt.done .cas{opacity:.62; stroke-width:4.5}
+.mt.hot .cas{opacity:.62; stroke-width:5.9}
 .mt.done .ln{opacity:1; stroke-width:3}
 .mt.hot .ln{opacity:1; stroke-width:4.4}
 .mt:focus{outline:none}
 .mt:focus-visible .ln{opacity:1; stroke-width:4.4}
 .mk{fill:var(--muted)}
-.mk-t{font-family:"IBM Plex Mono",monospace; font-size:14px; fill:var(--muted); letter-spacing:.04em}
-.tip{position:absolute; pointer-events:none; opacity:0; transform:translate(-50%,-142%);
+.mk-t{font-size:14px; font-weight:600; fill:var(--muted); letter-spacing:.06em}
+.tip{font-family:"Libre Franklin",Arial,sans-serif; position:absolute; pointer-events:none; opacity:0; transform:translate(-50%,-142%);
   background:var(--ink); color:var(--paper); padding:5px 9px; border-radius:3px; font-size:12px;
-  white-space:nowrap; transition:opacity .12s; z-index:4; box-shadow:var(--shadow)}
+  white-space:nowrap; transition:opacity .12s; z-index:4; box-shadow:var(--shadow); font-size:12px; font-weight:500}
 .tip b{font-weight:600}
 .tip.on{opacity:1}
 .mapfoot{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:9px 14px;
   border-top:1px solid var(--line); background:var(--surface);
-  font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.06em; color:var(--faint);
-  text-transform:uppercase}
+  font-size:9.5px; font-weight:600; letter-spacing:.11em; color:var(--faint); text-transform:uppercase}
 .maphead{align-items:center}
 .maphead .txt{display:grid; gap:2px}
 .pdfbtn{
-  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  font-size:10px; font-weight:700; letter-spacing:.11em; text-transform:uppercase;
   color:var(--accent); text-decoration:none; border:1px solid var(--accent); border-radius:2px;
   padding:6px 11px; white-space:nowrap; transition:.14s; background:transparent;
 }
@@ -251,19 +275,22 @@ textarea:focus{border-color:var(--accent); outline:none; box-shadow:0 0 0 3px va
 <header class="mast">
   <canvas id="contours" aria-hidden="true"></canvas>
   <div class="mast-in">
-    <p class="eyebrow">Kittatinny Ridge · Sussex County, N.J.</p>
-    <h1>Stokes State Forest Trail Log</h1>
-    <p class="sub">All <b>22 marked trails</b> across 16,447 acres, from the High Point boundary to the Delaware Water Gap. Tick off what you&rsquo;ve walked, grade it, and keep your notes. Open any trail for its description, trailhead and terrain.</p>
-
+    <p class="eyebrow">State of New Jersey &middot; Department of Environmental Protection &middot; State Park Service</p>
+    <h1>Trails</h1>
+    <div class="rule"></div>
+    <p class="forest">Stokes State Forest</p>
+    <p class="sub">All <b>22 marked trails</b> across 16,447 acres of the Kittatinny Mountains, from the southern boundary of High Point State Park to the Delaware Water Gap. Tick off what you&rsquo;ve walked, grade it, and keep your notes.</p>
+  </div>
+  <div class="band"><div class="band-in">
     <div class="stats">
       <div class="stat"><span class="k">Trails walked</span><span class="v" id="s-trails">0<small>/22</small></span></div>
       <div class="stat"><span class="k">Miles logged</span><span class="v" id="s-miles">0<small>/62.2</small></span></div>
       <div class="stat"><span class="k">Climb (est.)</span><span class="v" id="s-elev">0<small> ft</small></span></div>
-      <div class="stat is-gpa"><span class="k">Trail GPA</span><span class="v" id="s-gpa">&mdash;</span></div>
+      <div class="stat"><span class="k">Trail GPA</span><span class="v" id="s-gpa">&mdash;</span></div>
     </div>
     <div class="bar"><i id="s-bar"></i></div>
     <div class="bar-cap"><span id="s-pct">0% of the forest walked</span><span id="s-graded">no trails graded</span></div>
-  </div>
+  </div></div>
 </header>
 
 <div class="wrap">
@@ -516,7 +543,7 @@ function rowHTML(t){
     '<summary class="row">'+
       '<input type="checkbox" class="tick" '+(e.done?"checked":"")+' aria-label="Mark '+esc(t.n)+' as walked">'+
       blazeHTML(t)+
-      '<span class="nm"><b>'+esc(t.n)+'</b><span>'+esc(t.blaze)+' &middot; '+esc(t.use)+'</span></span>'+
+      '<span class="nm"><b>'+esc(t.n)+'</b><span>'+esc(t.blaze)+' &bull; '+esc(t.use)+'</span></span>'+
       '<span class="mi"><b>'+fmtMi(t.mi)+'</b> mi</span>'+
       '<span class="diff '+t.d+'">'+esc(t.dl)+'</span>'+
       '<span class="gr">'+esc(e.grade||"")+'</span>'+
@@ -666,7 +693,7 @@ function drawContours(){
   g.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue("--contour").trim()||"#8A5A2B";
   g.lineWidth=1;
   var peaks=[{x:w*0.80,y:h*0.30,s:1.0,p:0},{x:w*0.30,y:h*0.92,s:0.82,p:2.1}];
-  for(var r=16;r<Math.max(w,h)*1.25;r+=18){
+  for(var r=16;r<Math.max(w,h)*1.25;r+=20){
     for(var i=0;i<peaks.length;i++){
       var pk=peaks[i]; g.beginPath();
       for(var a=0;a<=6.2832+0.02;a+=0.05){
@@ -700,7 +727,11 @@ function buildMap(){
     var d=segs.map(function(x){return pth(x,false)}).join(" ");
     var c=t.c||["#8A8F94"];
     var g='<g class="mt" data-id="'+t.id+'" tabindex="0" role="button" aria-label="'+esc(t.n)+', '+fmtMi(t.mi)+' miles">';
-    g+='<path class="hit" d="'+d+'"/><path class="ln" style="stroke:'+c[0]+'" d="'+d+'"/>';
+    var rgb=parseInt((c[0]||"#888").slice(1),16);
+    var lum=(0.2126*(rgb>>16&255)+0.7152*(rgb>>8&255)+0.0722*(rgb&255))/255;
+    g+='<path class="hit" d="'+d+'"/>';
+    if(lum>0.78) g+='<path class="cas" d="'+d+'"/>';      /* white blazes need a casing to read */
+    g+='<path class="ln" style="stroke:'+c[0]+'" d="'+d+'"/>';
     if(c[1]) g+='<path class="ln alt" style="stroke:'+c[1]+'" d="'+d+'"/>';
     s.push(g+"</g>");
   });
