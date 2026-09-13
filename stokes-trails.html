@@ -238,6 +238,14 @@ textarea:focus{border-color:var(--accent); outline:none; box-shadow:0 0 0 3px va
   border-top:1px solid var(--line); background:var(--surface);
   font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.06em; color:var(--faint);
   text-transform:uppercase}
+.maphead{align-items:center}
+.maphead .txt{display:grid; gap:2px}
+.pdfbtn{
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--accent); text-decoration:none; border:1px solid var(--accent); border-radius:2px;
+  padding:6px 11px; white-space:nowrap; transition:.14s; background:transparent;
+}
+.pdfbtn:hover{background:var(--accent); color:var(--surface)}
 </style>
 
 <header class="mast">
@@ -261,8 +269,11 @@ textarea:focus{border-color:var(--accent); outline:none; box-shadow:0 0 0 3px va
 <div class="wrap">
   <section class="mapwrap">
     <div class="maphead">
-      <h2>The forest</h2>
-      <p>Every trail in its blaze colour &mdash; walked ones solid. Tap one to open it.</p>
+      <div class="txt">
+        <h2>The forest</h2>
+        <p>Every trail in its blaze colour &mdash; walked ones solid. Tap one to open it.</p>
+      </div>
+      <a class="pdfbtn" href="stokes-trail-map.pdf" target="_blank" rel="noopener">Official NJ&nbsp;DEP map &amp; brochure (PDF)<span aria-hidden="true"> &#8599;</span></a>
     </div>
     <svg id="map" role="img" aria-label="Map of the marked trails of Stokes State Forest"></svg>
     <div class="tip" id="tip"></div>
@@ -300,7 +311,7 @@ textarea:focus{border-color:var(--accent); outline:none; box-shadow:0 0 0 3px va
 
   <div class="foot">
     <div class="foot-row">
-      <span class="sync on" id="sync"><i class="dot"></i><span id="sync-t">Saved in this browser</span></span>
+      <span class="sync" id="sync"><i class="dot"></i><span id="sync-t">Connecting…</span></span>
       <button class="reset" id="reset">Clear log</button>
     </div>
     <p><b>Trail names, blazes, lengths, difficulty, trailheads and descriptions</b> are quoted from the New Jersey DEP State Park Service brochure <i>Trails of Stokes State Forest</i> (edition 9/23). The official brochure and forest map is <a href="https://razors-edge.xyz/stokes-trail-map.pdf">available here as a PDF</a>. The brochure text describes 21 trails; Cemetery Trail appears on its map only, with no description. Its map and text disagree on two lengths — Ladder (0.4 mi on the map, 0.5 in the text) and Shay (1.5 vs 1.0) — the text is used here, with the map figure noted on those trails.</p>
@@ -309,6 +320,38 @@ textarea:focus{border-color:var(--accent); outline:none; box-shadow:0 0 0 3px va
     <p>Stokes State Forest office · 1 Coursen Road, Branchville NJ · 973-948-3820. The forest is open to hunting year-round — wear blaze orange.</p>
   </div>
 </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCp2PBbqdj_g6NPR9iYQb7Z6tgXbqLtHIA",
+  authDomain:        "lunch-f7021.firebaseapp.com",
+  databaseURL:       "https://lunch-f7021-default-rtdb.firebaseio.com",
+  projectId:         "lunch-f7021",
+  storageBucket:     "lunch-f7021.firebasestorage.app",
+  messagingSenderId: "1053755216064",
+  appId:             "1:1053755216064:web:14b749200f825a4e9bdd25",
+};
+
+const NODE = "stokes-trails";
+const fbApp = initializeApp(firebaseConfig);
+const db    = getDatabase(fbApp);
+const auth  = getAuth(fbApp);
+const logRef = ref(db, NODE);
+
+signInAnonymously(auth).catch(e => { window._fbErr = e && e.message; });
+
+window._fbSet   = (id, val) => set(ref(db, NODE + "/" + id), val);
+window._fbClear = () => set(logRef, null);
+window._fbOn    = (cb, err) => onValue(logRef, s => cb(s.val()), err);
+
+/* only announce readiness once anonymous auth has actually landed, so the
+   first listener is registered with credentials and never trips the rules */
+onAuthStateChanged(auth, u => { if (u) window._fbReady = true; });
+</script>
 
 <script>
 /* ---------------- data: NJ DEP, Trails of Stokes State Forest (9/23) ---------------- */
@@ -404,12 +447,57 @@ function setEntry(id,patch){
   saveLocal(); renderStats();
 }
 
-function push(){}
+/* ---------------- live sync: Firebase RTDB (falls back to this browser) ---------------- */
+var FB=false, pushTimers={};
+
 function setSync(on,txt){
   var el=document.getElementById("sync");
   el.classList.toggle("on",!!on);
   document.getElementById("sync-t").textContent=txt;
 }
+
+function push(id){
+  if(!FB||!window._fbSet) return;
+  clearTimeout(pushTimers[id]);
+  pushTimers[id]=setTimeout(function(){
+    var e=entry(id);
+    try{
+      window._fbSet(id,{done:!!e.done,grade:e.grade||"",notes:e.notes||"",updatedAt:e.updatedAt||Date.now()});
+    }catch(x){}
+  },400);
+}
+
+function startFb(){
+  window._fbOn(function(data){
+    FB=true; setSync(true,"Synced across devices");
+    data=data||{};
+    var touched=[];
+    Object.keys(data).forEach(function(id){
+      var r=data[id]||{}, l=log[id];
+      if(!l||(r.updatedAt||0)>=(l.updatedAt||0)){
+        log[id]={done:!!r.done,grade:r.grade||"",notes:r.notes||"",updatedAt:r.updatedAt||0};
+        touched.push(id);
+      }
+    });
+    Object.keys(log).forEach(function(id){
+      var l=log[id], r=data[id];
+      if(!r||(l.updatedAt||0)>(r.updatedAt||0)) push(id);
+    });
+    if(touched.length) saveLocal();
+    touched.forEach(syncRow);
+    renderStats();
+  },function(err){
+    FB=false;
+    setSync(false,"Saved in this browser only");
+    if(window.console) console.warn("Stokes log — live sync unavailable:", err&&err.message);
+  });
+}
+
+(function waitForFb(n){
+  if(window._fbReady&&window._fbOn){ startFb(); return }
+  if(n>100){ setSync(false,"Saved in this browser"); return }   /* ~5s */
+  setTimeout(function(){ waitForFb(n+1) },50);
+})(0);
 
 /* ---------------- render ---------------- */
 function blazeHTML(t){
@@ -563,6 +651,7 @@ document.getElementById("sort").addEventListener("change",function(e){ sort=e.ta
 document.getElementById("reset").addEventListener("click",function(){
   if(!confirm("Clear every tick, grade and note in this log?")) return;
   log={}; saveLocal();
+  if(FB&&window._fbClear){ try{ window._fbClear() }catch(e){} }
   renderList(); renderStats();
 });
 
