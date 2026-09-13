@@ -222,54 +222,56 @@ textarea:focus{border-color:var(--accent); outline:none; box-shadow:0 0 0 3px va
 @media(prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
 
 /* ---------- map ---------- */
-:root{ --map-land:#EFE6CE; --map-water:#A9C4D2; --map-edge:#C0A671; --map-ground:#FBF7ED; --map-casing:#8E7B52; }
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --map-land:#241811; --map-water:#2C4653; --map-edge:#4E3A22; --map-ground:#17100A; --map-casing:#0C0805; } }
-:root[data-theme="dark"]{ --map-land:#241811; --map-water:#2C4653; --map-edge:#4E3A22; --map-ground:#17100A; --map-casing:#0C0805; }
 
-.mapwrap{margin:22px 0 4px; border:1px solid var(--line); border-top:3px solid var(--gold); border-radius:3px; overflow:hidden;
-  background:var(--map-ground); position:relative}
-.maphead{display:flex; justify-content:space-between; align-items:baseline; gap:14px; flex-wrap:wrap;
-  padding:11px 14px; border-bottom:1px solid var(--line); background:var(--surface)}
+.mapwrap{
+  /* the printed map's own palette — held constant in both themes, the way a
+     folded paper map looks the same whatever table you open it on */
+  --m-ground:#E7E6D6; --m-land:#A6B587; --m-edge:#6E7C52; --m-water:#CCDDEF;
+  --m-water-edge:#A3BBD3; --m-label:#492108; --m-casing:#38290F;
+  margin:22px 0 4px; border:1px solid var(--chestnut); border-radius:3px; overflow:hidden;
+  background:var(--m-ground); position:relative}
+.maphead{display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;
+  padding:11px 15px; border-bottom:3px solid var(--gold); background:var(--chestnut)}
 .maphead h2{font-family:"Libre Franklin",Arial,sans-serif; font-size:13px; font-weight:700; margin:0;
-  text-transform:uppercase; letter-spacing:.11em; color:var(--accent)}
-.maphead p{margin:0; font-size:15px; font-style:italic; color:var(--muted)}
-.maphead a{color:var(--accent)}
-#map{display:block; width:100%; height:auto}
-.mb{fill:var(--map-land); stroke:var(--map-edge); stroke-width:1.1; vector-effect:non-scaling-stroke}
-.mw{fill:var(--map-water); stroke:none}
+  text-transform:uppercase; letter-spacing:.13em; color:var(--gold)}
+.maphead p{margin:0; font-size:15px; font-style:italic; color:#DCC79B}
+
+#map{display:block; width:100%; height:auto; background:var(--m-ground)}
+.mb{fill:var(--m-land); stroke:var(--m-edge); stroke-width:1.4; vector-effect:non-scaling-stroke}
+.mw{fill:var(--m-water); stroke:var(--m-water-edge); stroke-width:.8; vector-effect:non-scaling-stroke}
 .hit{fill:none; stroke:transparent; stroke-width:13; vector-effect:non-scaling-stroke; cursor:pointer;
   stroke-linecap:round; stroke-linejoin:round}
-.ln{fill:none; stroke-width:1.7; vector-effect:non-scaling-stroke; opacity:.48; stroke-linecap:round;
+.ln{fill:none; stroke-width:2; vector-effect:non-scaling-stroke; opacity:.62; stroke-linecap:round;
   stroke-linejoin:round; pointer-events:none; transition:stroke-width .14s, opacity .14s}
 .ln.alt{stroke-dasharray:5 6}
-.cas{fill:none; stroke:var(--map-casing); stroke-width:3.2; vector-effect:non-scaling-stroke;
-  opacity:.3; stroke-linecap:round; stroke-linejoin:round; pointer-events:none;
+.cas{fill:none; stroke:var(--m-casing); stroke-width:3.5; vector-effect:non-scaling-stroke;
+  opacity:.38; stroke-linecap:round; stroke-linejoin:round; pointer-events:none;
   transition:stroke-width .14s, opacity .14s}
-.mt.done .cas{opacity:.62; stroke-width:4.5}
-.mt.hot .cas{opacity:.62; stroke-width:5.9}
-.mt.done .ln{opacity:1; stroke-width:3}
-.mt.hot .ln{opacity:1; stroke-width:4.4}
+.mt.done .cas{opacity:.7; stroke-width:5.2}
+.mt.hot .cas{opacity:.7; stroke-width:6.6}
+.mt.done .ln{opacity:1; stroke-width:3.6}
+.mt.hot .ln{opacity:1; stroke-width:5}
 .mt:focus{outline:none}
 .mt:focus-visible .ln{opacity:1; stroke-width:4.4}
-.mk{fill:var(--muted)}
-.mk-t{font-size:14px; font-weight:600; fill:var(--muted); letter-spacing:.06em}
+.mk{fill:var(--m-label)}
+.mk-t{font-size:14px; font-weight:700; fill:var(--m-label); letter-spacing:.05em;
+  paint-order:stroke; stroke:#EFEEE2; stroke-width:3.5; stroke-linejoin:round}
 .tip{font-family:"Libre Franklin",Arial,sans-serif; position:absolute; pointer-events:none; opacity:0; transform:translate(-50%,-142%);
-  background:var(--ink); color:var(--paper); padding:5px 9px; border-radius:3px; font-size:12px;
+  background:var(--chestnut); color:var(--gold); padding:5px 9px; border-radius:3px; font-size:12px;
   white-space:nowrap; transition:opacity .12s; z-index:4; box-shadow:var(--shadow); font-size:12px; font-weight:500}
 .tip b{font-weight:600}
 .tip.on{opacity:1}
-.mapfoot{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:9px 14px;
-  border-top:1px solid var(--line); background:var(--surface);
-  font-size:9.5px; font-weight:600; letter-spacing:.11em; color:var(--faint); text-transform:uppercase}
+.mapfoot{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:9px 15px;
+  border-top:2px solid var(--gold); background:var(--chestnut);
+  font-size:9.5px; font-weight:600; letter-spacing:.11em; color:#C9AE71; text-transform:uppercase}
 .maphead{align-items:center}
 .maphead .txt{display:grid; gap:2px}
 .pdfbtn{
   font-size:10px; font-weight:700; letter-spacing:.11em; text-transform:uppercase;
-  color:var(--accent); text-decoration:none; border:1px solid var(--accent); border-radius:2px;
+  color:var(--gold); text-decoration:none; border:1px solid var(--gold); border-radius:2px;
   padding:6px 11px; white-space:nowrap; transition:.14s; background:transparent;
 }
-.pdfbtn:hover{background:var(--accent); color:var(--surface)}
+.pdfbtn:hover{background:var(--gold); color:var(--chestnut)}
 </style>
 
 <header class="mast">
