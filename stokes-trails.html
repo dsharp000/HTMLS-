@@ -1,0 +1,690 @@
+<title>Stokes Trail Log</title>
+<meta name="description" content="An interactive checklist and map of all 22 marked trails in Stokes State Forest, New Jersey.">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%A5%BE%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --paper:#EAEDE6; --surface:#F6F8F3; --surface-2:#E1E6DA; --sunk:#DFE4D8;
+  --ink:#1B2A21; --ink-2:#41544733; --muted:#5E6E62; --faint:#8A9990;
+  --line:#C7D0C2; --line-soft:#D5DCCF;
+  --accent:#8A5A2B; --accent-soft:#8A5A2B1A; --contour:#8A5A2B;
+  --easy:#3F7D5C; --mod:#A8761B; --hard:#A8442C;
+  --done:#3E7A55; --done-soft:#3E7A5518;
+  --shadow:0 1px 2px #1b2a2112, 0 8px 24px #1b2a210a;
+  --white-blaze-edge:#9AA79E;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#141A16; --surface:#1C241E; --surface-2:#232D26; --sunk:#101511;
+    --ink:#E7EDE4; --ink-2:#E7EDE41f; --muted:#9DAB9F; --faint:#71806F;
+    --line:#2E3A31; --line-soft:#26302A;
+    --accent:#CD9257; --accent-soft:#CD925722; --contour:#CD9257;
+    --easy:#6FB98C; --mod:#DDA83F; --hard:#E0765A;
+    --done:#6FB98C; --done-soft:#6FB98C1f;
+    --shadow:0 1px 2px #0000004d, 0 10px 28px #00000033;
+    --white-blaze-edge:#5E6E62;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141A16; --surface:#1C241E; --surface-2:#232D26; --sunk:#101511;
+  --ink:#E7EDE4; --ink-2:#E7EDE41f; --muted:#9DAB9F; --faint:#71806F;
+  --line:#2E3A31; --line-soft:#26302A;
+  --accent:#CD9257; --accent-soft:#CD925722; --contour:#CD9257;
+  --easy:#6FB98C; --mod:#DDA83F; --hard:#E0765A;
+  --done:#6FB98C; --done-soft:#6FB98C1f;
+  --shadow:0 1px 2px #0000004d, 0 10px 28px #00000033;
+  --white-blaze-edge:#5E6E62;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"Public Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.55; margin:0;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:920px; margin:0 auto; padding:0 20px 72px}
+
+/* ---------- masthead ---------- */
+.mast{position:relative; overflow:hidden; border-bottom:1px solid var(--line); background:var(--surface)}
+#contours{position:absolute; inset:0; width:100%; height:100%; opacity:.17; pointer-events:none}
+.mast-in{position:relative; max-width:920px; margin:0 auto; padding:34px 20px 26px}
+.eyebrow{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; font-weight:500;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--accent); margin:0 0 8px;
+}
+h1{
+  font-family:"Zilla Slab",Georgia,serif; font-weight:700; font-size:clamp(30px,5.4vw,44px);
+  line-height:1.04; letter-spacing:-.015em; margin:0; text-wrap:balance;
+}
+.sub{color:var(--muted); margin:10px 0 0; max-width:62ch; font-size:14.5px}
+.sub b{color:var(--ink); font-weight:600}
+
+/* ---------- stats ---------- */
+.stats{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line);
+  border:1px solid var(--line); border-radius:3px; overflow:hidden; margin-top:24px}
+.stat{background:var(--surface); padding:12px 14px 13px}
+.stat .k{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--faint); display:block; margin-bottom:5px}
+.stat .v{font-family:"Zilla Slab",Georgia,serif; font-size:26px; font-weight:600;
+  line-height:1; font-variant-numeric:tabular-nums; display:block}
+.stat .v small{font-size:13px; color:var(--faint); font-weight:500}
+.stat.is-gpa .v{color:var(--accent)}
+@media(max-width:620px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+.bar{height:5px; background:var(--sunk); border-radius:3px; overflow:hidden; margin-top:14px;
+  border:1px solid var(--line-soft)}
+.bar i{display:block; height:100%; background:var(--done); width:0; transition:width .45s cubic-bezier(.4,0,.2,1)}
+.bar-cap{display:flex; justify-content:space-between; gap:12px; margin-top:7px;
+  font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--faint)}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center;
+  padding:16px 0 14px; border-bottom:1px solid var(--line); margin-bottom:2px; position:sticky; top:0;
+  background:var(--paper); z-index:5}
+.grp{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.glab{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--faint)}
+.chip{
+  font:inherit; font-size:12.5px; padding:3px 10px; border-radius:2px; cursor:pointer;
+  border:1px solid var(--line); background:transparent; color:var(--muted); transition:.13s;
+}
+.chip:hover{border-color:var(--accent); color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:var(--paper); font-weight:600}
+select.chip{padding:4px 8px; color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:2px}
+
+/* ---------- trail rows ---------- */
+.list{border-bottom:1px solid var(--line)}
+.trail{border-bottom:1px solid var(--line-soft)}
+.trail:last-child{border-bottom:0}
+.trail[open]{background:var(--surface)}
+.row{
+  display:grid; grid-template-columns:22px 26px 1fr auto auto auto; gap:13px; align-items:center;
+  padding:12px 10px 12px 4px; cursor:pointer; list-style:none; transition:background .12s;
+}
+.row::-webkit-details-marker{display:none}
+.row:hover{background:var(--surface-2)}
+.trail[open] .row{background:transparent}
+
+.tick{
+  width:19px; height:19px; margin:0; appearance:none; -webkit-appearance:none; cursor:pointer;
+  border:1.5px solid var(--line); border-radius:2px; background:var(--surface); position:relative;
+  transition:.14s; flex:none;
+}
+.tick:hover{border-color:var(--done)}
+.tick:checked{background:var(--done); border-color:var(--done)}
+.tick:checked::after{
+  content:""; position:absolute; left:5.5px; top:1.5px; width:5px; height:10px;
+  border:solid #fff; border-width:0 2px 2px 0; transform:rotate(42deg);
+}
+
+.blaze{width:14px; height:26px; border-radius:1px; overflow:hidden; display:flex;
+  flex-direction:column; box-shadow:0 0 0 1px var(--ink-2); flex:none}
+.blaze i{display:block; flex:1}
+.blaze.tri{box-shadow:none; align-items:center; justify-content:center}
+.blaze svg{display:block}
+
+.nm{min-width:0}
+.nm b{font-family:"Zilla Slab",Georgia,serif; font-size:17px; font-weight:600; letter-spacing:-.005em;
+  display:block; line-height:1.2}
+.nm span{font-size:12px; color:var(--faint); display:block; margin-top:1px}
+.trail.done .nm b{color:var(--done)}
+
+.mi{font-family:"IBM Plex Mono",monospace; font-size:13px; font-variant-numeric:tabular-nums;
+  color:var(--muted); white-space:nowrap}
+.mi b{color:var(--ink); font-weight:600}
+
+.diff{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em;
+  text-transform:uppercase; padding:2px 7px; border-radius:2px; white-space:nowrap;
+  border:1px solid currentColor}
+.diff.easy{color:var(--easy)} .diff.mod{color:var(--mod)} .diff.hard{color:var(--hard)}
+.diff.none{color:var(--faint)}
+
+.gr{font-family:"Zilla Slab",Georgia,serif; font-weight:700; font-size:17px; color:var(--accent);
+  min-width:30px; text-align:right; font-variant-numeric:tabular-nums}
+.gr:empty::before{content:"·"; color:var(--line)}
+
+@media(max-width:600px){
+  .row{grid-template-columns:22px 26px 1fr auto; gap:11px; row-gap:5px}
+  .nm{grid-row:1; grid-column:3}
+  .gr{grid-row:1; grid-column:4}
+  .mi{grid-row:2; grid-column:3; justify-self:start}
+  .diff{grid-row:2; grid-column:4; justify-self:end}
+}
+
+/* ---------- panel ---------- */
+.panel{padding:2px 10px 22px 65px; display:grid; gap:16px; max-width:70ch}
+@media(max-width:600px){.panel{padding-left:14px}}
+.desc{margin:0; font-size:14.5px; color:var(--ink)}
+.meta{display:grid; gap:7px; padding:12px 14px; background:var(--sunk); border-radius:3px;
+  border:1px solid var(--line-soft)}
+.meta div{display:grid; grid-template-columns:104px 1fr; gap:12px; font-size:13.5px; align-items:baseline}
+.meta dt,.meta .dt{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--faint)}
+.meta .dd{color:var(--ink)}
+.est{color:var(--faint); font-size:11.5px}
+@media(max-width:520px){.meta div{grid-template-columns:1fr; gap:1px}}
+
+.field > .glab{display:block; margin-bottom:7px}
+.grades{display:flex; flex-wrap:wrap; gap:4px}
+.g{font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:500; width:34px; padding:5px 0;
+  text-align:center; border:1px solid var(--line); background:var(--surface); color:var(--muted);
+  border-radius:2px; cursor:pointer; transition:.12s}
+.g:hover{border-color:var(--accent); color:var(--ink)}
+.g[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600}
+.g.clr{width:auto; padding:5px 9px; color:var(--faint)}
+
+textarea{
+  width:100%; min-height:74px; resize:vertical; font:inherit; font-size:14px; color:var(--ink);
+  background:var(--surface); border:1px solid var(--line); border-radius:3px; padding:9px 11px;
+  line-height:1.5;
+}
+textarea::placeholder{color:var(--faint)}
+textarea:focus{border-color:var(--accent); outline:none; box-shadow:0 0 0 3px var(--accent-soft)}
+
+/* ---------- footer ---------- */
+.foot{margin-top:26px; padding-top:18px; border-top:1px solid var(--line);
+  font-size:12.5px; color:var(--muted); display:grid; gap:9px}
+.foot p{margin:0; max-width:74ch}
+.foot a{color:var(--accent)}
+.foot-row{display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap}
+.sync{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--faint); display:flex; align-items:center; gap:6px}
+.dot{width:6px; height:6px; border-radius:50%; background:var(--faint); flex:none}
+.sync.on .dot{background:var(--done)}
+.reset{font:inherit; font-size:12px; background:none; border:1px solid var(--line);
+  color:var(--muted); padding:4px 10px; border-radius:2px; cursor:pointer}
+.reset:hover{border-color:var(--hard); color:var(--hard)}
+.empty{padding:34px 10px; text-align:center; color:var(--faint); font-size:14px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+
+/* ---------- map ---------- */
+:root{ --map-land:#DFE5D6; --map-water:#B7CBD6; --map-edge:#A9B7A2; --map-ground:#F1F3EC; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --map-land:#1E2720; --map-water:#24404C; --map-edge:#3A4A3E; --map-ground:#161C18; } }
+:root[data-theme="dark"]{ --map-land:#1E2720; --map-water:#24404C; --map-edge:#3A4A3E; --map-ground:#161C18; }
+
+.mapwrap{margin:22px 0 4px; border:1px solid var(--line); border-radius:3px; overflow:hidden;
+  background:var(--map-ground); position:relative}
+.maphead{display:flex; justify-content:space-between; align-items:baseline; gap:14px; flex-wrap:wrap;
+  padding:11px 14px; border-bottom:1px solid var(--line); background:var(--surface)}
+.maphead h2{font-family:"Zilla Slab",Georgia,serif; font-size:16px; font-weight:600; margin:0}
+.maphead p{margin:0; font-size:12px; color:var(--faint)}
+.maphead a{color:var(--accent)}
+#map{display:block; width:100%; height:auto}
+.mb{fill:var(--map-land); stroke:var(--map-edge); stroke-width:1.1; vector-effect:non-scaling-stroke}
+.mw{fill:var(--map-water); stroke:none}
+.hit{fill:none; stroke:transparent; stroke-width:13; vector-effect:non-scaling-stroke; cursor:pointer;
+  stroke-linecap:round; stroke-linejoin:round}
+.ln{fill:none; stroke-width:1.7; vector-effect:non-scaling-stroke; opacity:.44; stroke-linecap:round;
+  stroke-linejoin:round; pointer-events:none; transition:stroke-width .14s, opacity .14s}
+.ln.alt{stroke-dasharray:5 6}
+.mt.done .ln{opacity:1; stroke-width:3}
+.mt.hot .ln{opacity:1; stroke-width:4.4}
+.mt:focus{outline:none}
+.mt:focus-visible .ln{opacity:1; stroke-width:4.4}
+.mk{fill:var(--muted)}
+.mk-t{font-family:"IBM Plex Mono",monospace; font-size:14px; fill:var(--muted); letter-spacing:.04em}
+.tip{position:absolute; pointer-events:none; opacity:0; transform:translate(-50%,-142%);
+  background:var(--ink); color:var(--paper); padding:5px 9px; border-radius:3px; font-size:12px;
+  white-space:nowrap; transition:opacity .12s; z-index:4; box-shadow:var(--shadow)}
+.tip b{font-weight:600}
+.tip.on{opacity:1}
+.mapfoot{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:9px 14px;
+  border-top:1px solid var(--line); background:var(--surface);
+  font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.06em; color:var(--faint);
+  text-transform:uppercase}
+</style>
+
+<header class="mast">
+  <canvas id="contours" aria-hidden="true"></canvas>
+  <div class="mast-in">
+    <p class="eyebrow">Kittatinny Ridge · Sussex County, N.J.</p>
+    <h1>Stokes State Forest Trail Log</h1>
+    <p class="sub">All <b>22 marked trails</b> across 16,447 acres, from the High Point boundary to the Delaware Water Gap. Tick off what you&rsquo;ve walked, grade it, and keep your notes. Open any trail for its description, trailhead and terrain.</p>
+
+    <div class="stats">
+      <div class="stat"><span class="k">Trails walked</span><span class="v" id="s-trails">0<small>/22</small></span></div>
+      <div class="stat"><span class="k">Miles logged</span><span class="v" id="s-miles">0<small>/62.2</small></span></div>
+      <div class="stat"><span class="k">Climb (est.)</span><span class="v" id="s-elev">0<small> ft</small></span></div>
+      <div class="stat is-gpa"><span class="k">Trail GPA</span><span class="v" id="s-gpa">&mdash;</span></div>
+    </div>
+    <div class="bar"><i id="s-bar"></i></div>
+    <div class="bar-cap"><span id="s-pct">0% of the forest walked</span><span id="s-graded">no trails graded</span></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="mapwrap">
+    <div class="maphead">
+      <h2>The forest</h2>
+      <p>Every trail in its blaze colour &mdash; walked ones solid. Tap one to open it.</p>
+    </div>
+    <svg id="map" role="img" aria-label="Map of the marked trails of Stokes State Forest"></svg>
+    <div class="tip" id="tip"></div>
+    <div class="mapfoot"><span>Trail lines &amp; forest boundary: OpenStreetMap</span><span id="map-count">0 of 22 walked</span></div>
+  </section>
+
+  <div class="controls">
+    <div class="grp">
+      <span class="glab">Show</span>
+      <button class="chip" data-f="all" aria-pressed="true">All</button>
+      <button class="chip" data-f="todo" aria-pressed="false">To walk</button>
+      <button class="chip" data-f="done" aria-pressed="false">Walked</button>
+    </div>
+    <div class="grp">
+      <span class="glab">Difficulty</span>
+      <button class="chip" data-d="all" aria-pressed="true">Any</button>
+      <button class="chip" data-d="easy" aria-pressed="false">Easy</button>
+      <button class="chip" data-d="mod" aria-pressed="false">Moderate</button>
+      <button class="chip" data-d="hard" aria-pressed="false">Difficult</button>
+    </div>
+    <div class="grp">
+      <span class="glab">Sort</span>
+      <select class="chip" id="sort">
+        <option value="name">A–Z</option>
+        <option value="long">Longest first</option>
+        <option value="short">Shortest first</option>
+        <option value="diff">Hardest first</option>
+        <option value="grade">Best graded</option>
+        <option value="climb">Most climb</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <div class="foot">
+    <div class="foot-row">
+      <span class="sync on" id="sync"><i class="dot"></i><span id="sync-t">Saved in this browser</span></span>
+      <button class="reset" id="reset">Clear log</button>
+    </div>
+    <p><b>Trail names, blazes, lengths, difficulty, trailheads and descriptions</b> are quoted from the New Jersey DEP State Park Service brochure <i>Trails of Stokes State Forest</i> (edition 9/23). The official brochure and forest map is <a href="https://razors-edge.xyz/stokes-trail-map.pdf">available here as a PDF</a>. The brochure text describes 21 trails; Cemetery Trail appears on its map only, with no description. Its map and text disagree on two lengths — Ladder (0.4 mi on the map, 0.5 in the text) and Shay (1.5 vs 1.0) — the text is used here, with the map figure noted on those trails.</p>
+    <p><b>Climb figures are estimates, not official.</b> The brochure publishes no elevation data. These are approximations from the map&rsquo;s 100-ft contours (the forest runs roughly 250 ft to 1,653 ft at Sunrise Mountain) read against each trail&rsquo;s own description of its terrain. Treat them as a rough sense of effort, not a measurement. For a time estimate the brochure offers Naismith&rsquo;s Rule: an hour per three miles, plus an hour per 2,000 ft of climb.</p>
+    <p>Trail lines, forest boundary and water on the map are from OpenStreetMap contributors (ODbL), matched by name to the brochure&rsquo;s trails.</p>
+    <p>Stokes State Forest office · 1 Coursen Road, Branchville NJ · 973-948-3820. The forest is open to hunting year-round — wear blaze orange.</p>
+  </div>
+</div>
+
+<script>
+/* ---------------- data: NJ DEP, Trails of Stokes State Forest (9/23) ---------------- */
+var TRAILS=[
+ {id:"acropolis",n:"Acropolis Trail",blaze:"Gold & brown",c:["#C9A227","#6B4423"],mi:1.0,use:"Hiking",d:"hard",dl:"Difficult",el:550,
+  th:"South side of Route 206, across from Culvers Lake.",
+  desc:"The steepest trail within Stokes, a continuous climb to the top of the Kittatinny Ridge. Views of nearby Culver Lake and the Pocono Plateau are spectacular."},
+ {id:"appalachian",n:"Appalachian Trail",blaze:"White",c:["#FFFFFF"],mi:12.0,use:"Hiking",d:"mod",dl:"Moderate",el:2200,
+  th:"Numerous entry points along the trail.",
+  desc:"The historic national scenic trail running Maine to Georgia. Well-marked and well-traveled, with numerous rocks, bridges, boardwalks and changes in elevation. Sunrise Mountain, at 1,653 ft, is the high point of the Stokes section."},
+ {id:"blue-mountain",n:"Blue Mountain Trail",blaze:"Blue",c:["#2E5FA3"],mi:17.3,use:"Multiuse",d:"mod",dl:"Moderate",el:2700,
+  th:"Numerous places to enter.",
+  desc:"A new and extensive loop created by incorporating existing trails as well as short sections of new trail. It encircles the heart of the northern portion of the forest. With so many connections to other trails, there are many opportunities to plan a hike of almost any length."},
+ {id:"cemetery",n:"Cemetery Trail",blaze:"Not published",c:null,mi:0.33,use:"—",d:"none",dl:"Not rated",el:50,
+  th:"Not published in the brochure.",
+  desc:"Shown on the forest trail map at 0.33 miles — the shortest marked trail in Stokes — but carrying no description, blaze or difficulty rating in the brochure text. Check the trailhead sign or ask at the forest office."},
+ {id:"coursen",n:"Coursen Trail",blaze:"Blue",c:["#2E5FA3"],mi:1.5,use:"Multiuse",d:"mod",dl:"Moderate",el:250,
+  th:"One mile from Route 206 on the north side of Sunrise Mountain Road.",
+  desc:"A gently sloping route along a hillside that connects with Stony Brook Trail near Stony Lake, encountering wetlands along the way."},
+ {id:"criss",n:"Criss Trail",blaze:"Gray & teal",c:["#8A8F94","#2E7D7B"],mi:2.2,use:"Multiuse",d:"mod",dl:"Moderate",el:400,
+  th:"Two access points on the north side of Grau Road.",
+  desc:"Moderately sloped, moving along a boulder-strewn hillside. It follows an old road along a rocky stream bed, looping from Grau Road near Cabin 12 to Grau Road near Forked Brook."},
+ {id:"deep-root",n:"Deep Root Trail",blaze:"Red & yellow",c:["#C0392B","#E5C100"],mi:1.2,use:"Multiuse",d:"mod",dl:"Moderate",el:450,
+  th:"Starts from Criss Trail.",
+  desc:"Follows a creek, then climbs moderate slopes in a boulder-strewn hardwood forest. The trail levels out along the ridgetop and meets the upper reach of DeGroat Road."},
+ {id:"geology",n:"Geology Trail",blaze:"Blue triangles",c:["#2E5FA3"],shape:"tri",mi:1.0,use:"Hiking & interpretive",d:"mod",dl:"Moderate",el:200,
+  th:"Begins and ends from Tinsley Trail, downhill from Sunrise Mountain Road.",
+  desc:"A narrow loop winding through an area of glacial landforms. Numbered posts along the way correspond with an interpretive guide, available at the Stokes office, that explains the numerous points of geologic interest."},
+ {id:"ladder",n:"Ladder Trail",blaze:"Blue & gray",c:["#2E5FA3","#8A8F94"],mi:0.5,alt:"0.4 mi on the forest map",use:"Multiuse",d:"mod",dl:"Moderate",el:450,
+  th:"Access from Red Maple Trail on Woods Road.",
+  desc:"A steep trail running up the side of the Kittatinny Ridge to connect with the Appalachian Trail. Located in the remote southern end of the forest, where mixed hardwoods, mountain laurel and blueberry are abundant."},
+ {id:"lead-mine",n:"Lead Mine Trail",blaze:"Blue & gray",c:["#2E5FA3","#8A8F94"],mi:0.7,use:"Multiuse",d:"easy",dl:"Easy",el:75,
+  th:"From Coursen Road, 0.4 miles from the Stokes office.",
+  desc:"Runs from Coursen Road to the Blue Mountain Trail over generally level terrain. The trail includes an open clear-cut area dating from the mid-1980s."},
+ {id:"red-maple",n:"Red Maple Trail",blaze:"Red maple leaf",c:["#B03A2E"],shape:"leaf",mi:5.0,use:"Multiuse",d:"hard",dl:"Moderate to difficult",el:800,
+  th:"Struble Road parking lot for Lake Ashroe Recreation Area, or the upper lot at Tillman Ravine Natural Area.",
+  desc:"Connects the Lake Ashroe Recreation Area with the unique Tillman Ravine Natural Area — the longest point-to-point walk in the southern half of the forest."},
+ {id:"rock-oak",n:"Rock Oak Trail",blaze:"Blue & yellow",c:["#2E5FA3","#E5C100"],mi:1.5,use:"Multiuse",d:"easy",dl:"Easy",el:200,
+  th:"West side of Deckertown Turnpike, one mile from Crigger Road.",
+  desc:"Traverses a small ridge and passes an old logging deck. The trail highlights forest land in various stages of succession."},
+ {id:"shay",n:"Shay Trail",blaze:"Brown & yellow",c:["#6B4423","#E5C100"],mi:1.0,alt:"1.5 mi on the forest map",use:"Multiuse",d:"mod",dl:"Moderate",el:350,
+  th:"South side of Dimon Road, just past the Cook 4-H Camp.",
+  desc:"Served as a fire control route in July 1966, when a major forest fire burned through 2,000 acres at the southern end of Stokes. The trail is moderately steep and rocky."},
+ {id:"silver-mine",n:"Silver Mine Trail",blaze:"Orange",c:["#E07B22"],mi:2.2,use:"Multiuse",d:"mod",dl:"Moderate",el:350,
+  th:"Near the waterfall on Stony Brook Trail.",
+  desc:"Climbs a gently sloping hill, then descends back into the creek to an old silver mine shaft used by the previous property owner, John Snook, in the late 1800s. The trail loops back to Blue Mountain Trail."},
+ {id:"steffen",n:"Steffen Trail",blaze:"Black & gray",c:["#22262A","#8A8F94"],mi:1.8,use:"Multiuse",d:"easy",dl:"Easy",el:250,
+  th:"Parking lot on the right, after turning onto Struble Road.",
+  desc:"Moderately sloped throughout its length along a low forested ridge. Most of the woodland is chestnut oak and contains evidence of a destructive hurricane which felled many trees in 1950."},
+ {id:"stoll",n:"Stoll Trail",blaze:"Blue & gray",c:["#2E5FA3","#8A8F94"],mi:0.7,use:"Multiuse",d:"easy",dl:"Easy",el:75,
+  th:"South side of Dimon Road, just past the Cook 4-H Camp.",
+  desc:"A relatively short and level trail with rhododendron thickets and large trees — beech, hemlock, white pine and oak."},
+ {id:"stony-brook",n:"Stony Brook Trail",blaze:"Brown",c:["#6B4423"],mi:2.8,use:"Multiuse",d:"mod",dl:"Moderate",el:650,
+  th:"Parking area at the end of Kittle Road.",
+  desc:"Follows a small creek with waterfalls and continues to Kittle Field, Stony Lake and Sunrise Mountain Road. Moderately steep and a good climb for those who wish the exercise. The trail crosses many areas of the park."},
+ {id:"stony-lake",n:"Stony Lake Trail",blaze:"Blue & brown",c:["#2E5FA3","#6B4423"],mi:0.7,use:"Multiuse",d:"easy",dl:"Easy",el:40,
+  th:"From the playground at Stony Lake beach.",
+  desc:"A short looped trail around the south side of Stony Lake. It provides good views and follows along the edge of the lake."},
+ {id:"swenson",n:"Swenson Trail",blaze:"Red",c:["#C0392B"],mi:3.7,use:"Multiuse",d:"mod",dl:"Moderate",el:350,
+  th:"West side of Crigger Road.",
+  desc:"Connects to and shares the path with Blue Mountain Trail through a section of forest that was clear cut in the last century. Over the last 90 to 100 years natural succession has taken place, leading to the mature forest of oaks and other hardwoods seen here today."},
+ {id:"tillman-ravine",n:"Tillman Ravine Trail",blaze:"White",c:["#FFFFFF"],mi:1.5,use:"Hiking only",d:"mod",dl:"Moderate",el:280,
+  th:"West side of Stokes, along Dimon Road.",
+  desc:"A looped trail between ridges and a ravine along Tillman Brook in the Tillman Ravine Natural Area. The ravine is a narrow red shale and sandstone gorge set among tall hemlock trees."},
+ {id:"tinsley",n:"Tinsley Trail",blaze:"Yellow",c:["#E5C100"],mi:2.0,use:"Multiuse",d:"mod",dl:"Moderate",el:450,
+  th:"Skellenger Road or Sunrise Mountain Road.",
+  desc:"Connects the Blue Mountain Trail to Sunrise Mountain Road, and also provides access to the Geology Trail. Wide, easily negotiable and a little rocky."},
+ {id:"tower",n:"Tower Trail",blaze:"Green",c:["#2E7D32"],mi:1.6,use:"Multiuse",d:"hard",dl:"Difficult",el:550,
+  th:"On Sunrise Mountain Road, 1.5 miles from Route 206.",
+  desc:"Leads uphill to the Appalachian Trail, with an excellent view of rural Sussex County, then downhill from the trailhead to Stony Brook Trail."}
+];
+
+var GRADES=["A+","A","A-","B+","B","B-","C+","C","C-","D+","D","D-","F"];
+var GP={"A+":4.3,"A":4.0,"A-":3.7,"B+":3.3,"B":3.0,"B-":2.7,"C+":2.3,"C":2.0,"C-":1.7,"D+":1.3,"D":1.0,"D-":0.7,"F":0.0};
+var DORDER={easy:0,mod:1,hard:2,none:-1};
+function fmtMi(m){ return Math.abs(m*10-Math.round(m*10))<1e-9 ? m.toFixed(1) : m.toFixed(2); }
+var TOTAL_MI=TRAILS.reduce(function(a,t){return a+t.mi},0);
+
+/* ---------------- state ---------------- */
+var KEY="stokes-trail-log-v1";
+var log={}, DB=null, filt="all", dfilt="all", sort="name";
+
+function loadLocal(){ try{ return JSON.parse(localStorage.getItem(KEY)||"{}")||{} }catch(e){ return {} } }
+function saveLocal(){ try{ localStorage.setItem(KEY,JSON.stringify(log)) }catch(e){} }
+function entry(id){ return log[id]||{done:false,grade:"",notes:"",updatedAt:0} }
+
+function setEntry(id,patch){
+  var cur=entry(id);
+  log[id]={done:"done" in patch?!!patch.done:!!cur.done,
+           grade:"grade" in patch?patch.grade:(cur.grade||""),
+           notes:"notes" in patch?patch.notes:(cur.notes||""),
+           updatedAt:Date.now()};
+  saveLocal(); renderStats();
+}
+
+function push(){}
+function setSync(on,txt){
+  var el=document.getElementById("sync");
+  el.classList.toggle("on",!!on);
+  document.getElementById("sync-t").textContent=txt;
+}
+
+/* ---------------- render ---------------- */
+function blazeHTML(t){
+  if(!t.c) return '<span class="blaze" title="Blaze not published" style="background:repeating-linear-gradient(135deg,var(--line) 0 3px,transparent 3px 6px)"></span>';
+  if(t.shape==="tri") return '<span class="blaze tri" title="'+t.blaze+'"><svg width="16" height="14" viewBox="0 0 16 14" aria-hidden="true"><polygon points="8,0.5 15.5,13.5 0.5,13.5" fill="'+t.c[0]+'"/></svg></span>';
+  if(t.shape==="leaf") return '<span class="blaze tri" title="'+t.blaze+'"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="'+t.c[0]+'" d="M12 2 14.4 7.2 18.6 5.4 17.3 9.9 22 10.6 18.3 13.6 21.5 17 16.7 17.1 17.4 22 12.9 19.6 12 24 11.1 19.6 6.6 22 7.3 17.1 2.5 17 5.7 13.6 2 10.6 6.7 9.9 5.4 5.4 9.6 7.2Z"/></svg></span>';
+  var h='<span class="blaze" title="'+t.blaze+'">';
+  t.c.forEach(function(col){ h+='<i style="background:'+col+(col==="#FFFFFF"?';box-shadow:inset 0 0 0 1px var(--white-blaze-edge)':'')+'"></i>' });
+  return h+"</span>";
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]}) }
+
+function rowHTML(t){
+  var e=entry(t.id);
+  return '<details class="trail'+(e.done?" done":"")+'" data-id="'+t.id+'">'+
+    '<summary class="row">'+
+      '<input type="checkbox" class="tick" '+(e.done?"checked":"")+' aria-label="Mark '+esc(t.n)+' as walked">'+
+      blazeHTML(t)+
+      '<span class="nm"><b>'+esc(t.n)+'</b><span>'+esc(t.blaze)+' &middot; '+esc(t.use)+'</span></span>'+
+      '<span class="mi"><b>'+fmtMi(t.mi)+'</b> mi</span>'+
+      '<span class="diff '+t.d+'">'+esc(t.dl)+'</span>'+
+      '<span class="gr">'+esc(e.grade||"")+'</span>'+
+    '</summary>'+
+    '<div class="panel">'+
+      '<p class="desc">'+esc(t.desc)+'</p>'+
+      '<div class="meta">'+
+        '<div><span class="dt">Trailhead</span><span class="dd">'+esc(t.th)+'</span></div>'+
+        '<div><span class="dt">Length</span><span class="dd">'+fmtMi(t.mi)+' miles'+(t.alt?' <span class="est">('+esc(t.alt)+')</span>':'')+'</span></div>'+
+        '<div><span class="dt">Climb</span><span class="dd">&asymp; '+t.el.toLocaleString()+' ft <span class="est">estimated &mdash; see note below</span></span></div>'+
+        '<div><span class="dt">Time</span><span class="dd">&asymp; '+naismith(t)+' <span class="est">by Naismith&rsquo;s Rule</span></span></div>'+
+        '<div><span class="dt">Permitted</span><span class="dd">'+esc(t.use)+'</span></div>'+
+      '</div>'+
+      '<div class="field"><span class="glab">Your grade</span><div class="grades">'+
+        GRADES.map(function(g){return '<button class="g" data-g="'+g+'" aria-pressed="'+(e.grade===g)+'">'+g+'</button>'}).join("")+
+        '<button class="g clr" data-g="">clear</button>'+
+      '</div></div>'+
+      '<div class="field"><span class="glab">Notes</span>'+
+        '<textarea placeholder="Conditions, wildlife, who you went with, where to park&hellip;">'+esc(e.notes||"")+'</textarea>'+
+      '</div>'+
+    '</div>'+
+  '</details>';
+}
+
+function naismith(t){
+  var h=t.mi/3+t.el/2000;
+  var m=Math.round(h*60);
+  return m<60?m+" min":Math.floor(m/60)+" hr"+(m%60?" "+(m%60)+" min":"");
+}
+
+function visible(){
+  var out=TRAILS.filter(function(t){
+    var e=entry(t.id);
+    if(filt==="done"&&!e.done) return false;
+    if(filt==="todo"&&e.done) return false;
+    if(dfilt!=="all"&&t.d!==dfilt) return false;
+    return true;
+  });
+  var s={
+    name:function(a,b){return a.n.localeCompare(b.n)},
+    long:function(a,b){return b.mi-a.mi},
+    short:function(a,b){return a.mi-b.mi},
+    diff:function(a,b){return DORDER[b.d]-DORDER[a.d]||b.mi-a.mi},
+    climb:function(a,b){return b.el-a.el},
+    grade:function(a,b){
+      var x=entry(a.id).grade,y=entry(b.id).grade;
+      var gx=x in GP?GP[x]:-1, gy=y in GP?GP[y]:-1;
+      return gy-gx||a.n.localeCompare(b.n);
+    }
+  }[sort];
+  return out.sort(s);
+}
+
+function renderList(){
+  var v=visible();
+  document.getElementById("list").innerHTML = v.length
+    ? v.map(rowHTML).join("")
+    : '<p class="empty">No trails match those filters.</p>';
+}
+
+function syncRow(id){
+  var el=document.querySelector('.trail[data-id="'+id+'"]'); if(!el) return;
+  var e=entry(id);
+  el.classList.toggle("done",!!e.done);
+  el.querySelector(".tick").checked=!!e.done;
+  el.querySelector(".gr").textContent=e.grade||"";
+  el.querySelectorAll(".g").forEach(function(b){ b.setAttribute("aria-pressed",String(b.dataset.g===(e.grade||"")&&b.dataset.g!=="")) });
+  var ta=el.querySelector("textarea");
+  if(ta&&document.activeElement!==ta&&ta.value!==(e.notes||"")) ta.value=e.notes||"";
+}
+
+function renderStats(){
+  var done=TRAILS.filter(function(t){return entry(t.id).done});
+  var mi=done.reduce(function(a,t){return a+t.mi},0);
+  var el=done.reduce(function(a,t){return a+t.el},0);
+  var graded=TRAILS.map(function(t){return entry(t.id).grade}).filter(function(g){return g in GP});
+  var gpa=graded.length?graded.reduce(function(a,g){return a+GP[g]},0)/graded.length:null;
+
+  document.getElementById("s-trails").innerHTML=done.length+"<small>/"+TRAILS.length+"</small>";
+  document.getElementById("s-miles").innerHTML=mi.toFixed(1)+"<small>/"+TOTAL_MI.toFixed(1)+"</small>";
+  document.getElementById("s-elev").innerHTML=el.toLocaleString()+"<small> ft</small>";
+  document.getElementById("s-gpa").textContent=gpa===null?"—":gpa.toFixed(2);
+  var pct=mi/TOTAL_MI*100;
+  document.getElementById("s-bar").style.width=pct.toFixed(1)+"%";
+  document.getElementById("s-pct").textContent=pct<0.05?"0% of the forest walked":pct.toFixed(0)+"% of the forest walked";
+  syncMap();
+  document.getElementById("s-graded").textContent=!graded.length?"no trails graded":graded.length+(graded.length===1?" trail graded":" trails graded");
+}
+
+/* ---------------- events (delegated) ---------------- */
+var list=document.getElementById("list");
+list.addEventListener("click",function(ev){
+  var tick=ev.target.closest(".tick");
+  if(tick){
+    ev.stopPropagation();
+    var id=tick.closest(".trail").dataset.id;
+    setEntry(id,{done:tick.checked}); push(id); syncRow(id);
+    return;
+  }
+  var g=ev.target.closest(".g");
+  if(g){
+    var tid=g.closest(".trail").dataset.id;
+    var val=g.dataset.g;
+    if(val&&entry(tid).grade===val) val="";
+    setEntry(tid,{grade:val}); push(tid); syncRow(tid);
+  }
+});
+list.addEventListener("input",function(ev){
+  var ta=ev.target.closest("textarea"); if(!ta) return;
+  var id=ta.closest(".trail").dataset.id;
+  setEntry(id,{notes:ta.value}); push(id);
+});
+
+list.addEventListener("mouseover",function(ev){ var t=ev.target.closest(".trail"); if(t) hot(t.dataset.id) });
+list.addEventListener("mouseleave",function(){ hot(null) });
+
+document.querySelectorAll("[data-f]").forEach(function(b){
+  b.addEventListener("click",function(){
+    filt=b.dataset.f;
+    document.querySelectorAll("[data-f]").forEach(function(o){o.setAttribute("aria-pressed",String(o===b))});
+    renderList();
+  });
+});
+document.querySelectorAll("[data-d]").forEach(function(b){
+  b.addEventListener("click",function(){
+    dfilt=b.dataset.d;
+    document.querySelectorAll("[data-d]").forEach(function(o){o.setAttribute("aria-pressed",String(o===b))});
+    renderList();
+  });
+});
+document.getElementById("sort").addEventListener("change",function(e){ sort=e.target.value; renderList() });
+document.getElementById("reset").addEventListener("click",function(){
+  if(!confirm("Clear every tick, grade and note in this log?")) return;
+  log={}; saveLocal();
+  renderList(); renderStats();
+});
+
+/* ---------------- topographic backdrop ---------------- */
+function drawContours(){
+  var cv=document.getElementById("contours");
+  var w=cv.clientWidth,h=cv.clientHeight;
+  if(!w||!h) return;
+  var dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=w*dpr; cv.height=h*dpr;
+  var g=cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
+  g.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue("--contour").trim()||"#8A5A2B";
+  g.lineWidth=1;
+  var peaks=[{x:w*0.80,y:h*0.30,s:1.0,p:0},{x:w*0.30,y:h*0.92,s:0.82,p:2.1}];
+  for(var r=16;r<Math.max(w,h)*1.25;r+=18){
+    for(var i=0;i<peaks.length;i++){
+      var pk=peaks[i]; g.beginPath();
+      for(var a=0;a<=6.2832+0.02;a+=0.05){
+        var wob=1+0.11*Math.sin(a*3+pk.p+r*0.011)+0.055*Math.sin(a*5-r*0.019+pk.p);
+        var rr=r*wob*pk.s;
+        var x=pk.x+Math.cos(a)*rr*1.45, y=pk.y+Math.sin(a)*rr*0.78;
+        a===0?g.moveTo(x,y):g.lineTo(x,y);
+      }
+      g.closePath(); g.stroke();
+    }
+  }
+}
+
+var GEO={"bbox":[-74.87053,41.14194,-74.69559,41.26958],"bnd":[[[-74.8701,41.15032],[-74.86901,41.15185],[-74.86866,41.15294],[-74.87053,41.15809],[-74.86634,41.15774],[-74.86507,41.15801],[-74.86266,41.15726],[-74.86168,41.15717],[-74.86036,41.15746],[-74.85905,41.158],[-74.85576,41.15995],[-74.85601,41.1601],[-74.8564,41.15996],[-74.85697,41.15936],[-74.86536,41.16182],[-74.86559,41.16136],[-74.86737,41.16203],[-74.86593,41.1643],[-74.86359,41.16684],[-74.85748,41.17093],[-74.85735,41.16929],[-74.85568,41.17079],[-74.85047,41.16747],[-74.84845,41.16863],[-74.84979,41.16949],[-74.84417,41.17447],[-74.84865,41.17736],[-74.84491,41.18067],[-74.84693,41.18197],[-74.84328,41.18518],[-74.84197,41.18594],[-74.83942,41.18237],[-74.83774,41.18299],[-74.83592,41.18624],[-74.83266,41.18456],[-74.82114,41.19436],[-74.81588,41.19719],[-74.8117,41.19512],[-74.80702,41.19204],[-74.80375,41.19538],[-74.80374,41.19804],[-74.80267,41.19801],[-74.80288,41.19903],[-74.80241,41.19908],[-74.80007,41.19854],[-74.79779,41.20088],[-74.80004,41.20231],[-74.79869,41.2048],[-74.80297,41.2076],[-74.80275,41.20816],[-74.80327,41.20864],[-74.80136,41.20998],[-74.80119,41.21046],[-74.79986,41.21162],[-74.79577,41.21384],[-74.79115,41.21583],[-74.78984,41.21498],[-74.78994,41.21431],[-74.78913,41.21455],[-74.78757,41.2154],[-74.78302,41.21537],[-74.78159,41.21708],[-74.78072,41.21778],[-74.78137,41.2182],[-74.78102,41.21848],[-74.78023,41.21797],[-74.7799,41.21836],[-74.78083,41.21863],[-74.77839,41.22128],[-74.77821,41.22117],[-74.77803,41.22134],[-74.77759,41.22209],[-74.77683,41.2221],[-74.77597,41.22172],[-74.77348,41.22309],[-74.77165,41.2238],[-74.77068,41.22385],[-74.7697,41.2254],[-74.76724,41.22753],[-74.76772,41.2281],[-74.76799,41.22816],[-74.76604,41.22994],[-74.76768,41.23123],[-74.76631,41.23187],[-74.7664,41.23199],[-74.76689,41.23176],[-74.76824,41.23312],[-74.76809,41.2332],[-74.76977,41.23349],[-74.7683,41.23498],[-74.7722,41.23692],[-74.77508,41.23446],[-74.77312,41.23319],[-74.77292,41.23348],[-74.77188,41.23358],[-74.77124,41.23159],[-74.77137,41.23151],[-74.77074,41.2302],[-74.77295,41.22884],[-74.77489,41.23014],[-74.77704,41.22964],[-74.77718,41.23022],[-74.77751,41.23066],[-74.77826,41.23072],[-74.77882,41.23125],[-74.78768,41.23702],[-74.78558,41.23888],[-74.78895,41.24108],[-74.78625,41.24451],[-74.78222,41.24187],[-74.77797,41.24564],[-74.78021,41.24724],[-74.77999,41.24744],[-74.78319,41.24937],[-74.78217,41.25023],[-74.78277,41.25053],[-74.784,41.24976],[-74.78436,41.25005],[-74.78395,41.25041],[-74.78485,41.25066],[-74.78495,41.25085],[-74.7846,41.25106],[-74.78194,41.25044],[-74.77276,41.25834],[-74.77421,41.25929],[-74.77247,41.26061],[-74.77318,41.26105],[-74.77216,41.26208],[-74.77425,41.26359],[-74.7716,41.26592],[-74.76696,41.26293],[-74.76464,41.2627],[-74.7624,41.26312],[-74.75851,41.26047],[-74.7493,41.2685],[-74.7494,41.26857],[-74.7489,41.26902],[-74.7494,41.26933],[-74.74914,41.26958],[-74.7321,41.25861],[-74.73204,41.25835],[-74.73897,41.25225],[-74.72112,41.24055],[-74.71307,41.24767],[-74.70412,41.24171],[-74.70717,41.23904],[-74.70098,41.23507],[-74.70027,41.23578],[-74.69792,41.23396],[-74.69992,41.23188],[-74.69809,41.23053],[-74.69755,41.2308],[-74.69694,41.23063],[-74.69559,41.22914],[-74.69605,41.22806],[-74.69698,41.22744],[-74.69761,41.22788],[-74.69818,41.22704],[-74.69899,41.22657],[-74.698,41.22549],[-74.69874,41.22475],[-74.69751,41.22417],[-74.69821,41.22296],[-74.69986,41.2218],[-74.70045,41.22333],[-74.70189,41.22489],[-74.70391,41.22412],[-74.70757,41.22463],[-74.70701,41.22539],[-74.70729,41.22547],[-74.70909,41.22491],[-74.71032,41.2262],[-74.71053,41.22664],[-74.71064,41.22657],[-74.70921,41.22485],[-74.70887,41.22483],[-74.7079,41.22527],[-74.71397,41.21997],[-74.71601,41.22207],[-74.71398,41.21997],[-74.71789,41.21656],[-74.72798,41.2115],[-74.72924,41.21043],[-74.73014,41.21008],[-74.73283,41.20783],[-74.73438,41.20726],[-74.73671,41.20896],[-74.73934,41.20679],[-74.74232,41.20495],[-74.73876,41.20248],[-74.74064,41.20095],[-74.73936,41.20005],[-74.73839,41.19903],[-74.7409,41.19706],[-74.74321,41.19926],[-74.74423,41.19788],[-74.74803,41.1969],[-74.74836,41.1971],[-74.755,41.1918],[-74.76098,41.18805],[-74.75995,41.18682],[-74.76152,41.18625],[-74.76271,41.18551],[-74.76418,41.18439],[-74.76413,41.18412],[-74.7647,41.18353],[-74.76392,41.18369],[-74.76308,41.18295],[-74.76085,41.18464],[-74.75934,41.18544],[-74.75923,41.18568],[-74.75886,41.18552],[-74.76072,41.18454],[-74.7638,41.1822],[-74.76336,41.18136],[-74.76356,41.18133],[-74.76367,41.18176],[-74.76407,41.18218],[-74.76332,41.18288],[-74.76405,41.18358],[-74.76504,41.18326],[-74.76632,41.18469],[-74.77104,41.18205],[-74.77031,41.18036],[-74.77076,41.18031],[-74.77085,41.18052],[-74.77118,41.18035],[-74.77113,41.18002],[-74.77131,41.18045],[-74.77244,41.18026],[-74.7723,41.17985],[-74.77399,41.17965],[-74.77578,41.17898],[-74.77601,41.17935],[-74.77696,41.17898],[-74.77711,41.1792],[-74.77798,41.17906],[-74.77854,41.17993],[-74.78059,41.17896],[-74.78074,41.17922],[-74.78152,41.17886],[-74.78137,41.1786],[-74.78305,41.17778],[-74.78329,41.17799],[-74.78325,41.17764],[-74.7836,41.17679],[-74.78663,41.17383],[-74.78686,41.17249],[-74.78852,41.1704],[-74.78701,41.16952],[-74.78755,41.16837],[-74.78997,41.16912],[-74.79116,41.16853],[-74.79163,41.16919],[-74.79212,41.16933],[-74.79223,41.16905],[-74.79259,41.16912],[-74.79337,41.16955],[-74.79508,41.16802],[-74.79594,41.16762],[-74.79702,41.16833],[-74.7992,41.1676],[-74.79988,41.16719],[-74.79828,41.166],[-74.80203,41.16385],[-74.80299,41.16299],[-74.80321,41.16314],[-74.80754,41.16057],[-74.80719,41.16036],[-74.8083,41.15973],[-74.80846,41.15983],[-74.80888,41.15963],[-74.80879,41.15953],[-74.81057,41.15863],[-74.81133,41.15789],[-74.812,41.1576],[-74.81218,41.15793],[-74.81249,41.15779],[-74.81231,41.15745],[-74.81262,41.15731],[-74.81286,41.15777],[-74.81319,41.15766],[-74.81295,41.15719],[-74.8133,41.15711],[-74.81351,41.15751],[-74.81423,41.15741],[-74.81401,41.15701],[-74.81659,41.15557],[-74.81727,41.15494],[-74.81876,41.15593],[-74.82419,41.15358],[-74.82311,41.15254],[-74.8221,41.15189],[-74.82341,41.15136],[-74.82394,41.15225],[-74.83259,41.14938],[-74.83377,41.15022],[-74.83899,41.14713],[-74.83921,41.14626],[-74.83889,41.1458],[-74.84085,41.14498],[-74.84084,41.14462],[-74.84284,41.14383],[-74.84315,41.14333],[-74.84471,41.14264],[-74.84606,41.14336],[-74.84871,41.14194],[-74.84949,41.14379],[-74.85022,41.14408],[-74.85343,41.14635],[-74.85532,41.14626],[-74.85724,41.14813],[-74.85825,41.14843],[-74.85805,41.1478],[-74.85823,41.14766],[-74.86593,41.15063],[-74.86728,41.14884],[-74.8701,41.15032]],[[-74.80875,41.17069],[-74.80556,41.16832],[-74.80426,41.16911],[-74.80449,41.16932],[-74.80426,41.16946],[-74.80403,41.16925],[-74.80078,41.17127],[-74.80101,41.17148],[-74.79999,41.1721],[-74.79976,41.17189],[-74.79932,41.17231],[-74.79334,41.17579],[-74.79176,41.17645],[-74.79126,41.17623],[-74.79068,41.17689],[-74.79434,41.17926],[-74.79506,41.18035],[-74.79573,41.1824],[-74.79607,41.1824],[-74.79677,41.18171],[-74.7978,41.17969],[-74.79968,41.17802],[-74.80201,41.17654],[-74.80371,41.1748],[-74.80706,41.17276],[-74.80849,41.17105],[-74.80891,41.1708],[-74.80875,41.17069]],[[-74.83201,41.17679],[-74.83126,41.1762],[-74.8298,41.17662],[-74.82964,41.17641],[-74.82863,41.17675],[-74.82793,41.17654],[-74.82807,41.17612],[-74.82696,41.17588],[-74.82678,41.17643],[-74.82515,41.17651],[-74.82366,41.17779],[-74.82438,41.17818],[-74.82613,41.17814],[-74.82605,41.17869],[-74.82643,41.17873],[-74.82658,41.17823],[-74.82661,41.17887],[-74.82805,41.17884],[-74.82802,41.17834],[-74.82997,41.17744],[-74.83201,41.17679]],[[-74.81844,41.18153],[-74.81824,41.18124],[-74.82006,41.17959],[-74.82123,41.17786],[-74.81437,41.17356],[-74.80361,41.18292],[-74.80652,41.18485],[-74.80842,41.18473],[-74.80842,41.18518],[-74.80458,41.19026],[-74.80618,41.19131],[-74.8118,41.18837],[-74.81586,41.18486],[-74.81677,41.18551],[-74.81715,41.18527],[-74.8175,41.1855],[-74.8183,41.1851],[-74.81913,41.18448],[-74.81836,41.18412],[-74.81826,41.18163],[-74.81844,41.18153]],[[-74.76214,41.18763],[-74.76203,41.18752],[-74.76111,41.1882],[-74.76149,41.18837],[-74.76214,41.18763]],[[-74.76784,41.18665],[-74.7681,41.18669],[-74.76756,41.18608],[-74.76685,41.18649],[-74.76736,41.18705],[-74.76784,41.18665]],[[-74.79859,41.24158],[-74.79884,41.24049],[-74.79637,41.2404],[-74.7966,41.23736],[-74.80107,41.23879],[-74.80095,41.24184],[-74.79859,41.24158]],[[-74.83037,41.22027],[-74.83087,41.21982],[-74.83328,41.22206],[-74.83193,41.22348],[-74.83088,41.22263],[-74.83037,41.22027]],[[-74.80909,41.2337],[-74.80949,41.23335],[-74.8114,41.23469],[-74.81023,41.23592],[-74.80889,41.23549],[-74.80778,41.23479],[-74.80909,41.2337]],[[-74.82911,41.18077],[-74.82677,41.17914],[-74.82595,41.17938],[-74.82833,41.18105],[-74.82911,41.18077]],[[-74.8137,41.1589],[-74.81299,41.15801],[-74.81206,41.15844],[-74.81277,41.15933],[-74.8137,41.1589]],[[-74.79128,41.17046],[-74.79186,41.17075],[-74.79225,41.17038],[-74.79155,41.17021],[-74.79128,41.17046]],[[-74.83031,41.22002],[-74.83013,41.21914],[-74.83071,41.21968],[-74.83031,41.22002]]],"trails":{"blue-mountain":[[[-74.71639,41.22955],[-74.71604,41.2306],[-74.71558,41.23109],[-74.71523,41.23131],[-74.71456,41.23205],[-74.71426,41.23226],[-74.71373,41.23289],[-74.71325,41.23321],[-74.71196,41.23388],[-74.71175,41.23408],[-74.71172,41.23419],[-74.71192,41.23478],[-74.71222,41.23514],[-74.71219,41.2356],[-74.71231,41.23606],[-74.7128,41.23669],[-74.71304,41.23678],[-74.71339,41.23716],[-74.71337,41.23771],[-74.71345,41.23797],[-74.71339,41.23795],[-74.71339,41.23822],[-74.71298,41.23867],[-74.71202,41.23957],[-74.71111,41.24012],[-74.71087,41.24051],[-74.7109,41.2408],[-74.71127,41.24095],[-74.71149,41.24111],[-74.71159,41.24143],[-74.7126,41.24337]],[[-74.7976,41.20852],[-74.79747,41.20873],[-74.79747,41.20958],[-74.79803,41.20997],[-74.79807,41.21023],[-74.7979,41.21065],[-74.79814,41.211]],[[-74.71639,41.22955],[-74.71688,41.22941],[-74.71745,41.22939],[-74.7182,41.22928],[-74.71847,41.22932],[-74.7189,41.22949],[-74.7198,41.23014]],[[-74.74606,41.21399],[-74.74649,41.21371],[-74.74675,41.21366],[-74.74737,41.21372],[-74.74829,41.21342],[-74.74926,41.2129],[-74.74956,41.21229],[-74.74996,41.21197],[-74.74997,41.21181],[-74.74986,41.21153],[-74.75002,41.21085],[-74.75175,41.20883],[-74.75282,41.20834],[-74.75301,41.20832],[-74.75327,41.20843],[-74.75379,41.20847],[-74.75473,41.20879],[-74.75528,41.20891],[-74.75566,41.20893],[-74.75615,41.20883],[-74.75665,41.20896],[-74.75764,41.20859],[-74.75843,41.20839],[-74.75922,41.20801],[-74.75946,41.20763],[-74.75966,41.20751],[-74.76076,41.20732],[-74.76154,41.20731],[-74.76191,41.2074],[-74.76213,41.20739],[-74.76318,41.20708],[-74.7639,41.20679],[-74.76475,41.20664],[-74.76528,41.20641],[-74.76555,41.20567],[-74.766,41.20542],[-74.76623,41.20508],[-74.76673,41.20463],[-74.76697,41.20463],[-74.76721,41.20473],[-74.76763,41.20469],[-74.76796,41.20483],[-74.76862,41.20477],[-74.7692,41.20454],[-74.76979,41.20441],[-74.76997,41.20419],[-74.77054,41.20384],[-74.77133,41.20356]],[[-74.7925,41.18213],[-74.79256,41.1826],[-74.79248,41.1828],[-74.79174,41.18339],[-74.79132,41.18392],[-74.79089,41.18429],[-74.79061,41.18464],[-74.78988,41.18535],[-74.78904,41.18577],[-74.78859,41.18619],[-74.78848,41.18644],[-74.78806,41.18694],[-74.78687,41.18775],[-74.78658,41.18805],[-74.78583,41.18838],[-74.78427,41.18928],[-74.78241,41.19082],[-74.78104,41.19181],[-74.78073,41.19222],[-74.78051,41.19272],[-74.78039,41.1933],[-74.77987,41.1941],[-74.77965,41.19463],[-74.77939,41.19493],[-74.77885,41.19605],[-74.77889,41.19636],[-74.77883,41.19658],[-74.77842,41.19693],[-74.77753,41.19845],[-74.77732,41.19891],[-74.77728,41.19927],[-74.77712,41.19952]],[[-74.71459,41.24473],[-74.71482,41.24527],[-74.71512,41.24544],[-74.71545,41.2455]],[[-74.76013,41.22517],[-74.76012,41.22535],[-74.75988,41.22554],[-74.75941,41.2261],[-74.75855,41.22634],[-74.75812,41.22655],[-74.75766,41.22699],[-74.75711,41.22823],[-74.75712,41.22845],[-74.75677,41.22864],[-74.7564,41.22865],[-74.75589,41.22836],[-74.75549,41.22793],[-74.75491,41.2277],[-74.75444,41.22759],[-74.75392,41.2279],[-74.75326,41.22842],[-74.75284,41.22863],[-74.75288,41.22873],[-74.7532,41.22894],[-74.75296,41.22918],[-74.75243,41.22996],[-74.75215,41.2302],[-74.75184,41.23062],[-74.75157,41.23078],[-74.75108,41.23096],[-74.75073,41.23127],[-74.75027,41.23221],[-74.74956,41.23243],[-74.74911,41.23292],[-74.74887,41.23308],[-74.74842,41.23323],[-74.74697,41.23458],[-74.74662,41.2353],[-74.74657,41.2356],[-74.74628,41.23595],[-74.74563,41.23625],[-74.74561,41.23675],[-74.74534,41.237],[-74.74479,41.23724],[-74.744,41.23786],[-74.7432,41.238],[-74.7428,41.23841],[-74.74255,41.23888],[-74.74197,41.23924],[-74.74187,41.23954],[-74.74181,41.24031],[-74.74146,41.24041],[-74.74106,41.24036],[-74.73881,41.23941],[-74.73743,41.23894],[-74.7366,41.23884],[-74.73612,41.23891],[-74.73577,41.23872]],[[-74.77479,41.20334],[-74.77502,41.20321],[-74.77509,41.20211],[-74.77519,41.20188],[-74.77564,41.2012],[-74.77634,41.20054],[-74.77712,41.19952]],[[-74.77133,41.20356],[-74.77156,41.20356],[-74.77224,41.2032],[-74.77261,41.2031],[-74.77287,41.2032]],[[-74.71545,41.2455],[-74.71566,41.24536],[-74.71652,41.24547],[-74.71768,41.24541],[-74.71831,41.24559],[-74.71855,41.24594],[-74.7191,41.24616],[-74.72044,41.24601],[-74.72053,41.24596],[-74.72208,41.24605],[-74.72284,41.2462],[-74.72338,41.24618],[-74.72454,41.24637],[-74.72491,41.2465],[-74.7251,41.24673],[-74.72559,41.24661],[-74.72591,41.24658],[-74.72628,41.24667],[-74.7269,41.24658]],[[-74.7126,41.24337],[-74.71292,41.24338],[-74.71315,41.24348],[-74.71431,41.24416],[-74.71459,41.24473]],[[-74.71542,41.22796],[-74.71547,41.22818],[-74.71527,41.22864],[-74.71566,41.22932]],[[-74.71566,41.22932],[-74.71589,41.22948],[-74.71639,41.22955]],[[-74.7171,41.22484],[-74.71713,41.22472],[-74.71733,41.22459],[-74.71748,41.22436],[-74.71745,41.22425],[-74.7176,41.22399],[-74.71755,41.22364],[-74.71767,41.22347],[-74.71806,41.2236],[-74.71808,41.22376],[-74.71831,41.2239],[-74.71872,41.22384],[-74.71902,41.22372],[-74.71935,41.22378],[-74.72028,41.22354],[-74.72079,41.22364],[-74.72095,41.22349],[-74.72129,41.22335],[-74.72191,41.22344],[-74.72262,41.22333],[-74.72399,41.22364],[-74.72434,41.22384],[-74.7249,41.22389],[-74.72613,41.22429],[-74.72761,41.22396],[-74.72798,41.22374],[-74.72875,41.22343],[-74.72905,41.22296],[-74.72982,41.22241],[-74.73025,41.2227],[-74.73105,41.22295],[-74.73118,41.22288],[-74.73218,41.22302],[-74.73282,41.22347],[-74.73296,41.22379],[-74.73339,41.22409],[-74.73404,41.22423],[-74.73424,41.2242],[-74.73478,41.2239],[-74.73528,41.22393]],[[-74.74644,41.21516],[-74.74642,41.21506],[-74.74604,41.2148],[-74.7459,41.21462],[-74.74588,41.2145],[-74.74606,41.21399]],[[-74.77796,41.2154],[-74.77611,41.21642],[-74.77549,41.21655],[-74.77422,41.21656],[-74.77335,41.21689],[-74.77286,41.21721],[-74.77172,41.2174],[-74.7709,41.21739],[-74.76753,41.21845],[-74.7662,41.21909],[-74.76547,41.2193],[-74.76453,41.21979],[-74.76422,41.22065],[-74.76403,41.2208],[-74.76378,41.22122],[-74.76381,41.22198],[-74.76318,41.22254],[-74.763,41.22266],[-74.76277,41.22267],[-74.76241,41.22292],[-74.76198,41.22324],[-74.76138,41.22382],[-74.76114,41.2239],[-74.76077,41.22375],[-74.76029,41.22377],[-74.75926,41.22432],[-74.76013,41.22517]],[[-74.79829,41.21148],[-74.7978,41.21172],[-74.79769,41.2119],[-74.797,41.21232],[-74.79693,41.2124],[-74.79696,41.2125],[-74.79679,41.21266],[-74.79656,41.21273],[-74.79591,41.21272],[-74.79538,41.21247],[-74.79496,41.21242],[-74.79492,41.21255],[-74.79473,41.21255],[-74.79459,41.21263],[-74.79435,41.2126],[-74.79393,41.21264],[-74.79333,41.21297],[-74.793,41.21289],[-74.79287,41.21292],[-74.79284,41.21306],[-74.79238,41.21299],[-74.79213,41.21307],[-74.79183,41.21304],[-74.79169,41.2128],[-74.7915,41.2131],[-74.79131,41.21314],[-74.79098,41.21334],[-74.79059,41.21338],[-74.79009,41.21327],[-74.78945,41.21334],[-74.78932,41.21342],[-74.78901,41.21393],[-74.78867,41.21421],[-74.78836,41.21461],[-74.78788,41.21491],[-74.78783,41.21505],[-74.78669,41.21523],[-74.78598,41.21516],[-74.78558,41.21505],[-74.78404,41.21514],[-74.78383,41.21504],[-74.78395,41.21494],[-74.78351,41.21484],[-74.78308,41.21458],[-74.78303,41.21449],[-74.78289,41.21447],[-74.78282,41.21453],[-74.78238,41.2144],[-74.78224,41.21419],[-74.78196,41.21405],[-74.7811,41.21387],[-74.78032,41.21359],[-74.78008,41.21361],[-74.77986,41.21374],[-74.77845,41.21347],[-74.77835,41.21352],[-74.77834,41.21367],[-74.77845,41.21373],[-74.77853,41.21419],[-74.77868,41.21445],[-74.77832,41.21467],[-74.77799,41.21474],[-74.77757,41.21495],[-74.77757,41.21505],[-74.77794,41.21529],[-74.77796,41.2154]],[[-74.7947,41.1866],[-74.79491,41.1868],[-74.79497,41.18732],[-74.79537,41.18777],[-74.79561,41.18782],[-74.79566,41.18808],[-74.79558,41.1884],[-74.7951,41.18883],[-74.79507,41.18901],[-74.7947,41.18927],[-74.79421,41.18943],[-74.79391,41.18968],[-74.79397,41.18979],[-74.79359,41.19009],[-74.79334,41.19054],[-74.79312,41.19064],[-74.79278,41.19126],[-74.79256,41.19142],[-74.79248,41.19159],[-74.79252,41.19174],[-74.79244,41.1919],[-74.79208,41.1921],[-74.79188,41.1923],[-74.79169,41.19228],[-74.79161,41.19264],[-74.79139,41.19272],[-74.79136,41.19286],[-74.79123,41.19289],[-74.79085,41.19361],[-74.79085,41.19377],[-74.79064,41.19386],[-74.79059,41.19407],[-74.79066,41.19417],[-74.79057,41.19429],[-74.7903,41.19437],[-74.79028,41.19473],[-74.79017,41.19497],[-74.78988,41.19513],[-74.78962,41.19512],[-74.78909,41.19546],[-74.78894,41.19545],[-74.78863,41.19559],[-74.78863,41.19604],[-74.78891,41.19611],[-74.79039,41.19568],[-74.79068,41.19567],[-74.79124,41.19579],[-74.79278,41.19591],[-74.79362,41.19609],[-74.79426,41.19642],[-74.7944,41.1966],[-74.79486,41.19682],[-74.79483,41.19695],[-74.795,41.19724],[-74.79487,41.19742],[-74.79513,41.19779],[-74.79541,41.19787],[-74.79545,41.19801],[-74.7962,41.19824],[-74.79637,41.19846],[-74.79659,41.19857],[-74.79665,41.1987],[-74.79675,41.19875],[-74.79675,41.1989],[-74.79692,41.19889],[-74.79715,41.19915],[-74.79721,41.19952],[-74.79717,41.19973],[-74.79726,41.20004],[-74.79716,41.20012],[-74.7971,41.20039],[-74.79711,41.20087],[-74.79728,41.20121],[-74.79764,41.20155],[-74.79758,41.20165],[-74.79765,41.20178],[-74.79782,41.20181],[-74.79797,41.20226],[-74.7979,41.20247],[-74.798,41.20258],[-74.79777,41.20288],[-74.79773,41.20311],[-74.79754,41.2032],[-74.79759,41.2034],[-74.79755,41.20357],[-74.79765,41.20366],[-74.79763,41.20381],[-74.79799,41.20396],[-74.79792,41.20415],[-74.7978,41.20416],[-74.79775,41.20432],[-74.79782,41.20442],[-74.79771,41.20474],[-74.79743,41.20491],[-74.79722,41.20478],[-74.79701,41.20482],[-74.79743,41.20519],[-74.79749,41.20535],[-74.79757,41.20537],[-74.79775,41.20562],[-74.79768,41.20573],[-74.79775,41.20607],[-74.7982,41.20608],[-74.79827,41.20618],[-74.79776,41.2071],[-74.79772,41.20746],[-74.79781,41.20797],[-74.7976,41.20852]],[[-74.79305,41.18216],[-74.79322,41.18248],[-74.79428,41.18316],[-74.7947,41.18369],[-74.79501,41.18631]],[[-74.7741,41.20329],[-74.77405,41.20302],[-74.77392,41.20295],[-74.77346,41.20305]],[[-74.78863,41.19604],[-74.7881,41.196],[-74.7875,41.19581]],[[-74.79817,41.21104],[-74.79829,41.21148]],[[-74.79814,41.211],[-74.79817,41.21104]],[[-74.79256,41.1821],[-74.7925,41.18213]],[[-74.79305,41.18216],[-74.79256,41.1821]],[[-74.73528,41.22393],[-74.73566,41.22382],[-74.7359,41.22351],[-74.73623,41.22332],[-74.73677,41.22278],[-74.73752,41.22253],[-74.73784,41.22228],[-74.73854,41.22201],[-74.73948,41.22208],[-74.73972,41.22203],[-74.74046,41.22169],[-74.74073,41.22162],[-74.74108,41.22142],[-74.7418,41.22119],[-74.74232,41.22083],[-74.7425,41.22058],[-74.74286,41.22053],[-74.74348,41.22023],[-74.74468,41.21996],[-74.74519,41.21975],[-74.7453,41.21915],[-74.74551,41.2186],[-74.74557,41.21821],[-74.74571,41.21793],[-74.7458,41.21735],[-74.7459,41.21715],[-74.74586,41.21704],[-74.74617,41.2156],[-74.74644,41.21516]],[[-74.78172,41.21472],[-74.78066,41.21567],[-74.78028,41.21568],[-74.77943,41.21526],[-74.77904,41.21519],[-74.77872,41.2152],[-74.77796,41.2154]],[[-74.71471,41.22132],[-74.71512,41.22192],[-74.71603,41.22232],[-74.71677,41.22284],[-74.71689,41.22309],[-74.71682,41.22318],[-74.71686,41.22326],[-74.71708,41.22341],[-74.71751,41.22341],[-74.71767,41.22347]],[[-74.73367,41.24079],[-74.7344,41.24036],[-74.73492,41.23988],[-74.73524,41.23972],[-74.73532,41.23954],[-74.73556,41.23938],[-74.73574,41.23934]],[[-74.7269,41.24658],[-74.72781,41.24563],[-74.72859,41.24435],[-74.72894,41.24414],[-74.73023,41.24304],[-74.73135,41.24263],[-74.73143,41.24245],[-74.73169,41.24233],[-74.73191,41.24196],[-74.73238,41.24161],[-74.73262,41.24122],[-74.73296,41.24097],[-74.73323,41.24084],[-74.73367,41.24079]],[[-74.71542,41.22796],[-74.71568,41.22784],[-74.7159,41.22761],[-74.71636,41.22732],[-74.71653,41.22696],[-74.7167,41.22679],[-74.71674,41.22634],[-74.71698,41.22607],[-74.71698,41.22582],[-74.71717,41.22546],[-74.71706,41.22533],[-74.71715,41.22511],[-74.7171,41.22484]]],"appalachian":[[[-74.85206,41.14543],[-74.85143,41.14567],[-74.85126,41.14587],[-74.85094,41.14603],[-74.85061,41.14606],[-74.85013,41.14629],[-74.84971,41.14658],[-74.84918,41.14673],[-74.84792,41.14731],[-74.84714,41.14745],[-74.84625,41.14792],[-74.84588,41.148],[-74.84546,41.14839],[-74.84515,41.14878],[-74.84469,41.14903],[-74.84393,41.14908],[-74.84258,41.14889],[-74.84199,41.14903],[-74.84102,41.14948],[-74.84015,41.15031],[-74.83988,41.15068],[-74.8396,41.15082],[-74.83815,41.15112],[-74.83781,41.15096],[-74.83754,41.15093],[-74.83718,41.15102],[-74.83687,41.15126],[-74.83567,41.15167],[-74.83542,41.15183],[-74.83477,41.15251],[-74.83414,41.15267],[-74.83353,41.15274],[-74.8332,41.15293],[-74.83256,41.15349],[-74.83191,41.15374],[-74.83169,41.1539],[-74.83141,41.15397],[-74.83106,41.1544],[-74.83074,41.15454],[-74.83042,41.15483],[-74.82979,41.15518],[-74.82918,41.15568],[-74.82814,41.15602],[-74.82739,41.15611],[-74.82676,41.15625],[-74.8263,41.15643],[-74.82611,41.15667],[-74.82552,41.15713],[-74.82395,41.15777],[-74.82272,41.15812],[-74.82206,41.15806],[-74.82188,41.1581],[-74.82139,41.15843],[-74.82064,41.1585],[-74.8199,41.15881],[-74.81964,41.15901],[-74.81923,41.15908],[-74.81858,41.15903],[-74.81813,41.15934],[-74.81759,41.15947],[-74.81705,41.1597],[-74.81596,41.16065],[-74.81553,41.16063],[-74.81475,41.16079],[-74.81378,41.16112],[-74.81299,41.16131],[-74.81277,41.16145],[-74.81253,41.16174],[-74.81151,41.16221],[-74.81083,41.16236],[-74.81067,41.16245],[-74.81004,41.16306],[-74.80956,41.16322],[-74.80904,41.16352],[-74.80852,41.16369],[-74.80819,41.16389],[-74.80747,41.16457],[-74.80722,41.16473],[-74.8065,41.16501],[-74.8059,41.16535],[-74.8055,41.1657],[-74.80346,41.16673],[-74.80311,41.16706],[-74.8027,41.16723],[-74.80235,41.16747],[-74.802,41.16775],[-74.80178,41.16803],[-74.80153,41.16819],[-74.80038,41.16872],[-74.79939,41.16969],[-74.79883,41.16989],[-74.79865,41.1701],[-74.79807,41.1704],[-74.79775,41.17065],[-74.79761,41.1707],[-74.79726,41.1706],[-74.79693,41.17068],[-74.79654,41.17052],[-74.79617,41.17055],[-74.79568,41.1704],[-74.79517,41.1705],[-74.79352,41.17141],[-74.79339,41.17158],[-74.79256,41.17209],[-74.79215,41.17245],[-74.7918,41.17292],[-74.79151,41.17317],[-74.79115,41.17322],[-74.79083,41.17336],[-74.7906,41.17378],[-74.79051,41.17417],[-74.79068,41.17479],[-74.79113,41.17552],[-74.79117,41.17571],[-74.79114,41.1764],[-74.79086,41.17668],[-74.79095,41.17681],[-74.79092,41.17692]],[[-74.7913,41.17717],[-74.7913,41.17746],[-74.79099,41.17887],[-74.79084,41.17916],[-74.79055,41.17943],[-74.7893,41.18008],[-74.78794,41.18045],[-74.78786,41.18067],[-74.78769,41.18086],[-74.78682,41.18139],[-74.78514,41.18171],[-74.78503,41.18168],[-74.78472,41.18135],[-74.78446,41.18123],[-74.78416,41.18133],[-74.78321,41.18116],[-74.78199,41.18127],[-74.78163,41.18117],[-74.78143,41.18119],[-74.78096,41.18142],[-74.7807,41.18138],[-74.78063,41.18117],[-74.78084,41.18062],[-74.7811,41.18021],[-74.78157,41.17973],[-74.78152,41.17964],[-74.78093,41.17952],[-74.78038,41.17972],[-74.77967,41.18009],[-74.77934,41.18011],[-74.77892,41.18034],[-74.77879,41.18049],[-74.77793,41.1809],[-74.77773,41.18106],[-74.77666,41.18152],[-74.77595,41.18193],[-74.77559,41.18204],[-74.77548,41.18215],[-74.77442,41.18261],[-74.77369,41.183],[-74.77332,41.18306],[-74.77283,41.18334],[-74.77226,41.18351],[-74.77186,41.18381],[-74.77122,41.18403],[-74.77033,41.18444],[-74.76999,41.18475],[-74.76944,41.18496],[-74.7689,41.18527],[-74.76852,41.18574],[-74.76812,41.18607],[-74.76807,41.18626],[-74.76812,41.18682],[-74.76789,41.18713],[-74.76747,41.18745],[-74.76718,41.18754],[-74.7667,41.18799],[-74.76643,41.1881],[-74.76613,41.18871],[-74.76578,41.1891],[-74.76488,41.18981],[-74.76283,41.19124],[-74.7614,41.19241],[-74.76084,41.19313],[-74.76078,41.19334],[-74.76046,41.19382],[-74.7599,41.19439],[-74.75937,41.19523],[-74.75884,41.19565],[-74.75821,41.19588],[-74.75697,41.19584],[-74.75643,41.196],[-74.75614,41.19613],[-74.75573,41.19647],[-74.75529,41.1967],[-74.75441,41.19682],[-74.75356,41.19723],[-74.75311,41.19753],[-74.75293,41.19772],[-74.75182,41.19828],[-74.75147,41.19852],[-74.75108,41.19897],[-74.74974,41.19964],[-74.74939,41.20008],[-74.74842,41.20083],[-74.748,41.20123],[-74.74757,41.20148],[-74.7472,41.20183],[-74.74691,41.20211],[-74.74659,41.20261],[-74.74628,41.2029],[-74.74572,41.20317],[-74.74543,41.20324],[-74.74495,41.20354],[-74.74457,41.2037],[-74.7443,41.20388],[-74.74373,41.20445],[-74.74265,41.20513],[-74.74225,41.20558],[-74.74157,41.20613],[-74.74129,41.20625],[-74.73752,41.20952],[-74.73692,41.20969],[-74.73538,41.21033],[-74.73501,41.21044],[-74.73443,41.21046],[-74.73383,41.21079],[-74.73311,41.21079],[-74.73271,41.21091],[-74.73217,41.21094],[-74.73117,41.21119],[-74.73091,41.2114],[-74.73064,41.21148],[-74.73049,41.21172],[-74.73021,41.21187],[-74.73007,41.21211],[-74.7294,41.21262],[-74.72931,41.21281],[-74.72918,41.21291],[-74.72874,41.21307],[-74.72802,41.2135],[-74.72759,41.21358],[-74.72723,41.21396],[-74.72703,41.21405],[-74.72667,41.21405],[-74.72644,41.21412],[-74.72633,41.21428],[-74.72617,41.21494],[-74.72609,41.215],[-74.72567,41.21503],[-74.72506,41.21522],[-74.72348,41.21616],[-74.72234,41.21658],[-74.72213,41.21691],[-74.72156,41.21728],[-74.72125,41.21757],[-74.72087,41.21766],[-74.72056,41.21785],[-74.72045,41.21814],[-74.72022,41.21827],[-74.71985,41.21834],[-74.7184,41.21912],[-74.71801,41.21918],[-74.71776,41.2193],[-74.71743,41.21959],[-74.71661,41.21989],[-74.71615,41.2202],[-74.716,41.22039],[-74.71544,41.22072],[-74.71513,41.22105],[-74.71471,41.22132],[-74.71418,41.22157],[-74.7139,41.22162],[-74.71377,41.22178],[-74.71314,41.2222],[-74.71276,41.22254],[-74.71182,41.2237],[-74.71177,41.22408],[-74.71111,41.22492],[-74.71111,41.22514],[-74.71076,41.22556],[-74.71071,41.22575],[-74.71043,41.22613]],[[-74.7103,41.22628],[-74.71021,41.22666],[-74.70937,41.22712],[-74.70912,41.22741],[-74.70918,41.22775],[-74.70888,41.22838],[-74.709,41.22867],[-74.70877,41.22908],[-74.70866,41.22954],[-74.70829,41.23006],[-74.70807,41.23067],[-74.70768,41.23103],[-74.70749,41.23139],[-74.70718,41.23151],[-74.70706,41.23167],[-74.70704,41.23181],[-74.70718,41.23211],[-74.70718,41.23225],[-74.70695,41.23264],[-74.7063,41.23299],[-74.70624,41.23312],[-74.70627,41.23333],[-74.70606,41.23388],[-74.70577,41.23416],[-74.70539,41.23437],[-74.70504,41.23465],[-74.70478,41.23499],[-74.7045,41.23519],[-74.703,41.23592],[-74.70296,41.23616]]],"tower":[[[-74.76542,41.20322],[-74.76548,41.20138],[-74.76586,41.19895],[-74.76614,41.1962],[-74.76611,41.19504],[-74.76601,41.19472],[-74.76613,41.19442],[-74.76595,41.19259],[-74.76624,41.19176],[-74.76626,41.19061],[-74.76641,41.18972],[-74.7663,41.18965],[-74.76643,41.18921],[-74.76622,41.18925],[-74.76611,41.18917],[-74.76617,41.18893],[-74.76613,41.18871]],[[-74.77133,41.20356],[-74.77056,41.20295],[-74.77012,41.20223],[-74.77001,41.20222],[-74.76865,41.20266],[-74.76796,41.20276],[-74.76749,41.2029],[-74.76693,41.20315],[-74.76655,41.20325],[-74.76558,41.20371]],[[-74.76558,41.20371],[-74.76545,41.2036],[-74.76542,41.20322]],[[-74.76542,41.20322],[-74.76542,41.20322]]],"stony-brook":[[[-74.77133,41.20356],[-74.77056,41.20295],[-74.77012,41.20223],[-74.77001,41.20222],[-74.76865,41.20266],[-74.76796,41.20276],[-74.76749,41.2029],[-74.76693,41.20315],[-74.76655,41.20325],[-74.76558,41.20371]],[[-74.77133,41.20356],[-74.77156,41.20356],[-74.77224,41.2032],[-74.77261,41.2031],[-74.77287,41.2032]],[[-74.76558,41.20371],[-74.76501,41.20409],[-74.76377,41.20473],[-74.76346,41.20509],[-74.76079,41.20625],[-74.76003,41.20671],[-74.75975,41.20656],[-74.75972,41.20621],[-74.7599,41.20581],[-74.75981,41.20549],[-74.75976,41.20482],[-74.75954,41.20466],[-74.75913,41.20386],[-74.75899,41.20384],[-74.75887,41.20368],[-74.75834,41.20341],[-74.75751,41.20234],[-74.75704,41.20188],[-74.75596,41.20148],[-74.75551,41.20093],[-74.75484,41.20066],[-74.75452,41.20035],[-74.75391,41.20001],[-74.75355,41.19906],[-74.75352,41.1988],[-74.7532,41.19866],[-74.75294,41.19844],[-74.75267,41.19839],[-74.75238,41.198]],[[-74.7741,41.20329],[-74.77418,41.20348],[-74.77369,41.20386],[-74.77334,41.20441],[-74.77335,41.20456],[-74.77319,41.20509],[-74.77334,41.2051],[-74.77345,41.20534],[-74.77395,41.20568],[-74.77376,41.20587],[-74.77372,41.20611],[-74.77385,41.20635],[-74.77454,41.20687],[-74.77441,41.20724],[-74.77441,41.20843],[-74.77421,41.21039],[-74.77431,41.21061],[-74.77475,41.21107],[-74.77477,41.21147],[-74.7747,41.21172],[-74.77482,41.21219],[-74.77536,41.21275],[-74.77621,41.21308],[-74.77825,41.2137],[-74.77834,41.21367]],[[-74.7741,41.20329],[-74.77405,41.20302],[-74.77392,41.20295],[-74.77346,41.20305]]],"coursen":[[[-74.77195,41.19929],[-74.77259,41.19856],[-74.77261,41.19841],[-74.77327,41.19758],[-74.77366,41.1973],[-74.77405,41.1969],[-74.77435,41.19676],[-74.77461,41.19652],[-74.77479,41.1961],[-74.77481,41.19578],[-74.7747,41.19525],[-74.77493,41.19493],[-74.77497,41.19464],[-74.77478,41.19439],[-74.77461,41.19399],[-74.77465,41.19363],[-74.77482,41.19321],[-74.77529,41.19269],[-74.77535,41.19236],[-74.7758,41.19194],[-74.77598,41.19123],[-74.77596,41.19106],[-74.77651,41.19017],[-74.77641,41.19003],[-74.77648,41.1893],[-74.77639,41.18909],[-74.77685,41.18852],[-74.77694,41.18828],[-74.77715,41.188],[-74.77784,41.18739],[-74.77803,41.18713],[-74.77805,41.18678]],[[-74.77187,41.19945],[-74.77195,41.19929]],[[-74.77012,41.20223],[-74.77056,41.2021],[-74.77046,41.20143],[-74.77048,41.20117],[-74.77091,41.20085],[-74.77127,41.20012],[-74.77164,41.20001],[-74.77174,41.19989],[-74.77187,41.19972],[-74.77187,41.19945]]],"rock-oak":[[[-74.74486,41.26632],[-74.74498,41.26605],[-74.74528,41.26572],[-74.74603,41.26513],[-74.74615,41.26491],[-74.74647,41.26463],[-74.74787,41.26416],[-74.74833,41.26412],[-74.74868,41.26398],[-74.7494,41.26344],[-74.75014,41.26254],[-74.75028,41.2621],[-74.75084,41.26164],[-74.75142,41.26132],[-74.75282,41.26081],[-74.75405,41.25997],[-74.75395,41.25938],[-74.75412,41.25913],[-74.75423,41.25878],[-74.75445,41.2585],[-74.75502,41.25729],[-74.7552,41.25686],[-74.75532,41.25598],[-74.75588,41.25482],[-74.75593,41.25429],[-74.75584,41.25395],[-74.75536,41.25325],[-74.75509,41.25247],[-74.75504,41.25161],[-74.75478,41.25087],[-74.75489,41.25047],[-74.75509,41.25016],[-74.75521,41.24976],[-74.75524,41.24924]]],"criss":[[[-74.74763,41.2393],[-74.74762,41.23987],[-74.74771,41.24009],[-74.748,41.24043],[-74.74806,41.24088],[-74.748,41.24127],[-74.7482,41.24176],[-74.74778,41.24268],[-74.74776,41.24308],[-74.74756,41.24345],[-74.74762,41.24374],[-74.74754,41.24395],[-74.74824,41.24453],[-74.74825,41.24483],[-74.74851,41.24524],[-74.74967,41.24638],[-74.74988,41.24682],[-74.75017,41.24692],[-74.75043,41.24689],[-74.75059,41.24657],[-74.75082,41.24634],[-74.75109,41.24617],[-74.75144,41.24572],[-74.75207,41.24538],[-74.75288,41.2451],[-74.75329,41.24487]],[[-74.75381,41.24423],[-74.75405,41.24431],[-74.75439,41.24424],[-74.75546,41.24366],[-74.75611,41.24258],[-74.75714,41.24155],[-74.75737,41.24123],[-74.75795,41.24086],[-74.75823,41.24058],[-74.75838,41.24034],[-74.7586,41.23971],[-74.75922,41.23918],[-74.75941,41.23914],[-74.76023,41.23816],[-74.76136,41.23645],[-74.76263,41.23548],[-74.76293,41.23535],[-74.76336,41.23548],[-74.76366,41.23539],[-74.76456,41.23466],[-74.76559,41.2334],[-74.76585,41.23321],[-74.7663,41.23227],[-74.76621,41.23217],[-74.76574,41.23208],[-74.76542,41.23188],[-74.76527,41.23158],[-74.76531,41.23129],[-74.7655,41.23094],[-74.76639,41.23016]],[[-74.75381,41.24423],[-74.75329,41.24487]]],"shay":[[[-74.84492,41.16755],[-74.84526,41.16683],[-74.8451,41.16644],[-74.84385,41.16606],[-74.84361,41.1657],[-74.84359,41.16539],[-74.84342,41.1649],[-74.84298,41.16476],[-74.84261,41.16453],[-74.84244,41.16414],[-74.84195,41.16381],[-74.84151,41.16326],[-74.84176,41.16251],[-74.84171,41.16231],[-74.84218,41.16147],[-74.84253,41.16044],[-74.84282,41.16001],[-74.84309,41.15896],[-74.84307,41.15857],[-74.84267,41.15771],[-74.8424,41.15686],[-74.84234,41.15636],[-74.84165,41.15593],[-74.8414,41.15565],[-74.84127,41.15529],[-74.84127,41.15498],[-74.84119,41.15486]]],"acropolis":[[[-74.79038,41.17126],[-74.79298,41.17046],[-74.79389,41.17004],[-74.79474,41.16986],[-74.79515,41.16962],[-74.79486,41.17],[-74.79447,41.17036],[-74.79414,41.17085],[-74.79364,41.17124],[-74.79361,41.17137]],[[-74.79361,41.17137],[-74.79371,41.17153],[-74.79368,41.17169],[-74.79337,41.17194],[-74.79269,41.17278],[-74.79258,41.17309],[-74.79234,41.17347],[-74.79225,41.1739],[-74.79238,41.17391],[-74.79259,41.1737],[-74.7938,41.17285],[-74.79423,41.17241],[-74.79488,41.17209],[-74.79497,41.1721],[-74.79499,41.17219],[-74.7933,41.17346]]],"red-maple":[[[-74.81927,41.1663],[-74.81911,41.16697],[-74.81877,41.16724],[-74.81835,41.16816],[-74.81832,41.16837],[-74.81799,41.16862],[-74.81778,41.1689],[-74.8178,41.16912],[-74.81763,41.1694],[-74.81738,41.16955],[-74.81652,41.1698],[-74.81625,41.17008],[-74.81555,41.17053],[-74.81544,41.17068],[-74.81548,41.17096],[-74.81486,41.17134],[-74.81469,41.17152],[-74.81441,41.17211]],[[-74.84189,41.15321],[-74.83837,41.15432]],[[-74.81441,41.17211],[-74.8152,41.17251],[-74.81571,41.17292],[-74.81583,41.17313],[-74.81602,41.17325],[-74.81625,41.17381],[-74.81687,41.17431],[-74.81727,41.1745],[-74.81751,41.17475],[-74.81753,41.17493],[-74.81722,41.17513],[-74.81727,41.17537],[-74.81757,41.17593],[-74.81756,41.17603],[-74.81728,41.17616],[-74.81725,41.1763],[-74.8165,41.17676],[-74.81619,41.17686],[-74.81533,41.1773],[-74.81496,41.17764],[-74.81426,41.17792],[-74.81411,41.17824],[-74.81411,41.17845],[-74.81423,41.17858],[-74.81413,41.17883],[-74.81417,41.17898],[-74.81401,41.17933],[-74.81347,41.17974],[-74.81337,41.18007],[-74.8134,41.18037],[-74.81346,41.18046],[-74.81345,41.18068],[-74.81356,41.18097],[-74.8134,41.18136],[-74.81266,41.18201],[-74.81203,41.18212],[-74.81198,41.18236],[-74.81202,41.18262],[-74.81173,41.183],[-74.81151,41.18379],[-74.81123,41.18388]],[[-74.83837,41.15432],[-74.83695,41.15477],[-74.83549,41.15545],[-74.83508,41.15585],[-74.8349,41.15627],[-74.83463,41.15654],[-74.83441,41.15665],[-74.83333,41.15688],[-74.83302,41.15711],[-74.83189,41.15751],[-74.83046,41.15862],[-74.83002,41.15883],[-74.82881,41.15918],[-74.82714,41.16009],[-74.82653,41.16027],[-74.82536,41.16075],[-74.82431,41.16107],[-74.82333,41.16169],[-74.82279,41.16229],[-74.82227,41.16244],[-74.82183,41.16242],[-74.82069,41.16328],[-74.82015,41.16344],[-74.81831,41.16468],[-74.81796,41.16498]],[[-74.85879,41.15841],[-74.85852,41.15815],[-74.85783,41.1579],[-74.85734,41.15837],[-74.85686,41.1585],[-74.85653,41.15867],[-74.85616,41.15849],[-74.85589,41.15848],[-74.85538,41.15828],[-74.85528,41.15812],[-74.85504,41.15803],[-74.85469,41.15811],[-74.85418,41.15803],[-74.85371,41.15821],[-74.85328,41.1582],[-74.85298,41.15813],[-74.85258,41.15762],[-74.8523,41.15754],[-74.85233,41.1572],[-74.85207,41.1567],[-74.85212,41.15648],[-74.85225,41.15638],[-74.8521,41.15591],[-74.85221,41.15555],[-74.85236,41.15539],[-74.85296,41.15513],[-74.85346,41.15471],[-74.85377,41.15469],[-74.85421,41.15446],[-74.85454,41.15416],[-74.85461,41.15401],[-74.85458,41.15386],[-74.85433,41.15355],[-74.85409,41.1535],[-74.8538,41.15328],[-74.85314,41.15321],[-74.85276,41.15307],[-74.85252,41.15281],[-74.85252,41.15269],[-74.85183,41.15206],[-74.85075,41.15217],[-74.84988,41.152],[-74.84903,41.15235],[-74.84826,41.15282],[-74.8482,41.15293],[-74.8477,41.15301],[-74.84728,41.15263],[-74.84687,41.15261],[-74.8464,41.15276],[-74.84621,41.15292],[-74.84599,41.15294],[-74.84565,41.15312],[-74.84558,41.15342],[-74.84528,41.15365],[-74.84466,41.15386],[-74.84395,41.15425],[-74.84348,41.15437],[-74.84245,41.15483],[-74.84227,41.15479],[-74.84215,41.15468],[-74.84197,41.15433],[-74.84198,41.15425],[-74.84224,41.15398],[-74.84237,41.15374],[-74.84236,41.1536],[-74.84233,41.1535],[-74.84189,41.15321]],[[-74.81796,41.16498],[-74.81825,41.16505],[-74.81888,41.16596],[-74.81927,41.1663]]],"lead-mine":[[[-74.79137,41.18937],[-74.79077,41.1894],[-74.79024,41.18967],[-74.78995,41.18989],[-74.78926,41.19012],[-74.78797,41.19074],[-74.78778,41.19103],[-74.78758,41.19116],[-74.78638,41.1913],[-74.78549,41.19182],[-74.78513,41.19193],[-74.78486,41.19212],[-74.78437,41.1923],[-74.78404,41.1923],[-74.78333,41.19244],[-74.78199,41.19286],[-74.7816,41.19307],[-74.78152,41.19325],[-74.78132,41.19337],[-74.78099,41.19337],[-74.78044,41.1931]]],"stony-lake":[[[-74.77187,41.19945],[-74.77195,41.19929]],[[-74.77195,41.19929],[-74.77306,41.19924],[-74.77357,41.19898],[-74.7743,41.19846],[-74.77505,41.19816],[-74.77566,41.1977],[-74.77585,41.19771],[-74.77602,41.19797],[-74.77604,41.19819],[-74.776,41.20017],[-74.77588,41.20052],[-74.77508,41.20103],[-74.7749,41.2015],[-74.77519,41.20188]],[[-74.77187,41.19945],[-74.77255,41.20007],[-74.7727,41.20049],[-74.77289,41.20064],[-74.7729,41.20073]]],"deep-root":[[[-74.76512,41.23401],[-74.76572,41.23457],[-74.76581,41.23487],[-74.76616,41.23514],[-74.76675,41.23591],[-74.76745,41.23666],[-74.76743,41.238],[-74.7673,41.2382],[-74.76734,41.23828],[-74.76702,41.23873],[-74.76664,41.23913],[-74.76637,41.23958],[-74.76594,41.24067],[-74.76579,41.24124],[-74.76522,41.2418],[-74.76471,41.24208],[-74.76453,41.2423],[-74.76432,41.24235],[-74.76361,41.24296],[-74.76312,41.24354],[-74.76301,41.24381],[-74.76265,41.24408],[-74.76234,41.24459],[-74.76216,41.24476],[-74.76198,41.2452],[-74.76066,41.24698],[-74.7605,41.24751],[-74.76053,41.24778],[-74.75998,41.24849],[-74.75983,41.24854],[-74.75969,41.24845]]],"swenson":[[[-74.73528,41.22393],[-74.73514,41.22408],[-74.73439,41.22452],[-74.73364,41.22476],[-74.7335,41.22512],[-74.73352,41.22536],[-74.73293,41.22597],[-74.7328,41.2262],[-74.73226,41.22642],[-74.73112,41.22663],[-74.73019,41.2275],[-74.72981,41.22806],[-74.72931,41.22861],[-74.7292,41.22904],[-74.72891,41.22934],[-74.72884,41.2297],[-74.72861,41.23002],[-74.72845,41.23117],[-74.72822,41.23147],[-74.72832,41.23205],[-74.7274,41.2335]]],"tinsley":[[[-74.74644,41.21516],[-74.74642,41.21506],[-74.74604,41.2148],[-74.7459,41.21462],[-74.74588,41.2145],[-74.74606,41.21399]],[[-74.73356,41.2108],[-74.73405,41.21104],[-74.73537,41.21109],[-74.73827,41.2109],[-74.73976,41.21122],[-74.74004,41.21136],[-74.74039,41.21167],[-74.74049,41.21225],[-74.74049,41.21259],[-74.74065,41.21323],[-74.74111,41.21361],[-74.74153,41.21371],[-74.7425,41.21355],[-74.743,41.21366],[-74.74403,41.21361],[-74.74493,41.2138],[-74.74574,41.21377],[-74.74606,41.21399]],[[-74.74644,41.21516],[-74.74691,41.21552],[-74.74758,41.21568],[-74.7479,41.21569],[-74.74886,41.21598],[-74.74913,41.21652],[-74.74925,41.21711],[-74.74929,41.2179],[-74.74908,41.21875],[-74.74933,41.21944],[-74.75122,41.22032],[-74.7517,41.22064],[-74.75218,41.2212],[-74.75255,41.22136],[-74.75266,41.22186],[-74.75325,41.22241],[-74.75467,41.22308],[-74.75564,41.22428],[-74.75566,41.22528],[-74.75593,41.22583],[-74.75678,41.22643],[-74.75772,41.22693]]],"silver-mine":[[[-74.77421,41.21039],[-74.77381,41.21024],[-74.77318,41.20973],[-74.77163,41.20811],[-74.77128,41.20767],[-74.77092,41.20703],[-74.77065,41.20689],[-74.76986,41.20664],[-74.76944,41.20668],[-74.76879,41.20744],[-74.768,41.20805],[-74.76673,41.20921],[-74.7659,41.2094],[-74.7645,41.21059],[-74.76329,41.21223],[-74.76235,41.21321],[-74.76239,41.21337],[-74.76304,41.21417],[-74.76415,41.21441],[-74.76492,41.21473],[-74.7651,41.21533],[-74.7648,41.2156],[-74.7647,41.21606],[-74.76475,41.21607],[-74.7646,41.21627],[-74.76459,41.21674],[-74.76464,41.21684],[-74.7649,41.21699],[-74.76497,41.2172],[-74.76524,41.21744],[-74.76517,41.21775],[-74.76532,41.2181],[-74.76535,41.2185],[-74.76568,41.21878],[-74.76553,41.21903],[-74.76556,41.21927]]],"steffen":[[[-74.81441,41.17211],[-74.8143,41.17236],[-74.81406,41.17259],[-74.81349,41.17279],[-74.8123,41.17347],[-74.81173,41.17373],[-74.81148,41.17414],[-74.81085,41.17474],[-74.8102,41.175],[-74.80924,41.17552],[-74.80875,41.17585],[-74.80859,41.17606],[-74.80683,41.17729],[-74.80652,41.17735],[-74.80596,41.17757],[-74.80599,41.17775],[-74.80639,41.17816],[-74.80649,41.17843],[-74.80647,41.17853],[-74.80622,41.17881],[-74.80631,41.17906],[-74.80624,41.17938],[-74.80609,41.17967],[-74.80607,41.18007],[-74.80613,41.18025],[-74.80601,41.18051],[-74.80608,41.18071],[-74.80589,41.18091],[-74.80541,41.18114],[-74.80528,41.18127],[-74.80477,41.18147],[-74.80451,41.18178],[-74.80452,41.18214],[-74.80351,41.18305],[-74.80347,41.18334],[-74.80332,41.18358],[-74.80322,41.18428],[-74.80328,41.1849],[-74.80354,41.18514],[-74.80357,41.18536],[-74.80369,41.1855],[-74.80361,41.18554],[-74.80377,41.18573]]],"ladder":[[[-74.81378,41.16112],[-74.81395,41.16131],[-74.81455,41.16172],[-74.81472,41.16207],[-74.815,41.16234],[-74.81612,41.16302],[-74.81666,41.16362],[-74.81698,41.16408],[-74.8173,41.16424],[-74.81759,41.16493],[-74.81775,41.16507]]],"cemetery":[[[-74.8625,41.15569],[-74.86323,41.15532],[-74.86351,41.15526],[-74.86412,41.15546],[-74.86461,41.15551],[-74.86491,41.15547],[-74.86546,41.15506],[-74.86635,41.15508],[-74.86678,41.15522],[-74.86727,41.15527],[-74.86773,41.15553],[-74.8681,41.15559],[-74.86836,41.15553],[-74.86846,41.15567],[-74.86906,41.15592],[-74.86913,41.15604],[-74.86954,41.1562],[-74.86981,41.15618],[-74.87011,41.15625]]],"tillman-ravine":[[[-74.85783,41.1579],[-74.85826,41.15766],[-74.85833,41.1573],[-74.85882,41.15689],[-74.85928,41.15682],[-74.85993,41.15657],[-74.86047,41.15667],[-74.86097,41.15652],[-74.86162,41.15613],[-74.86197,41.15583],[-74.8625,41.15569]],[[-74.86229,41.15686],[-74.86239,41.15673],[-74.86225,41.15654],[-74.86229,41.15636],[-74.86255,41.15616],[-74.8625,41.15569]],[[-74.86047,41.15667],[-74.86004,41.15685],[-74.85938,41.1575],[-74.85918,41.15758],[-74.85904,41.1578],[-74.85872,41.15793],[-74.85852,41.15815]]],"geology":[[[-74.74019,41.21149],[-74.74,41.21154],[-74.73979,41.21175],[-74.73985,41.21189],[-74.7398,41.21194],[-74.73959,41.21196],[-74.73977,41.21207],[-74.73969,41.21237],[-74.73946,41.21248],[-74.73942,41.21261],[-74.7396,41.21279],[-74.73955,41.21286],[-74.73887,41.21312],[-74.7379,41.21365],[-74.73772,41.21393],[-74.73745,41.21418],[-74.73741,41.21431],[-74.73711,41.21449],[-74.73694,41.21479],[-74.73675,41.21494],[-74.73651,41.2148],[-74.73651,41.21472],[-74.73665,41.21459],[-74.73667,41.21422],[-74.73631,41.21373],[-74.7363,41.21337],[-74.73601,41.21311],[-74.73625,41.21295],[-74.73676,41.2129],[-74.73684,41.21283],[-74.73686,41.2127],[-74.73708,41.21262],[-74.73722,41.21236],[-74.73727,41.21192],[-74.73691,41.2115],[-74.73647,41.21145],[-74.73631,41.21102]]],"stoll":[[[-74.84132,41.1692],[-74.84098,41.16914],[-74.84026,41.16918],[-74.83905,41.16976],[-74.83872,41.17015],[-74.83873,41.1705],[-74.83826,41.17079],[-74.83786,41.17081],[-74.83692,41.17105],[-74.8364,41.17179],[-74.83599,41.17221],[-74.83525,41.17252],[-74.8352,41.17273],[-74.83495,41.17304],[-74.83495,41.17319],[-74.8348,41.17339],[-74.83438,41.17364],[-74.83423,41.17395],[-74.83397,41.1742],[-74.83382,41.17508]]]},"water":[{"n":"","p":[[-74.74112,41.24072],[-74.74105,41.24053],[-74.73895,41.23961],[-74.73734,41.23908],[-74.73676,41.23896],[-74.73635,41.23905],[-74.73487,41.239],[-74.73438,41.23925],[-74.73483,41.23893],[-74.73448,41.2389],[-74.73448,41.23875],[-74.73368,41.2386],[-74.7357,41.23872],[-74.73575,41.23895],[-74.73643,41.23899],[-74.73663,41.23888],[-74.73734,41.23899],[-74.73879,41.23943],[-74.74145,41.2406],[-74.74167,41.24053],[-74.74196,41.24019],[-74.74199,41.23929],[-74.74221,41.2391],[-74.74258,41.23907],[-74.74284,41.23842],[-74.74324,41.23802],[-74.74406,41.23789],[-74.74458,41.23741],[-74.74588,41.23677],[-74.7468,41.23543],[-74.74702,41.2346],[-74.74824,41.23358],[-74.74844,41.23326],[-74.74879,41.23324],[-74.74935,41.23291],[-74.7496,41.23245],[-74.75,41.23233],[-74.75061,41.23244],[-74.75093,41.23232],[-74.75077,41.23195],[-74.75117,41.23192],[-74.7513,41.2315],[-74.75108,41.23103],[-74.75128,41.23089],[-74.75194,41.23084],[-74.75219,41.23023],[-74.75258,41.22992],[-74.75303,41.22918],[-74.75413,41.22827],[-74.75451,41.22813],[-74.75546,41.22812],[-74.75599,41.22855],[-74.75677,41.22875],[-74.75729,41.22843],[-74.75755,41.2281],[-74.75754,41.22737],[-74.75777,41.22704],[-74.75853,41.22641],[-74.75995,41.22608],[-74.76045,41.22542],[-74.75998,41.22616],[-74.75869,41.22646],[-74.75787,41.22711],[-74.75766,41.22747],[-74.75766,41.22812],[-74.75712,41.22869],[-74.75675,41.22887],[-74.75633,41.22884],[-74.75536,41.22821],[-74.75425,41.22834],[-74.75333,41.22908],[-74.75272,41.23],[-74.7524,41.23019],[-74.75214,41.23091],[-74.75168,41.23112],[-74.75135,41.23193],[-74.75099,41.2324],[-74.75049,41.23258],[-74.75,41.23245],[-74.74937,41.23307],[-74.74891,41.23334],[-74.74854,41.23339],[-74.74836,41.23368],[-74.74706,41.23478],[-74.74699,41.23546],[-74.74592,41.23696],[-74.74472,41.23745],[-74.74411,41.23796],[-74.74328,41.23814],[-74.74264,41.23914],[-74.74215,41.23928],[-74.74194,41.24046],[-74.74166,41.24069],[-74.74112,41.24072]]},{"n":"","p":[[-74.719,41.23784],[-74.71926,41.23806],[-74.71872,41.2387],[-74.71854,41.23868],[-74.71863,41.23856],[-74.71845,41.2384],[-74.71729,41.23857],[-74.71707,41.23856],[-74.7171,41.23848],[-74.71612,41.23881],[-74.71557,41.23885],[-74.71495,41.23923],[-74.71542,41.23966],[-74.71551,41.2401],[-74.71567,41.24022],[-74.71573,41.24087],[-74.7149,41.24109],[-74.71466,41.24086],[-74.71435,41.24108],[-74.71396,41.24115],[-74.71363,41.24185],[-74.71377,41.24204],[-74.71376,41.24243],[-74.71262,41.24408],[-74.71185,41.24491],[-74.71179,41.24516],[-74.71194,41.24531],[-74.71172,41.2457],[-74.71181,41.24591],[-74.71154,41.24599],[-74.71147,41.24656],[-74.71125,41.24679],[-74.7107,41.24695],[-74.71054,41.24679],[-74.71016,41.24684],[-74.71024,41.24726],[-74.71059,41.24768],[-74.71046,41.24781],[-74.71114,41.24818],[-74.71176,41.24871],[-74.71217,41.24918],[-74.7126,41.24995],[-74.7125,41.24997],[-74.71164,41.24873],[-74.71102,41.24819],[-74.71015,41.24771],[-74.70985,41.24695],[-74.70964,41.2471],[-74.70963,41.24678],[-74.70977,41.24668],[-74.70967,41.24612],[-74.71064,41.24583],[-74.71081,41.24557],[-74.71108,41.24564],[-74.71147,41.24523],[-74.71165,41.24522],[-74.71182,41.2448],[-74.713,41.24342],[-74.71372,41.2423],[-74.71355,41.24196],[-74.71381,41.24114],[-74.71463,41.24077],[-74.71565,41.24064],[-74.71533,41.23966],[-74.71479,41.23936],[-74.71485,41.23919],[-74.71551,41.23878],[-74.71665,41.23855],[-74.71691,41.23842],[-74.71689,41.23828],[-74.71885,41.23838],[-74.71915,41.23809],[-74.719,41.23784]]},{"n":"","p":[[-74.72,41.23766],[-74.72015,41.23726],[-74.72138,41.23704],[-74.72172,41.23745],[-74.72226,41.23758],[-74.72275,41.23737],[-74.72289,41.23699],[-74.72304,41.2371],[-74.72266,41.23811],[-74.72291,41.23868],[-74.72333,41.23898],[-74.72356,41.23936],[-74.72312,41.23969],[-74.72264,41.23956],[-74.72181,41.2402],[-74.72084,41.24058],[-74.72044,41.24103],[-74.72044,41.24139],[-74.72024,41.24175],[-74.71927,41.24284],[-74.71924,41.24298],[-74.71961,41.24319],[-74.72017,41.24393],[-74.7205,41.24481],[-74.72105,41.24453],[-74.72251,41.24502],[-74.72344,41.24509],[-74.72461,41.24479],[-74.72636,41.24365],[-74.72743,41.24324],[-74.72827,41.24272],[-74.72884,41.24187],[-74.729,41.24125],[-74.7305,41.24088],[-74.73099,41.24089],[-74.7318,41.24038],[-74.73186,41.24016],[-74.73221,41.23985],[-74.7325,41.2401],[-74.73104,41.24096],[-74.73018,41.24102],[-74.72912,41.2413],[-74.72895,41.2419],[-74.72849,41.24264],[-74.72769,41.24321],[-74.72657,41.24367],[-74.72471,41.24482],[-74.72394,41.24511],[-74.72328,41.24517],[-74.72248,41.24509],[-74.72109,41.24467],[-74.72047,41.24489],[-74.71978,41.24352],[-74.71922,41.24317],[-74.71925,41.24269],[-74.71998,41.24196],[-74.72032,41.24146],[-74.72038,41.24089],[-74.72071,41.24056],[-74.72184,41.2401],[-74.72262,41.23945],[-74.72323,41.23956],[-74.72346,41.23931],[-74.72281,41.23872],[-74.72259,41.23821],[-74.72257,41.23774],[-74.72152,41.2375],[-74.72122,41.23766],[-74.72079,41.23746],[-74.72022,41.23739],[-74.72,41.23766]]},{"n":"Lake Ashroe","p":[[-74.8111,41.18482],[-74.8113,41.18457],[-74.81204,41.18444],[-74.81262,41.18398],[-74.81307,41.18389],[-74.81332,41.18353],[-74.81311,41.18309],[-74.81329,41.18301],[-74.81349,41.1826],[-74.81397,41.1823],[-74.81348,41.18211],[-74.81353,41.18172],[-74.81371,41.1816],[-74.81434,41.18155],[-74.81447,41.18117],[-74.81434,41.1809],[-74.81442,41.1806],[-74.81415,41.18046],[-74.81417,41.18037],[-74.81477,41.17966],[-74.8163,41.17851],[-74.81701,41.17826],[-74.81759,41.17822],[-74.81778,41.17813],[-74.8178,41.17796],[-74.81836,41.17806],[-74.81869,41.17788],[-74.81885,41.17822],[-74.81926,41.17835],[-74.81977,41.17834],[-74.82007,41.17857],[-74.82052,41.17842],[-74.82061,41.1786],[-74.82013,41.17911],[-74.81993,41.17954],[-74.81875,41.18059],[-74.81811,41.18085],[-74.81782,41.18119],[-74.81677,41.18114],[-74.81629,41.18187],[-74.81574,41.18219],[-74.8153,41.18281],[-74.81495,41.18291],[-74.81426,41.18375],[-74.81368,41.18412],[-74.81352,41.18411],[-74.81332,41.18445],[-74.81247,41.18485],[-74.81123,41.1866],[-74.81061,41.18641],[-74.8109,41.18575],[-74.8109,41.18521],[-74.8111,41.18482]]},{"n":"Kittatinny Lake","p":[[-74.80654,41.17239],[-74.80641,41.17266],[-74.80546,41.1731],[-74.80496,41.17319],[-74.80482,41.17332],[-74.80506,41.17364],[-74.80475,41.17366],[-74.80375,41.17413],[-74.80352,41.17439],[-74.8025,41.175],[-74.80192,41.17556],[-74.80105,41.1761],[-74.80051,41.17625],[-74.79925,41.17715],[-74.79784,41.1784],[-74.79655,41.18018],[-74.79587,41.17984],[-74.79606,41.17955],[-74.79602,41.17843],[-74.79558,41.17765],[-74.79491,41.17791],[-74.79445,41.17831],[-74.794,41.17818],[-74.79302,41.1776],[-74.79343,41.17673],[-74.79432,41.17673],[-74.79484,41.17658],[-74.79551,41.17614],[-74.79628,41.17596],[-74.7978,41.1746],[-74.79863,41.17424],[-74.79859,41.17412],[-74.7988,41.17394],[-74.80068,41.17306],[-74.80123,41.17259],[-74.80357,41.17129],[-74.80423,41.17113],[-74.80514,41.17043],[-74.80614,41.16993],[-74.80626,41.17002],[-74.80621,41.17018],[-74.80654,41.17037],[-74.80724,41.17043],[-74.80737,41.17093],[-74.80751,41.17101],[-74.80734,41.17104],[-74.80684,41.17185],[-74.80688,41.17206],[-74.80654,41.17239]]},{"n":"Lake Wapalanne","p":[[-74.7508,41.2278],[-74.75124,41.22877],[-74.75107,41.22907],[-74.7505,41.22949],[-74.75067,41.2296],[-74.74993,41.22931],[-74.74982,41.22865],[-74.74949,41.22833],[-74.74972,41.22665],[-74.75138,41.2245],[-74.75211,41.22462],[-74.75223,41.22539],[-74.75209,41.22595],[-74.75117,41.22656],[-74.75065,41.22654],[-74.75023,41.22671],[-74.74998,41.22704],[-74.75016,41.22736],[-74.75009,41.22782],[-74.7503,41.22808],[-74.75053,41.22807],[-74.7508,41.2278]]},{"n":"Lake Shawanni","p":[[-74.84676,41.16854],[-74.84617,41.16843],[-74.84575,41.16936],[-74.84504,41.16959],[-74.8448,41.16991],[-74.84423,41.17015],[-74.84416,41.17038],[-74.84392,41.17023],[-74.84323,41.17016],[-74.8431,41.16947],[-74.84266,41.16988],[-74.8428,41.16968],[-74.84269,41.16936],[-74.84305,41.16925],[-74.84308,41.16904],[-74.84464,41.16864],[-74.84476,41.16872],[-74.84594,41.16824],[-74.84679,41.16846],[-74.84676,41.16854]]},{"n":"","p":[[-74.79371,41.19664],[-74.79389,41.19661],[-74.79434,41.19685],[-74.79441,41.1975],[-74.79414,41.19755],[-74.7937,41.19806],[-74.79266,41.19876],[-74.79301,41.1983],[-74.79278,41.19817],[-74.79088,41.1977],[-74.78946,41.19772],[-74.79051,41.19734],[-74.79121,41.19689],[-74.79202,41.19703],[-74.79255,41.19686],[-74.79309,41.19647],[-74.79354,41.19669],[-74.79371,41.19664]]},{"n":"Deer Lake","p":[[-74.82776,41.17727],[-74.82802,41.17782],[-74.82771,41.178],[-74.82717,41.17803],[-74.82655,41.17793],[-74.82486,41.17798],[-74.82447,41.17728],[-74.82484,41.17689],[-74.82577,41.17691],[-74.82698,41.17719],[-74.82739,41.17712],[-74.82776,41.17727]]},{"n":"Shotwell Pond","p":[[-74.79599,41.20176],[-74.79583,41.20195],[-74.79565,41.20263],[-74.79582,41.20302],[-74.79616,41.20301],[-74.79622,41.20285],[-74.79617,41.20211],[-74.79599,41.20176]]},{"n":"","p":[[-74.79704,41.20947],[-74.79769,41.20993],[-74.79667,41.2104],[-74.79571,41.21051],[-74.79565,41.21024],[-74.79628,41.20999],[-74.79704,41.20947]]},{"n":"","p":[[-74.79288,41.18262],[-74.79308,41.18246],[-74.79282,41.18227],[-74.79259,41.1823],[-74.79262,41.18249],[-74.79288,41.18262]]},{"n":"","p":[[-74.78983,41.17659],[-74.78967,41.17666],[-74.78966,41.17688],[-74.7901,41.17707],[-74.79015,41.17673],[-74.78983,41.17659]]},{"n":"","p":[[-74.73932,41.21241],[-74.73878,41.21272],[-74.73898,41.21302],[-74.73944,41.21277],[-74.73921,41.2127],[-74.73932,41.21241]]},{"n":"","p":[[-74.78049,41.214],[-74.78008,41.21408],[-74.78051,41.21424],[-74.78061,41.21402],[-74.78049,41.214]]},{"n":"","p":[[-74.73831,41.213],[-74.73834,41.21328],[-74.73844,41.21324],[-74.7384,41.21298],[-74.73831,41.213]]},{"n":"","p":[[-74.73793,41.21305],[-74.73783,41.21317],[-74.73796,41.21324],[-74.73805,41.21308],[-74.73793,41.21305]]},{"n":"","p":[[-74.77636,41.21243],[-74.77618,41.21239],[-74.77649,41.21252],[-74.77636,41.21243]]},{"n":"","p":[[-74.78922,41.1772],[-74.78947,41.17727],[-74.7894,41.17716],[-74.78922,41.1772]]},{"n":"","p":[[-74.73755,41.21246],[-74.73754,41.21263],[-74.73769,41.21246],[-74.73755,41.21246]]},{"n":"","p":[[-74.73781,41.2119],[-74.73772,41.21205],[-74.73781,41.21216],[-74.73781,41.2119]]},{"n":"","p":[[-74.73825,41.2117],[-74.73831,41.21194],[-74.73841,41.21187],[-74.73825,41.2117]]},{"n":"","p":[[-74.73945,41.21212],[-74.7394,41.21227],[-74.7396,41.2122],[-74.73945,41.21212]]},{"n":"","p":[[-74.73997,41.21208],[-74.7399,41.21219],[-74.74008,41.21224],[-74.73997,41.21208]]},{"n":"","p":[[-74.73656,41.21263],[-74.7364,41.21279],[-74.73656,41.21263]]},{"n":"","p":[[-74.7374,41.21235],[-74.73761,41.21227],[-74.7374,41.21235]]},{"n":"","p":[[-74.73877,41.21153],[-74.73886,41.21148],[-74.73877,41.21153]]},{"n":"","p":[[-74.73876,41.21163],[-74.73886,41.21176],[-74.73876,41.21163]]}],"marks":[{"n":"Sunrise Mountain","t":"peak","p":[-74.72033,41.21821]},{"n":"Culver Fire Tower","t":"tower","p":[-74.76647,41.18793]},{"n":"Forest Office","t":"office","p":[-74.79568,41.18565]}]};
+
+/* ---------------- map (geometry: OpenStreetMap contributors, ODbL) ---------------- */
+function buildMap(){
+  var b=GEO.bbox, mnL=b[0], mnA=b[1], mxL=b[2], mxA=b[3];
+  var k=Math.cos((mnA+mxA)/2*Math.PI/180), W=1000, S=W/((mxL-mnL)*k), H=(mxA-mnA)*S;
+  function px(p){ return [(p[0]-mnL)*k*S, (mxA-p[1])*S] }
+  function pth(pts,close){
+    var d="",q;
+    for(var i=0;i<pts.length;i++){ q=px(pts[i]); d+=(i?"L":"M")+q[0].toFixed(1)+" "+q[1].toFixed(1) }
+    return d+(close?"Z":"");
+  }
+  var s=[];
+  GEO.bnd.forEach(function(r){ if(r.length>8) s.push('<path class="mb" d="'+pth(r,true)+'"/>') });
+  GEO.water.forEach(function(w){ s.push('<path class="mw" d="'+pth(w.p,true)+'"/>') });
+  TRAILS.forEach(function(t){
+    var segs=GEO.trails[t.id]; if(!segs) return;
+    var d=segs.map(function(x){return pth(x,false)}).join(" ");
+    var c=t.c||["#8A8F94"];
+    var g='<g class="mt" data-id="'+t.id+'" tabindex="0" role="button" aria-label="'+esc(t.n)+', '+fmtMi(t.mi)+' miles">';
+    g+='<path class="hit" d="'+d+'"/><path class="ln" style="stroke:'+c[0]+'" d="'+d+'"/>';
+    if(c[1]) g+='<path class="ln alt" style="stroke:'+c[1]+'" d="'+d+'"/>';
+    s.push(g+"</g>");
+  });
+  GEO.marks.forEach(function(m){
+    var q=px(m.p), x=q[0].toFixed(1), y=q[1].toFixed(1);
+    if(m.t==="peak") s.push('<path class="mk" d="M'+x+' '+(q[1]-7).toFixed(1)+'l6 10h-12Z"/>');
+    else if(m.t==="tower") s.push('<rect class="mk" x="'+(q[0]-4).toFixed(1)+'" y="'+(q[1]-4).toFixed(1)+'" width="8" height="8"/>');
+    else s.push('<circle class="mk" cx="'+x+'" cy="'+y+'" r="4"/>');
+    var far=q[0]>W*0.66;
+    s.push('<text class="mk-t"'+(far?' text-anchor="end"':'')+' x="'+(q[0]+(far?-9:9)).toFixed(1)+'" y="'+(q[1]+5).toFixed(1)+'">'+esc(m.n)+'</text>');
+  });
+  var svg=document.getElementById("map");
+  svg.setAttribute("viewBox","0 0 "+W.toFixed(0)+" "+H.toFixed(0));
+  svg.innerHTML=s.join("");
+  wireMap();
+}
+
+function wireMap(){
+  var svg=document.getElementById("map"), tip=document.getElementById("tip");
+  function name(id){ for(var i=0;i<TRAILS.length;i++) if(TRAILS[i].id===id) return TRAILS[i]; }
+  svg.addEventListener("mousemove",function(ev){
+    var g=ev.target.closest(".mt");
+    if(!g){ tip.classList.remove("on"); hot(null); return }
+    var t=name(g.dataset.id); if(!t) return;
+    hot(t.id);
+    var r=svg.getBoundingClientRect(), e=entry(t.id);
+    tip.innerHTML="<b>"+esc(t.n)+"</b> &middot; "+fmtMi(t.mi)+" mi"+(e.grade?" &middot; "+esc(e.grade):"");
+    tip.style.left=(ev.clientX-r.left)+"px"; tip.style.top=(ev.clientY-r.top)+"px";
+    tip.classList.add("on");
+  });
+  svg.addEventListener("mouseleave",function(){ tip.classList.remove("on"); hot(null) });
+  svg.addEventListener("click",function(ev){
+    var g=ev.target.closest(".mt"); if(g) openTrail(g.dataset.id);
+  });
+  svg.addEventListener("keydown",function(ev){
+    if(ev.key!=="Enter"&&ev.key!==" ") return;
+    var g=ev.target.closest(".mt"); if(!g) return;
+    ev.preventDefault(); openTrail(g.dataset.id);
+  });
+}
+
+function hot(id){
+  document.querySelectorAll(".mt").forEach(function(g){ g.classList.toggle("hot", g.dataset.id===id) });
+}
+
+function syncMap(){
+  var n=0;
+  TRAILS.forEach(function(t){
+    var g=document.querySelector('.mt[data-id="'+t.id+'"]'); if(!g) return;
+    var d=entry(t.id).done; if(d) n++;
+    g.classList.toggle("done",d);
+  });
+  var c=document.getElementById("map-count");
+  if(c) c.textContent=n+" of "+TRAILS.length+" walked";
+}
+
+function resetFilters(){
+  filt="all"; dfilt="all";
+  document.querySelectorAll("[data-f]").forEach(function(o){o.setAttribute("aria-pressed",String(o.dataset.f==="all"))});
+  document.querySelectorAll("[data-d]").forEach(function(o){o.setAttribute("aria-pressed",String(o.dataset.d==="all"))});
+}
+
+function openTrail(id){
+  var el=document.querySelector('.trail[data-id="'+id+'"]');
+  if(!el){ resetFilters(); renderList(); el=document.querySelector('.trail[data-id="'+id+'"]') }
+  if(!el) return;
+  el.open=true;
+  el.scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+/* ---------------- boot ---------------- */
+log=loadLocal();
+renderList(); buildMap(); renderStats(); drawContours();
+addEventListener("resize",function(){ clearTimeout(window.__rz); window.__rz=setTimeout(drawContours,150) });
+if(window.matchMedia) try{ matchMedia("(prefers-color-scheme: dark)").addEventListener("change",drawContours) }catch(e){}
+</script>
