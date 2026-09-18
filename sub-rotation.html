@@ -386,6 +386,29 @@
     font: inherit;
     font-size: 16px;
   }
+  .paste-box { margin-top: 10px; }
+  .paste-box summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--blue);
+    font-size: 14px;
+    padding: 6px 0;
+    list-style: none;
+  }
+  .paste-box summary::-webkit-details-marker { display: none; }
+  .paste-box summary::before { content: "▸ "; }
+  .paste-box[open] summary::before { content: "▾ "; }
+  .paste-box textarea {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 16px;
+    line-height: 1.4;
+    resize: vertical;
+    margin-top: 4px;
+  }
   .btn {
     height: 44px;
     padding: 0 16px;
@@ -441,6 +464,12 @@
     <input type="text" id="add-name" placeholder="Add a player…" autocomplete="off" autocapitalize="words">
     <button class="btn" id="btn-add">Add</button>
   </div>
+  <details class="paste-box" id="paste-box">
+    <summary>Paste a whole list</summary>
+    <textarea id="paste-names" rows="3" autocapitalize="words"
+      placeholder="Abel Andrew Anthony …&#10;Separate names with spaces, commas, or one per line"></textarea>
+    <button class="btn block" id="btn-add-all">Add all</button>
+  </details>
   <p class="hint">Tap a name to mark them out for today. ✕ removes them from the roster for good.</p>
 
   <h3>Players on the pitch</h3>
@@ -452,6 +481,7 @@
   <h3>Game</h3>
   <p class="stat-line" id="game-stat"></p>
   <button class="btn secondary block" id="btn-reset-game">↺ New game — reset clock, times &amp; score</button>
+  <button class="btn danger block" id="btn-clear-roster">Clear the roster — set up a different team</button>
   <button class="btn danger block" id="btn-reset-all">Reset everything to the default roster</button>
   <button class="btn block" id="btn-close">Done</button>
 </div>
@@ -680,18 +710,61 @@
       if (p.present) S.order = S.order.filter(x => x !== id).concat(id);
     });
   }
-  function addPlayer(name) {
-    name = String(name || '').trim();
-    if (!name) return;
-    if (S.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-      showToast(`${name} is already on the roster`, false);
-      return;
-    }
-    const id = 'p' + Date.now().toString(36);
-    change(`${name} added`, () => {
-      S.players.push({ id, name, present: true, played: 0, changedAt: now(), goals: 0 });
-      S.order.push(id);
+  // Ids only need to be unique within this roster; re-roll on the rare clash.
+  function newId() {
+    let id;
+    do { id = 'p' + Math.random().toString(36).slice(2, 8); }
+    while (S.players.some(p => p.id === id));
+    return id;
+  }
+  // Names separated by whitespace, commas, or semicolons — one token per player.
+  function parseNames(text) {
+    return String(text || '').split(/[\s,;]+/).map(n => n.trim()).filter(Boolean);
+  }
+  // Adds every name not already on the roster (case-insensitive), as one
+  // undoable change. Returns how many were added and skipped.
+  function addPlayers(names) {
+    const seen = new Set(S.players.map(p => p.name.toLowerCase()));
+    const fresh = [];
+    let skipped = 0;
+    names.forEach(n => {
+      const k = n.toLowerCase();
+      if (seen.has(k)) { skipped++; return; }
+      seen.add(k);
+      fresh.push(n);
     });
+    if (!fresh.length) {
+      showToast(skipped ? (skipped === 1 && names.length === 1
+        ? `${names[0]} is already on the roster` : 'All of those are already on the roster') : 'No names found', false);
+      return { added: 0, skipped };
+    }
+    const t = now();
+    const label = fresh.length === 1
+      ? `${fresh[0]} added`
+      : `${fresh.length} players added${skipped ? ` · ${skipped} duplicate${skipped === 1 ? '' : 's'} skipped` : ''}`;
+    change(label, () => {
+      fresh.forEach(name => {
+        const id = newId();
+        S.players.push({ id, name, present: true, played: 0, changedAt: t, goals: 0 });
+        S.order.push(id);
+      });
+    });
+    return { added: fresh.length, skipped };
+  }
+  function addPlayer(name) {
+    const names = parseNames(name);
+    if (names.length) addPlayers(names);
+  }
+  // Empty the team entirely so a different coach can set up their own roster.
+  function clearRoster() {
+    if (!confirm('Clear the whole roster?\n\nRemoves every player, the goalie, and the current game. Use this to set up a different team.')) return;
+    const pitchSize = S.pitchSize;
+    S = { ...freshState(), players: [], order: [], pitchSize };
+    undoSnapshot = null;
+    save();
+    releaseWake();
+    render();
+    showToast('Roster cleared — add your players', false);
   }
   function removePlayer(id) {
     const p = byId(id);
@@ -853,6 +926,10 @@
     const open = slots - onPitch.length;
     const full = open <= 0;
 
+    if (!S.players.length) {
+      list.innerHTML = '<div class="empty">No players yet.<br>Tap ⚙ to add your team — you can paste a whole list.</div>';
+      return;
+    }
     if (!q.length && !gk) {
       list.innerHTML = '<div class="empty">Nobody\'s marked as here today.<br>Tap ⚙ to set up the roster.</div>';
       return;
@@ -954,6 +1031,18 @@
   document.getElementById('btn-close').addEventListener('click', closeSheet);
   document.getElementById('btn-reset-game').addEventListener('click', resetGame);
   document.getElementById('btn-reset-all').addEventListener('click', resetAll);
+  document.getElementById('btn-clear-roster').addEventListener('click', clearRoster);
+
+  const pasteBox = document.getElementById('paste-names');
+  const addAllBtn = document.getElementById('btn-add-all');
+  pasteBox.addEventListener('input', () => {
+    const n = parseNames(pasteBox.value).length;
+    addAllBtn.textContent = n ? `Add ${n} name${n === 1 ? '' : 's'}` : 'Add all';
+  });
+  addAllBtn.addEventListener('click', () => {
+    const r = addPlayers(parseNames(pasteBox.value));
+    if (r.added) { pasteBox.value = ''; addAllBtn.textContent = 'Add all'; }
+  });
   document.getElementById('pitch-minus').addEventListener('click', () => setPitchSize(S.pitchSize - 1));
   document.getElementById('pitch-plus').addEventListener('click', () => setPitchSize(S.pitchSize + 1));
 
@@ -976,7 +1065,7 @@
   if (S.runningSince) requestWake();
 
   // Exposed for testing only.
-  window.__subs = { state: () => S, now, statusOf, subOut, subIn, move, goal, setGoalie, togglePresent, toggleClock };
+  window.__subs = { state: () => S, now, statusOf, subOut, subIn, move, goal, setGoalie, togglePresent, toggleClock, parseNames, addPlayers, clearRoster };
 })();
 </script>
 </body>
