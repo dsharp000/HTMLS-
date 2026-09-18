@@ -561,10 +561,12 @@
     opts = opts || {};
     const t = now();
     const before = statusMap();
+    const wasFull = pitchFull();
     undoSnapshot = JSON.stringify(S);
     mutate();
     clampLineup();
     const after = statusMap();
+    const justFilled = !wasFull && pitchFull() && S.lineup > 0;
     S.players.forEach(p => {
       if (before[p.id] === after[p.id]) return;
       if (isPlaying(before[p.id])) p.played = (p.played || 0) + stintOf(p, t);
@@ -572,7 +574,12 @@
     });
     save();
     render();
-    if (label) showToast(label, !opts.noUndo);
+    if (justFilled) {
+      const n = S.lineup + (gkPlayer() ? 1 : 0);
+      showToast(`✅ ${label ? label + ' — ' : ''}that's ${n} on. Lineup set!`, !opts.noUndo);
+    } else if (label) {
+      showToast(label, !opts.noUndo);
+    }
   }
 
   function undo() {
@@ -616,11 +623,13 @@
       });
       return;
     }
-    // Pitch is full: take the last slot and send whoever had it to the bottom.
-    const leaving = q[S.lineup - 1];
+    // Pitch is full: the player at the top of the pitch list comes off (to the
+    // bottom of the bench) and the newcomer joins at the bottom of the pitch
+    // list — the same direction OUT rotates, so the list always cycles one way.
+    const leaving = q[0];
     if (!leaving) return;
     change(`${p.name} on · ${leaving.name} off`, () => {
-      const placed = placeAfter(S.order.filter(x => x !== leaving.id), id, q[S.lineup - 2]);
+      const placed = placeAfter(S.order.filter(x => x !== leaving.id), id, q[S.lineup - 1]);
       S.order = placed.concat(leaving.id);
     });
   }
@@ -727,13 +736,14 @@
     S.runningSince = null;
     S.them = 0;
     S.lineup = 0;
+    S.gk = null;
     S.players.forEach(p => { p.played = 0; p.changedAt = 0; p.goals = 0; });
     undoSnapshot = null;
     save();
     releaseWake();
     render();
     closeSheet();
-    showToast('New game — everyone\'s on the bench, pick your starters', false);
+    showToast('New game — pick a goalie and your starters', false);
   }
   function resetAll() {
     if (!confirm('Reset EVERYTHING?\n\nRoster goes back to the default list and all times and scores are cleared.')) return;
@@ -849,7 +859,7 @@
     }
 
     let html = `<div class="divider pitch">On the pitch · ${onPitch.length + (gk ? 1 : 0)} of ${S.pitchSize}` +
-               `${open > 0 && bench.length ? ` · pick ${Math.min(open, bench.length)} more` : ''}</div>`;
+               `${open > 0 && bench.length ? ` · pick ${Math.min(open, bench.length)} more` : full ? ' ✓' : ''}</div>`;
     if (gk) html += rowHtml(gk, 'gk', t, {});
     html += onPitch.map(p => rowHtml(p, 'on', t, {})).join('');
     if (!onPitch.length && !gk) {
