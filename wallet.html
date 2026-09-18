@@ -1,0 +1,2018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Wallet Rewards Tracker</title>
+<meta name="description" content="Track every credit, reward and perk across the cards in your wallet — Sapphire Reserve, Blue Cash Preferred, Costco Executive, American and United — against what each one costs you." />
+<meta name="theme-color" content="#F1F3F8" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#0A1220" media="(prefers-color-scheme: dark)" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Wallet" />
+<link rel="icon" href="sapphire-icon-32.png" sizes="32x32" />
+<link rel="icon" href="sapphire-icon-180.png" sizes="180x180" />
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+<style>
+  :root{
+    --ink:#0B1424; --ink-2:#4B5769; --ink-3:#8B96A8; --dead:#B4BCC9;
+    --paper:#F1F3F8; --card:#FFFFFF; --line:#DDE3ED; --hair:#EEF1F6;
+    /* per-card theme — overwritten from script when the wallet switches cards */
+    --accent:#1E3FBF; --accent-2:#3B6BE8; --accent-soft:#E7EDFC; --accent-ink:#16308F;
+    --punch-1:#1E3FBF; --punch-2:#3B6BE8; --punch-3:#16308F;
+    --claimed:#176B50; --claimed-soft:#E3F3ED;
+    --warn:#8A5A0B; --warn-soft:#FDF4E3; --warn-line:#EFDCB4;
+    --gold:#D9B65F;
+    --shadow:0 1px 2px rgba(11,20,36,.05), 0 8px 24px -14px rgba(11,20,36,.22);
+    --card-1:#04091A; --card-2:#0C1E45; --card-3:#1A3894; --card-4:#0A1732;
+    --face-hi:rgba(122,156,255,.42);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ink:#E9EDF5; --ink-2:#A7B2C4; --ink-3:#7A8698; --dead:#4E5A6E;
+      --paper:#0A1220; --card:#131D30; --line:#243247; --hair:#1B2739;
+      --accent:#7A9CFF; --accent-2:#9FB8FF; --accent-soft:#1A2748; --accent-ink:#AFC4FF;
+      --claimed:#48CCA1; --claimed-soft:#12302A;
+      --warn:#E3B76A; --warn-soft:#241E12; --warn-line:#3D3220;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 28px -16px rgba(0,0,0,.7);
+    }
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+  html,body{ margin:0; background:var(--paper); }
+  body{
+    color:var(--ink); padding:24px 16px 64px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  .wrap{ max-width:740px; margin:0 auto; }
+  ::selection{ background:var(--accent); color:#fff; }
+
+  .num{ font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+  .eyebrow{ font-size:10.5px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin:0; }
+
+  /* ── masthead ─────────────────────────────────────────────── */
+  .brand{ display:flex; align-items:center; gap:13px; margin-bottom:16px; }
+  .brand .eyebrow{ font-size:12.5px; letter-spacing:.14em; color:var(--ink-2); }
+  .mark{ flex:none; width:38px; height:38px; display:block;
+    filter:drop-shadow(0 4px 10px rgba(11,20,36,.28)); }
+  .brand h1{ font-size:26px; font-weight:800; letter-spacing:-.035em; margin:3px 0 0; line-height:1.1; }
+  .brand .signin{ margin-left:auto; flex:none; }
+
+  /* ── card switcher ────────────────────────────────────────── */
+  .cardbar{ display:flex; gap:8px; margin-bottom:16px; padding:2px 2px 8px;
+    overflow-x:auto; scrollbar-width:thin; -webkit-overflow-scrolling:touch; }
+  .cardtab{ flex:none; display:inline-flex; align-items:center; gap:8px; white-space:nowrap;
+    font:inherit; font-size:12.5px; font-weight:650; letter-spacing:-.01em; cursor:pointer;
+    padding:8px 14px; border:1px solid var(--line); border-radius:999px;
+    background:var(--card); color:var(--ink-2);
+    transition:border-color .15s,color .15s,background .15s; }
+  .cardtab:hover{ border-color:var(--tab); color:var(--ink); }
+  .cardtab[aria-selected="true"]{ border-color:var(--tab); color:var(--ink);
+    background:var(--card); box-shadow:inset 0 0 0 1px var(--tab); }
+  .swatch{ flex:none; width:11px; height:14px; border-radius:3px; background:var(--tab);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.4); }
+  .cardtab .mini{ font-size:10.5px; font-weight:700; color:var(--ink-3); }
+  .cardtab[aria-selected="true"] .mini{ color:var(--tab-ink); }
+
+  /* ── the card face ────────────────────────────────────────── */
+  .cardface{
+    position:relative; overflow:hidden; isolation:isolate;
+    border-radius:18px; padding:20px 22px 18px; color:#fff;
+    background:
+      radial-gradient(120% 90% at 88% -10%, var(--face-hi) 0%, transparent 55%),
+      radial-gradient(90% 80% at 6% 108%, rgba(6,14,32,.85) 0%, transparent 60%),
+      linear-gradient(134deg, var(--card-1) 0%, var(--card-2) 36%, var(--card-3) 68%, var(--card-4) 100%);
+    border:1px solid rgba(255,255,255,.14);
+    box-shadow:0 22px 44px -22px rgba(6,17,45,.8), inset 0 1px 0 rgba(255,255,255,.22);
+  }
+  .cardface::before{
+    content:''; position:absolute; inset:0; z-index:-1; pointer-events:none;
+    background:repeating-linear-gradient(102deg, rgba(255,255,255,.030) 0 1px, transparent 1px 4px);
+    mix-blend-mode:overlay;
+  }
+  .cardface::after{
+    content:''; position:absolute; top:-60%; bottom:-60%; width:38%; z-index:-1; pointer-events:none;
+    background:linear-gradient(100deg, transparent, rgba(255,255,255,.16), transparent);
+    transform:skewX(-16deg); left:-45%; animation:sweep 1.5s .2s ease-out 1 both;
+  }
+  @keyframes sweep{ from{ left:-45%; } to{ left:120%; } }
+
+  .cf-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+  .cf-cap{ font-size:10px; font-weight:700; letter-spacing:.2em; text-transform:uppercase;
+    color:rgba(255,255,255,.6); margin:0; }
+  .chip{ width:34px; height:26px; border-radius:6px; flex:none;
+    background:linear-gradient(150deg,#F0DCA0,var(--gold) 45%,#9C7C2E);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.6), inset 0 -1px 0 rgba(0,0,0,.25);
+    position:relative; opacity:.92; }
+  .chip::before, .chip::after{ content:''; position:absolute; left:5px; right:5px; height:1px;
+    background:rgba(74,56,12,.45); }
+  .chip::before{ top:9px; } .chip::after{ top:16px; }
+
+  .big{ font-size:46px; font-weight:750; line-height:1; letter-spacing:-.04em;
+    text-shadow:0 2px 18px rgba(0,0,0,.35); }
+  .of{ font-size:12.5px; color:rgba(255,255,255,.66); margin:9px 0 0; }
+  .of .num{ color:rgba(255,255,255,.9); }
+
+  .bar{ position:relative; height:28px; border-radius:9px; margin-top:18px; overflow:hidden;
+    background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.16);
+    box-shadow:inset 0 2px 5px rgba(0,0,0,.28); }
+  .fill{ position:absolute; top:0; bottom:0; left:0; width:0; border-radius:8px 0 0 8px;
+    background:linear-gradient(180deg,#8FAEFF,#4E74EC 55%,#2B4BC4);
+    box-shadow:0 0 18px rgba(120,155,255,.45), inset 0 1px 0 rgba(255,255,255,.35);
+    transition:width .5s cubic-bezier(.22,.9,.3,1); }
+  .fill.paid{ background:linear-gradient(180deg,#4FD0A3,#1E9E77 55%,#137256);
+    box-shadow:0 0 18px rgba(79,208,163,.5), inset 0 1px 0 rgba(255,255,255,.35); }
+  .tick{ position:absolute; top:-4px; bottom:-4px; width:2px; z-index:2;
+    background:linear-gradient(180deg,#FFF,rgba(255,255,255,.35)); box-shadow:0 0 8px rgba(0,0,0,.5); }
+  .ticklab{ display:flex; justify-content:space-between; margin-top:8px; font-size:10.5px;
+    color:rgba(255,255,255,.5); letter-spacing:.02em; gap:10px; }
+  .verdict{ margin:14px 0 0; font-size:13px; font-weight:650; color:#F2CE8B; letter-spacing:-.01em; }
+  .verdict.paid{ color:#79E7BE; }
+
+  .field{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px;
+    padding-top:13px; border-top:1px solid rgba(255,255,255,.14);
+    font-size:12px; color:rgba(255,255,255,.6); }
+  .field label{ font-weight:650; color:rgba(255,255,255,.92); letter-spacing:.01em; }
+  .field input{ font:inherit; font-size:12.5px; padding:7px 10px; border-radius:8px; color-scheme:dark;
+    border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.10); color:#fff; }
+  .field input.money{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-variant-numeric:tabular-nums; width:96px; }
+  .reset-note{ color:#F2CE8B; font-weight:650; }
+
+  .switch{ display:inline-flex; align-items:center; gap:9px; font:inherit; font-size:12.5px;
+    font-weight:650; color:rgba(255,255,255,.92); background:none; border:none; padding:0;
+    cursor:pointer; letter-spacing:.01em; }
+  .track{ position:relative; flex:none; width:38px; height:22px; border-radius:999px;
+    background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.24);
+    transition:background .18s,border-color .18s; }
+  .knob{ position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%;
+    background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.45); transition:transform .18s; }
+  .switch[aria-checked="true"] .track{ background:rgba(255,255,255,.45); border-color:rgba(255,255,255,.7); }
+  .switch[aria-checked="true"] .knob{ transform:translateX(16px); }
+  .switch:hover .track{ border-color:rgba(255,255,255,.5); }
+  .switch-note{ font-size:11.5px; color:rgba(255,255,255,.55); flex:1 1 200px; }
+
+  /* ── panels ───────────────────────────────────────────────── */
+  .panel{ position:relative; overflow:hidden; background:var(--card); border:1px solid var(--line);
+    border-radius:14px; padding:17px 19px; margin-top:12px; box-shadow:var(--shadow); }
+  .panel::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:linear-gradient(180deg,var(--accent-2),var(--accent)); }
+  .panel-note{ font-size:12px; line-height:1.55; color:var(--ink-2); margin:14px 0 0;
+    padding-top:12px; border-top:1px solid var(--hair); }
+
+  .risk::before{ background:linear-gradient(180deg,#E9B65C,#C58A1E); }
+  .risk.clear::before{ background:linear-gradient(180deg,var(--claimed),var(--claimed)); }
+  .risk.later::before{ background:linear-gradient(180deg,var(--accent-2),var(--accent)); }
+  .risk.later .risk-head .eyebrow, .risk.later .risk-total{ color:var(--ink-2); }
+  .risk.later .risk-when{ color:var(--ink-2); background:var(--paper); border-color:var(--line); }
+  .risk-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  .risk-head .eyebrow{ color:var(--warn); }
+  .risk.clear .risk-head .eyebrow{ color:var(--claimed); }
+  .risk-total{ font-size:15px; font-weight:750; color:var(--warn); letter-spacing:-.02em; }
+  .risk-list{ list-style:none; margin:11px 0 0; padding:0; }
+  .risk-list li{ display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+    font-size:13px; padding:8px 0; border-top:1px solid var(--hair); }
+  .risk-list li:first-child{ border-top:none; padding-top:2px; }
+  .risk-what{ font-weight:650; letter-spacing:-.01em; }
+  .risk-when{ font-size:11.5px; font-weight:700; color:var(--warn); white-space:nowrap;
+    background:var(--warn-soft); border:1px solid var(--warn-line); border-radius:999px; padding:3px 9px; }
+  .risk-when.soon{ color:#A32B1C; background:#FDECE9; border-color:#F3CFC8; }
+  .risk-none{ font-size:13px; color:var(--ink-2); margin:8px 0 0; }
+  .risk-more{ font:inherit; font-size:12.5px; font-weight:650; color:var(--ink-2); cursor:pointer;
+    margin:10px 0 0; padding:6px 0 0; background:none; border:none; border-top:1px solid var(--hair);
+    width:100%; text-align:left; letter-spacing:-.01em; transition:color .15s; }
+  .risk-more:hover{ color:var(--accent); }
+  .risk-more::after{ content:' ▾'; font-size:10px; vertical-align:1px; }
+  .risk-more[aria-expanded="true"]::after{ content:' ▴'; }
+  .risk-when.far{ color:var(--ink-2); background:var(--paper); border-color:var(--line); }
+  @media (prefers-color-scheme:dark){
+    .risk-when.soon{ color:#FF9C8B; background:#301A16; border-color:#4A2620; }
+  }
+
+  .points-row{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-top:13px; }
+  .points input{ font:inherit; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-variant-numeric:tabular-nums; font-size:20px; font-weight:700; width:190px; padding:10px 12px;
+    border:1px solid var(--line); border-radius:10px; background:var(--paper); color:var(--ink); }
+  .points input:hover{ border-color:var(--accent); }
+  .points-out{ text-align:right; }
+  .points-out .amt{ font-size:33px; font-weight:750; line-height:1; color:var(--accent);
+    letter-spacing:-.035em; }
+  .points-out .cap{ font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--ink-3); margin-bottom:7px; }
+  .fieldlab{ font-size:11px; color:var(--ink-3); display:block; margin:0 0 7px; }
+
+  /* ── spend / earn ─────────────────────────────────────────── */
+  .earn{ list-style:none; margin:13px 0 0; padding:0; }
+  .earn li{ padding:12px 0; border-top:1px solid var(--hair); }
+  .earn li:first-child{ border-top:none; padding-top:2px; }
+  .earn-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .earn-name{ font-size:13.5px; font-weight:700; letter-spacing:-.01em; flex:1 1 150px; }
+  .earn-rate{ font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+    padding:3px 8px; border-radius:999px; background:var(--accent-soft); color:var(--accent-ink);
+    border:1px solid var(--accent); margin-left:8px; vertical-align:1px; }
+  .earn-in{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--ink-3); }
+  .earn-in input{ font:inherit; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-variant-numeric:tabular-nums; font-size:14px; font-weight:650; width:118px; padding:8px 10px;
+    border:1px solid var(--line); border-radius:9px; background:var(--paper); color:var(--ink); }
+  .earn-in input:hover{ border-color:var(--accent); }
+  .earn-out{ font-size:15px; font-weight:750; color:var(--accent); letter-spacing:-.02em;
+    min-width:86px; text-align:right; }
+  .earn-out span{ display:block; font-size:10.5px; font-weight:650; color:var(--ink-3); letter-spacing:0; }
+  .earn-note{ font-size:11.5px; line-height:1.5; color:var(--ink-3); margin:7px 0 0; }
+  .capbar{ position:relative; height:6px; border-radius:99px; background:var(--hair); margin-top:9px; overflow:hidden; }
+  .capbar i{ position:absolute; inset:0 auto 0 0; width:0; border-radius:99px;
+    background:linear-gradient(90deg,var(--accent-2),var(--accent)); transition:width .35s ease; }
+  .capbar.full i{ background:linear-gradient(90deg,#E9B65C,#C58A1E); }
+  .earn-sum{ display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+    margin-top:14px; padding-top:13px; border-top:1px solid var(--line); }
+  .earn-sum b{ font-size:22px; font-weight:750; letter-spacing:-.03em; color:var(--accent); }
+
+  /* ── usage counters ───────────────────────────────────────── */
+  .use{ padding:14px 0; border-top:1px solid var(--hair); }
+  .use:first-of-type{ border-top:none; padding-top:4px; }
+  .use-top{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+  .use-name{ font-size:14px; font-weight:700; letter-spacing:-.02em; flex:1 1 160px; }
+  .use-name span{ display:block; font-size:11.5px; font-weight:600; color:var(--ink-3); margin-top:3px; line-height:1.45; }
+  .stepper{ display:flex; align-items:center; gap:12px; }
+  .step{ flex:none; width:42px; height:42px; font:inherit; font-size:21px; font-weight:700; line-height:1;
+    display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer;
+    border:1px solid var(--line); border-radius:12px; background:var(--paper); color:var(--ink-2);
+    transition:background .15s,color .15s,border-color .15s,transform .1s; }
+  .step:hover{ border-color:var(--accent); color:var(--accent); }
+  .step:active{ transform:scale(.9); }
+  .step:disabled{ opacity:.35; cursor:not-allowed; }
+  .step:disabled:hover{ border-color:var(--line); color:var(--ink-2); }
+  .use-count{ font-size:30px; font-weight:750; line-height:1; letter-spacing:-.035em;
+    min-width:2ch; text-align:center; }
+  .use-val{ text-align:right; min-width:84px; }
+  .use-val b{ display:block; font-size:19px; font-weight:750; letter-spacing:-.03em; color:var(--accent); }
+  .use-val span{ font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+  .use-off b{ color:var(--ink-3); }
+  .use-nomoney b{ color:var(--ink-2); font-size:13px; letter-spacing:-.01em; }
+  .use-per{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; font-size:11.5px;
+    color:var(--ink-3); margin-top:10px; }
+  .use-per input{ font:inherit; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-variant-numeric:tabular-nums; font-size:12.5px; width:82px; padding:6px 9px;
+    border:1px solid var(--line); border-radius:8px; background:var(--paper); color:var(--ink); }
+  .use-per input:hover{ border-color:var(--accent); }
+  .use-cap{ font-size:11px; font-weight:700; letter-spacing:.02em; padding:3px 9px; border-radius:999px;
+    background:var(--paper); border:1px solid var(--line); color:var(--ink-2); white-space:nowrap; }
+  .use-cap.done{ background:var(--claimed-soft); border-color:var(--claimed); color:var(--claimed); }
+
+  /* ── status ladder ────────────────────────────────────────── */
+  .ladder{ margin-top:13px; }
+  .ladder-bar{ position:relative; height:10px; border-radius:99px; background:var(--hair); overflow:hidden; }
+  .ladder-bar i{ position:absolute; inset:0 auto 0 0; width:0; border-radius:99px;
+    background:linear-gradient(90deg,var(--accent-2),var(--accent)); transition:width .4s ease; }
+  .ladder-rows{ list-style:none; margin:13px 0 0; padding:0; }
+  .ladder-rows li{ display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+    font-size:12.5px; padding:7px 0; border-top:1px solid var(--hair); color:var(--ink-2); }
+  .ladder-rows li:first-child{ border-top:none; }
+  .ladder-rows li.hit{ color:var(--claimed); font-weight:700; }
+  .ladder-rows li.next{ color:var(--ink); font-weight:700; }
+  .ladder-rows .num{ font-size:12px; }
+  .ladder-now{ display:flex; align-items:flex-end; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+
+  /* ── perks ────────────────────────────────────────────────── */
+  .perk-list{ list-style:none; margin:12px 0 0; padding:0; }
+  .perk-list li{ display:flex; gap:11px; align-items:flex-start; padding:9px 0;
+    border-top:1px solid var(--hair); font-size:13px; line-height:1.5; }
+  .perk-list li:first-child{ border-top:none; padding-top:2px; }
+  .perk-list b{ font-weight:700; letter-spacing:-.01em; }
+  .perk-list p{ margin:2px 0 0; font-size:12px; color:var(--ink-2); }
+  .pip{ flex:none; width:7px; height:7px; border-radius:2px; margin-top:6px;
+    background:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .perk-list li.watch .pip{ background:var(--warn); box-shadow:0 0 0 3px var(--warn-soft); }
+  .perk-list li.watch b{ color:var(--warn); }
+  .nocash{ display:inline-block; font-size:9px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+    padding:2px 7px; border-radius:999px; margin-left:8px; vertical-align:1.5px;
+    background:var(--paper); color:var(--ink-3); border:1px solid var(--line); }
+
+  /* ── sections ─────────────────────────────────────────────── */
+  .sec{ margin-top:30px; }
+  .sechead{ position:relative; display:flex; align-items:baseline; justify-content:space-between;
+    gap:12px; padding-bottom:9px; border-bottom:1px solid var(--line); }
+  .sechead::after{ content:''; position:absolute; left:0; bottom:-1px; width:56px; height:2px;
+    border-radius:2px; background:linear-gradient(90deg,var(--accent),var(--accent-2)); }
+  .sechead h2{ margin:0; color:var(--ink); font-size:11px; }
+  .val{ font-size:12.5px; font-weight:750; color:var(--ink-2); white-space:nowrap; letter-spacing:-.01em; }
+  .secsub{ font-size:11.5px; color:var(--ink-3); margin:9px 0 0; }
+
+  .row{ position:relative; background:var(--card); border:1px solid var(--line); border-top:none;
+    padding:15px 17px; transition:background .16s; }
+  .sec .row:first-of-type{ border-top:1px solid var(--line); border-radius:12px 12px 0 0; margin-top:12px; }
+  .sec .row:last-child{ border-radius:0 0 12px 12px; box-shadow:var(--shadow); }
+  .row::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:3px;
+    background:var(--accent); opacity:0; transition:opacity .16s; }
+  .row:hover::before{ opacity:.7; }
+  .rowtop{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  .name{ font-size:15px; font-weight:700; letter-spacing:-.02em; }
+  .detail{ font-size:12.5px; line-height:1.5; color:var(--ink-2); margin:6px 0 0; }
+
+  .tag{ display:inline-block; font-size:9.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+    padding:3px 8px; border-radius:999px; margin-left:9px; vertical-align:1.5px;
+    background:var(--paper); color:var(--ink-3); border:1px solid var(--line); }
+  .tag.ends{ background:var(--warn-soft); color:var(--warn); border-color:var(--warn-line); }
+  .row.expired{ background:var(--hair); }
+  .row.expired .name,.row.expired .val,.row.expired .detail{ color:var(--dead); }
+  .row.expired::before{ display:none; }
+  .row.expired .strip,.row.expired .slots{ opacity:.45; pointer-events:none; }
+
+  .strip{ display:grid; grid-template-columns:repeat(12,1fr); gap:5px; margin-top:13px; }
+  .punch{ position:relative; aspect-ratio:1; border:1px solid var(--line); border-radius:7px;
+    background:var(--paper); color:var(--ink-3); font-size:10.5px; font-weight:750; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; padding:0; font-family:inherit;
+    transition:background .15s,color .15s,border-color .15s,box-shadow .15s,transform .1s; }
+  .punch:hover{ border-color:var(--accent); color:var(--accent); }
+  .punch:active{ transform:scale(.93); }
+  /* A punched month always wears the card's saturated daylight colour. The dark
+     scheme lightens --accent for legible text on dark panels, which is exactly
+     the wrong direction for a filled chip carrying white letters. */
+  .punch[aria-pressed="true"]{ color:#fff; border-color:var(--punch-3);
+    background:linear-gradient(165deg,var(--punch-2),var(--punch-1) 60%,var(--punch-3));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 2px 5px -1px rgba(11,20,36,.35); }
+  .punch.now{ border-color:var(--ink); border-width:2px; color:var(--ink); }
+  .punch.now[aria-pressed="true"]{ color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
+    0 0 0 3px var(--accent-soft); }
+  .punch.future{ opacity:.42; }
+  .punch.gone{ background:repeating-linear-gradient(-45deg,var(--hair) 0 3px,var(--paper) 3px 6px);
+    color:var(--dead); cursor:not-allowed; }
+  .punch.gone:hover{ border-color:var(--line); color:var(--dead); }
+  .striplab{ font-size:11px; color:var(--ink-3); margin:9px 0 0; }
+
+  .slots{ display:flex; gap:9px; margin-top:13px; flex-wrap:wrap; }
+  .slot{ position:relative; flex:1 1 148px; font:inherit; font-size:13px; font-weight:650; text-align:left;
+    padding:11px 13px; border:1px solid var(--line); border-radius:11px; background:var(--paper);
+    color:var(--ink-2); cursor:pointer; overflow:hidden;
+    transition:background .15s,color .15s,border-color .15s,transform .1s; }
+  .slot:hover{ border-color:var(--accent); color:var(--accent); }
+  .slot:active{ transform:scale(.985); }
+  .slot[aria-pressed="true"]{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent-ink); }
+  .slot[aria-pressed="true"]::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:var(--accent); }
+  .slot.live{ border-color:var(--ink-2); }
+  .slot.closed{ border-style:dashed; color:var(--dead); background:transparent; }
+  .slot.closed:hover{ color:var(--ink-2); border-color:var(--ink-3); }
+  .slot span{ display:block; font-size:11px; font-weight:600; opacity:.75; margin-top:3px; }
+
+  .check{ display:flex; gap:13px; align-items:flex-start; width:100%; font:inherit; text-align:left;
+    background:none; border:none; padding:0; cursor:pointer; color:inherit; }
+  .box{ flex:none; width:23px; height:23px; margin-top:1px; border:1.5px solid var(--line);
+    border-radius:7px; background:var(--paper); display:flex; align-items:center; justify-content:center;
+    color:transparent; font-size:13px; font-weight:800;
+    transition:background .18s,border-color .18s,color .18s,transform .18s; }
+  .check:hover .box{ border-color:var(--accent); }
+  .check[aria-pressed="true"] .box{ border-color:var(--claimed); color:#fff; transform:scale(1.04);
+    background:linear-gradient(165deg,#2FA37C,#176B50); }
+  .check[aria-pressed="true"] .name{ text-decoration:line-through; text-decoration-color:var(--ink-3); color:var(--ink-2); }
+  .check .grow{ flex:1; }
+  .row.expired .check{ cursor:not-allowed; }
+  .row.expired .box{ background:var(--paper); border-color:var(--line); color:transparent; transform:none; }
+
+  /* ── whole wallet ─────────────────────────────────────────── */
+  .wallet{ margin-top:34px; }
+  .wallet::before{ background:linear-gradient(180deg,var(--ink-3),var(--ink-2)); }
+  .wtable{ list-style:none; margin:13px 0 0; padding:0; }
+  .wtable li{ border-top:1px solid var(--hair); }
+  .wtable li:first-child{ border-top:none; }
+  .wrow{ display:flex; align-items:center; gap:11px; width:100%; font:inherit; text-align:left;
+    background:none; border:none; padding:11px 0; cursor:pointer; color:inherit; }
+  .wrow:hover .wname{ color:var(--accent); }
+  .wname{ flex:1 1 auto; font-size:13.5px; font-weight:700; letter-spacing:-.02em; transition:color .15s; }
+  .wname span{ display:block; font-size:11.5px; font-weight:600; color:var(--ink-3); margin-top:2px; }
+  .wnet{ flex:none; text-align:right; font-size:14px; font-weight:750; letter-spacing:-.02em; }
+  .wnet.up{ color:var(--claimed); } .wnet.down{ color:var(--warn); }
+  .wnet span{ display:block; font-size:10.5px; font-weight:650; color:var(--ink-3); letter-spacing:0; }
+  .wsum{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    margin-top:14px; padding-top:14px; border-top:1px solid var(--line); }
+  .wsum-big{ font-size:26px; font-weight:750; letter-spacing:-.035em; }
+  .wsum-big.up{ color:var(--claimed); } .wsum-big.down{ color:var(--warn); }
+  .wsum-lab{ font-size:11.5px; color:var(--ink-2); max-width:330px; line-height:1.5; }
+
+  /* ── footer ───────────────────────────────────────────────── */
+  .foot{ margin-top:32px; display:flex; align-items:flex-start; justify-content:space-between;
+    gap:14px; flex-wrap:wrap; }
+  .reset{ font:inherit; font-size:12.5px; font-weight:650; padding:9px 15px; border:1px solid var(--line);
+    border-radius:9px; background:var(--card); color:var(--ink-2); cursor:pointer;
+    transition:border-color .15s,color .15s; }
+  .reset:hover{ border-color:var(--warn); color:var(--warn); }
+  .signin{ font-size:12.5px; font-weight:650; padding:9px 15px; border-radius:9px; white-space:nowrap;
+    border:1px solid var(--accent); background:var(--accent-soft); color:var(--accent-ink);
+    text-decoration:none; transition:background .15s,color .15s; }
+  .signin:hover{ background:var(--accent); color:#fff; }
+  .signin::after{ content:' ↗'; font-size:10.5px; vertical-align:1px; opacity:.75; }
+  .note{ font-size:11.5px; line-height:1.6; color:var(--ink-3); max-width:430px; margin:0; }
+  .note a{ color:var(--ink-2); text-decoration-color:var(--line); }
+  .note a:hover{ color:var(--accent); }
+  .fineprint{ font-size:10.5px; line-height:1.6; color:var(--ink-3); opacity:.8; margin:20px 0 0;
+    padding-top:14px; border-top:1px solid var(--line); }
+  .status{ font-size:12px; color:var(--ink-3); }
+
+  button:focus-visible, input:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  @media (prefers-reduced-motion:reduce){
+    *{ transition:none !important; animation:none !important; }
+    .cardface::after{ display:none; }
+  }
+  @media (max-width:520px){
+    body{ padding:18px 13px 52px; }
+    .strip{ grid-template-columns:repeat(6,1fr); }
+    .big{ font-size:38px; }
+    .cardface{ padding:18px 17px 16px; }
+    .points input{ width:100%; }
+    .points-out{ text-align:left; }
+    .risk-list li{ flex-direction:column; align-items:flex-start; gap:4px; }
+    .signin-long{ display:none; }
+    .brand .signin{ padding:8px 11px; }
+    .brand h1{ font-size:23px; }
+    .earn-top{ gap:8px; }
+    .earn-out{ text-align:left; min-width:0; }
+    /* once the name claims the full width, the counter and its value share the
+       next line rather than stacking into three rows */
+    .use-top{ align-items:center; }
+    .use-val{ text-align:left; min-width:0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="brand">
+    <svg class="mark" id="mark" viewBox="0 0 48 48" aria-hidden="true"></svg>
+    <div>
+      <p class="eyebrow" id="cardLabel"></p>
+      <h1 id="cardTitle">Rewards Tracker</h1>
+    </div>
+    <a class="signin" id="signin" href="#" target="_blank" rel="noopener noreferrer">Sign in</a>
+  </header>
+
+  <nav class="cardbar" id="cardbar" aria-label="Cards in your wallet"></nav>
+
+  <section class="cardface" id="face">
+    <div class="cf-top">
+      <p class="cf-cap">Claimed to date</p>
+      <span class="chip" aria-hidden="true"></span>
+    </div>
+    <div class="num big" id="claimed">$0</div>
+    <p class="of">of <span class="num" id="total"></span> available &middot; annual cost
+      <span class="num" id="feeLabel"></span></p>
+    <div class="bar">
+      <div class="fill" id="fill"></div>
+      <div class="tick" id="tick"></div>
+    </div>
+    <div class="ticklab">
+      <span>$0</span>
+      <span id="tickLabel"></span>
+      <span class="num" id="totalRight"></span>
+    </div>
+    <p class="verdict" id="verdict"></p>
+    <div id="faceFields"></div>
+  </section>
+
+  <div id="board"></div>
+
+  <div class="panel wallet" id="wallet"></div>
+
+  <div class="foot">
+    <p class="note">
+      Everything is saved in this browser only &mdash; nothing is sent anywhere, and nobody else sees
+      your entries. Card terms change often; confirm anything close to a deadline against the issuer.
+      <a href="index.html">&larr; Razor's Edge</a>
+    </p>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="status" id="status"></span>
+      <button type="button" class="reset" id="reset">Clear this card</button>
+    </div>
+  </div>
+
+  <p class="fineprint">
+    An independent personal tool, not affiliated with, endorsed by, or sponsored by JPMorgan Chase &amp; Co.,
+    American Express, Citibank, Costco Wholesale, American Airlines, or United Airlines. Card, program and
+    airline names are their respective trademarks, used here only to describe the products being tracked.
+    Benefit lists reflect what was published when this page was written &mdash; treat them as a checklist,
+    not as terms.
+  </p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var LS_KEY = "wallet-tracker";
+  var LEGACY_CSR = ["csr-tracker", "csr-tracker-2026"];
+  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var MONTHS_LONG = ["January","February","March","April","May","June",
+                     "July","August","September","October","November","December"];
+
+  /* ══ card marks ══════════════════════════════════════════════
+     Abstract shapes, not issuer logos — enough to tell the cards
+     apart at a glance without borrowing anyone's brand. */
+  var MARKS = {
+    gem:'<defs><linearGradient id="mA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7FA6FF"/>'
+      + '<stop offset=".45" stop-color="#2242C7"/><stop offset="1" stop-color="#0C1C55"/></linearGradient></defs>'
+      + '<path d="M14.5 4h19l10.5 13.5L24 45 4 17.5z" fill="url(#mA)"/>'
+      + '<path d="M14.5 4 4 17.5h40L33.5 4z" fill="#fff" opacity=".22"/>'
+      + '<path d="M24 45 4 17.5h40z" fill="#000" opacity=".14"/>'
+      + '<path d="M14.5 4 18 17.5 24 45 30 17.5 33.5 4" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="1.1"/>'
+      + '<path d="M4 17.5h40" stroke="#fff" stroke-opacity=".34" stroke-width="1.1"/>',
+    square:'<defs><linearGradient id="mB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5FB6F5"/>'
+      + '<stop offset=".5" stop-color="#0E7BD1"/><stop offset="1" stop-color="#08355C"/></linearGradient></defs>'
+      + '<rect x="5" y="7" width="38" height="34" rx="5" fill="url(#mB)"/>'
+      + '<rect x="5" y="7" width="38" height="12" rx="5" fill="#fff" opacity=".18"/>'
+      + '<path d="M17 33l7-16 7 16" fill="none" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/>'
+      + '<path d="M20 29h8" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>',
+    warehouse:'<defs><linearGradient id="mC" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2606C"/>'
+      + '<stop offset=".5" stop-color="#C41230"/><stop offset="1" stop-color="#5E0A12"/></linearGradient></defs>'
+      + '<path d="M24 5 44 16v27H4V16z" fill="url(#mC)"/>'
+      + '<path d="M24 5 44 16H4z" fill="#fff" opacity=".22"/>'
+      + '<rect x="12" y="24" width="24" height="19" rx="2" fill="#000" opacity=".16"/>'
+      + '<path d="M12 30h24M12 36h24" stroke="#fff" stroke-opacity=".45" stroke-width="1.6"/>',
+    wing:'<defs><linearGradient id="mD" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C6D2DC"/>'
+      + '<stop offset=".5" stop-color="#7E8B96"/><stop offset="1" stop-color="#2E3941"/></linearGradient></defs>'
+      + '<path d="M6 30 42 6 30 42l-6-11z" fill="url(#mD)"/>'
+      + '<path d="M42 6 24 31l-18-1z" fill="#fff" opacity=".26"/>'
+      + '<path d="M42 6 24 31l6 11z" fill="#0F6CA8" opacity=".55"/>',
+    globe:'<defs><linearGradient id="mE" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6FB0FF"/>'
+      + '<stop offset=".5" stop-color="#0057B8"/><stop offset="1" stop-color="#00224D"/></linearGradient></defs>'
+      + '<circle cx="24" cy="24" r="19" fill="url(#mE)"/>'
+      + '<path d="M24 5c6 5 6 33 0 38M24 5c-6 5-6 33 0 38" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1.4"/>'
+      + '<path d="M6 18h36M6 30h36" stroke="#fff" stroke-opacity=".38" stroke-width="1.4"/>'
+      + '<path d="M24 5a19 19 0 0 1 13 6l-26 26A19 19 0 0 1 24 5z" fill="#fff" opacity=".12"/>'
+  };
+
+  /* ══ the wallet ══════════════════════════════════════════════
+     Each card carries its own theme, credit lists and perk lists.
+     Anything a card omits simply doesn't render — that's how one
+     layout serves a $795 travel card and a $130 warehouse
+     membership without either looking half-finished. */
+  var CARDS = [
+
+  /* ── Chase Sapphire Reserve ─────────────────────────────── */
+  { id:"csr", short:"Sapphire", name:"Chase Sapphire Reserve", label:"Chase",
+    fee:795, feeWord:"annual fee", mark:"gem",
+    light:{ a:"#1E3FBF", a2:"#3B6BE8", soft:"#E7EDFC", ink:"#16308F" },
+    dark: { a:"#7A9CFF", a2:"#9FB8FF", soft:"#1A2748", ink:"#AFC4FF" },
+    face:["#04091A","#0C1E45","#1A3894","#0A1732"], hi:"rgba(122,156,255,.42)",
+    signin:{ text:"Chase", href:"https://secure.chase.com/" },
+    anniversary:"The $300 travel credit resets on this date, not Jan 1.",
+
+    monthly:[
+      { id:"lyft", name:"Lyft in-app credit", per:10, through:"2027-09-30",
+        detail:"Pay with the Reserve in the Lyft app." },
+      { id:"peloton", name:"Peloton membership", per:10, through:"2027-12-31",
+        detail:"Activation required." },
+      { id:"doordash", name:"DoorDash promos", per:25,
+        detail:"One $5 restaurant promo plus two $10 non-restaurant promos. Promo value, not a statement credit." },
+      { id:"appletv", name:"Apple TV+", per:13, through:"2027-06-22",
+        detail:"Complimentary with the Reserve — activate once, then it renews itself. Valued at the $12.99 standalone price." },
+      { id:"applemusic", name:"Apple Music", per:11, through:"2027-06-22",
+        detail:"Complimentary with the Reserve — activate once, then it renews itself. Valued at the $10.99 standalone price." }
+    ],
+    semi:[
+      { id:"dining", name:"Exclusive Tables dining", per:150, halves:true, slots:["Jan–Jun","Jul–Dec"],
+        detail:"Only at Sapphire Reserve Exclusive Tables restaurants, booked through OpenTable. Coverage is thin outside major metros." },
+      { id:"stubhub", name:"StubHub / viagogo", per:150, halves:true, slots:["Jan–Jun","Jul–Dec"],
+        detail:"Entertainment and event tickets." },
+      { id:"edit", name:"The Edit hotel credit", per:250, slots:["Booking 1","Booking 2"],
+        detail:"Prepaid stay of two nights or more. Two eligible bookings per calendar year — the old Jan–Jun / Jul–Dec split was removed Jan 1, 2026." }
+    ],
+    annual:[
+      { id:"travel", name:"Travel credit", value:300, anniversary:true,
+        detail:"Posts automatically against travel charges — airfare, hotels, rental cars, transit, tolls, parking. Resets on your account anniversary, not Jan 1." },
+      { id:"hotel250", name:"Chase Travel hotels credit", value:250, through:"2026-12-31",
+        detail:"2026 only. Select Chase Travel hotels (IHG, Omni, Virgin), two-night minimum, book by Dec 31, 2026." }
+    ],
+    once:[
+      { id:"globalentry", name:"Global Entry / TSA PreCheck", value:120,
+        note:"Up to $120, once every four years — counts toward the fee the year you use it" },
+      { id:"dashpass", name:"DashPass membership", note:"Activate in the DoorDash app" },
+      { id:"prioritypass", name:"Priority Pass enrollment", note:"Sapphire Lounges, Priority Pass, select Air Canada lounges" },
+      { id:"ihg", name:"IHG One Rewards Platinum", note:"Enroll — status through Dec 31, 2027", through:"2027-12-31" }
+    ],
+    uses:[
+      { id:"lounge", name:"Lounge visits", unit:"visit", per:50,
+        note:"Sapphire Lounge, Priority Pass, and select Air Canada lounges." }
+    ],
+    points:{ label:"Ultimate Rewards balance", unit:"Points", cpp:1,
+      note:"Points ÷ 100. That's the floor — roughly what you'd get taking cash back. Transferred to Hyatt, United, or Air Canada, the same balance usually stretches well past this number." },
+    perks:[
+      { name:"Priority Pass Select + Sapphire Lounge access", note:"Unlimited visits for you at Chase Sapphire Lounges and the Priority Pass network." },
+      { name:"Points Boost", note:"Select Chase Travel bookings redeem points above the 1¢ floor — the single biggest swing in what your balance is worth." },
+      { name:"IHG One Rewards Platinum Elite", note:"Complimentary status while the card is open." },
+      { name:"Primary rental car coverage", note:"Decline the counter waiver and the card's collision coverage goes first, ahead of your own insurance." },
+      { name:"Trip delay and cancellation cover", note:"Delays past six hours or an overnight, plus trip cancellation reimbursement. Pay for the trip with the card." },
+      { name:"No foreign transaction fees", note:"Charge abroad without the usual 3% skim." },
+      { name:"Emergency medical and roadside assistance", note:"Dispatch is free; the service itself may not be." },
+      { kind:"watch", name:"Lounge guests aren't automatic anymore", note:"Chase now gates unlimited guest access behind a high annual spend threshold. Confirm your guest count before you promise anyone a seat." }
+    ]
+  },
+
+  /* ── Amex Blue Cash Preferred ───────────────────────────── */
+  { id:"bcp", short:"Blue Cash", name:"Amex Blue Cash Preferred", label:"American Express",
+    fee:95, feeWord:"annual fee", mark:"square",
+    light:{ a:"#0E6FC4", a2:"#3F97E2", soft:"#E3F0FC", ink:"#0A5497" },
+    dark: { a:"#6FBAFF", a2:"#9BD2FF", soft:"#0F2942", ink:"#A8D6FF" },
+    face:["#071A2E","#0C3C68","#1E7AC4","#0A2440"], hi:"rgba(120,190,255,.40)",
+    signin:{ text:"Amex", href:"https://www.americanexpress.com/" },
+    feeNote:"Set this to 0 if your first year is waived.",
+
+    monthly:[
+      { id:"disney", name:"Disney Bundle credit", per:7,
+        detail:"$7 back each month on an auto-renewing Disney Bundle subscription of $9.99 or more. Enrollment required — it does not post on its own." }
+    ],
+    once:[
+      { id:"enroll", name:"Enroll in the Disney Bundle credit",
+        note:"Amex account → Benefits. Nothing posts until you do this once." },
+      { id:"offers", name:"Add this month's Amex Offers",
+        note:"Targeted statement credits sit unclaimed in the app — adding them takes a minute and they expire quietly." }
+    ],
+    spend:{ mode:"cash", title:"Cash back by category", periodNote:"Enter what you expect to charge to this card over the calendar year.",
+      cats:[
+        { id:"grocery", label:"U.S. supermarkets", rate:.06, cap:6000, after:.01,
+          note:"6% on the first $6,000 a year, then 1%. The cap resets every January — $360 is the most this line can ever pay." },
+        { id:"stream", label:"Select U.S. streaming", rate:.06,
+          note:"6% with no cap, on the services Amex lists as eligible." },
+        { id:"gas", label:"U.S. gas stations", rate:.03 },
+        { id:"transit", label:"Transit", rate:.03, note:"Rideshare, tolls, parking, trains, buses, tickets." },
+        { id:"other", label:"Everything else", rate:.01 }
+      ] },
+    points:{ label:"Reward Dollars on hand", unit:"Reward Dollars", money:true,
+      note:"Reward Dollars redeem as a statement credit, dollar for dollar. There's no transfer partner upside here — the value is the number." },
+    perks:[
+      { name:"Amex Offers", note:"Rotating targeted credits you have to add manually. Worth a monthly sweep; it routinely beats the annual fee on its own." },
+      { name:"Purchase protection and extended warranty", note:"Covers eligible items against damage or theft, and adds a year to most manufacturer warranties." },
+      { name:"Return protection", note:"If a merchant won't take it back within 90 days, Amex may refund it." },
+      { name:"Plan It", note:"Split a large charge into fixed monthly payments for a flat fee instead of revolving interest." },
+      { name:"Global Assist hotline", note:"Medical and legal referrals more than 100 miles from home." },
+      { kind:"watch", name:"2.7% foreign transaction fee", note:"This is a domestic card. Take the Sapphire Reserve abroad — same purchase costs 2.7% more here." },
+      { kind:"watch", name:"The grocery cap is the whole game", note:"Past $6,000 of supermarket spend the rate falls to 1%. Move the overflow to another card once the bar below fills." }
+    ]
+  },
+
+  /* ── Costco Executive + Citi Costco Visa ────────────────── */
+  { id:"costco", short:"Costco", name:"Costco Executive + Citi Visa", label:"Costco Wholesale · Citi",
+    fee:130, feeWord:"membership", mark:"warehouse",
+    light:{ a:"#C41230", a2:"#E4485F", soft:"#FCE7EA", ink:"#960D24" },
+    dark: { a:"#FF8593", a2:"#FFB0B9", soft:"#3A1218", ink:"#FFB8C1" },
+    face:["#2A0508","#5E0A12","#C41230","#3A070D"], hi:"rgba(255,150,160,.38)",
+    signin:{ text:"Costco", href:"https://www.costco.com/" },
+    feeNote:"Executive is $130 — $65 more than Gold Star.",
+
+    monthly:[
+      { id:"onlinecredit", name:"Costco.com monthly credit", per:10,
+        detail:"Executive members get $10 off a Costco.com order of $150 or more, once a month. It does not roll over — an unused month is simply gone." }
+    ],
+    once:[
+      { id:"exec", name:"Executive membership active", note:"The 2% reward and the monthly credit both depend on it" },
+      { id:"household", name:"Add your free household card", note:"One extra card for someone at your address, included" },
+      { id:"autorenew", name:"Citi Costco Visa on file for renewal", note:"Membership auto-renews and the card is the natural payment method" }
+    ],
+    spend:{ mode:"cash", title:"Rewards by category", periodNote:"Enter what you expect to spend over the membership year.",
+      cats:[
+        /* Card-tied earning only. The Executive membership's own 2% reward is
+           real money, but it posts at renewal rather than through the Visa, so
+           it stays out of this panel. */
+        { id:"warehouse", label:"Costco & Costco.com", rate:.02,
+          note:"2% on the Citi Costco Visa. The Executive membership's separate 2% reward isn't counted here." },
+        { id:"gas", label:"Gas & EV charging", rate:.04, cap:7000, after:.01,
+          note:"4% on the first $7,000 a year, then 1%. Costco's own pumps count." },
+        { id:"dining", label:"Restaurants & eligible travel", rate:.03 },
+        { id:"other", label:"Everything else", rate:.01 }
+      ] },
+    points:{ label:"Reward certificate on hand", unit:"Certificate value", money:true,
+      note:"Citi's certificate arrives with your February statement; the Executive 2% posts at renewal. Both are redeemed in person at the warehouse — for cash or merchandise — and the Citi certificate expires Dec 31 of the year it's issued." },
+    perks:[
+      { name:"Early shopping hours", note:"Executive members get in ahead of everyone else on weekday and Saturday mornings. No cash value; enormous on a Saturday." },
+      { name:"Executive downgrade guarantee", note:"If your 2% reward doesn't beat the $65 upgrade premium, Costco refunds the difference. The upgrade is effectively risk-free." },
+      { name:"Gas station access", note:"Membership-only pumps, usually well under the street price. Pays a chunk of the fee by itself if you fill up there." },
+      { name:"Costco Services discounts", note:"Auto and home insurance, tires, hearing aids, travel, checks, payroll — quoted below retail for members." },
+      { name:"100% satisfaction guarantee", note:"Membership refundable any time; most merchandise returnable without a deadline." },
+      { name:"Costco Travel Executive bonus", note:"Extra rebate on most Costco Travel packages, on top of the standard member pricing." },
+      { kind:"watch", name:"The Citi certificate is once a year, in person", note:"It comes in February, can't be split across visits in most cases, and lapses at year end. Redeem it on a trip you were making anyway." },
+      { kind:"watch", name:"The monthly $10 needs a $150 order", note:"Below the threshold it doesn't trigger, and it won't stack up for later." }
+    ]
+  },
+
+  /* ── Citi AAdvantage Platinum Select ────────────────────── */
+  { id:"aa", short:"American", name:"Citi AAdvantage Platinum Select", label:"American Airlines · Citi",
+    fee:99, feeWord:"annual fee", mark:"wing",
+    light:{ a:"#0F6CA8", a2:"#3E97CE", soft:"#E4F1F9", ink:"#0B5183" },
+    dark: { a:"#63BDEF", a2:"#93D5FA", soft:"#0D2A3C", ink:"#A2DBFA" },
+    /* brushed silver, kept dark enough that white type holds up across it */
+    face:["#12171B","#232C33","#5C686F","#171E24"], hi:"rgba(215,230,240,.26)",
+    signin:{ text:"Citi", href:"https://www.citi.com/" },
+    feeNote:"Often waived the first 12 months — set 0 for year one.",
+    anniversary:"Card anniversary — the $125 flight discount is measured over the cardmember year ending on this date.",
+
+    annual:[
+      { id:"flight125", name:"American flight discount", value:125, anniversary:true,
+        detail:"Earned by putting $20,000 of purchases on the card during your cardmember year and renewing. It arrives after the anniversary, so the spending has to be done before it." }
+    ],
+    once:[
+      { id:"linkaa", name:"AAdvantage number linked to the card",
+        note:"The free bag and preferred boarding only attach to reservations booked under the linked number" },
+      { id:"addcompanions", name:"Know who your bag benefit covers",
+        note:"You plus up to four companions on the same domestic reservation" }
+    ],
+    uses:[
+      { id:"bag", name:"Checked bags waived", unit:"bag", per:35,
+        note:"First checked bag free for you and up to four companions on domestic itineraries. Count each person, each direction — a family of four round-trip is eight bags." },
+      { id:"inflight", name:"Inflight purchases at 25% off", unit:"purchase", per:4,
+        note:"Food, drinks and Wi-Fi bought on AA flights come back as a statement credit. Log roughly what the discount saved you." }
+    ],
+    spend:{ mode:"miles", cpp:1.4, title:"Miles by category", periodNote:"Enter what you expect to charge to this card over the year.",
+      cats:[
+        { id:"aa", label:"American Airlines purchases", rate:2 },
+        { id:"dining", label:"Restaurants", rate:2 },
+        { id:"gas", label:"Gas stations", rate:2 },
+        { id:"other", label:"Everything else", rate:1 }
+      ] },
+    status:{ label:"Loyalty Points", short:"LP",
+      note:"Every mile you earn from spending is also a Loyalty Point, and Loyalty Points are the only thing that moves you up the ladder. No cash value — this is the status track, not the currency track. The status year runs March 1 to February 28.",
+      tiers:[ { n:"AAdvantage Gold", v:40000 }, { n:"Platinum", v:75000 },
+              { n:"Platinum Pro", v:125000 }, { n:"Executive Platinum", v:200000 } ] },
+    points:{ label:"AAdvantage miles balance", unit:"Miles", cpp:1.4,
+      note:"Valued at 1.4¢ — roughly what a mile fetches on a domestic saver seat. Web specials and partner business class beat it; anything booked at the standard award chart usually doesn't." },
+    perks:[
+      { name:"First checked bag free", note:"You and up to four companions on the same domestic reservation. At $35 a bag each way, one family trip clears the annual fee." },
+      { name:"Preferred boarding", note:"Group 5 — ahead of the crush, which in practice means overhead bin space." },
+      { name:"25% back on inflight purchases", note:"Food, drinks and Wi-Fi on AA-operated flights, refunded as a statement credit." },
+      { name:"No foreign transaction fees", note:"Fine to use abroad." },
+      { name:"Loyalty Point earning on every dollar", note:"Ordinary spend counts toward status, not just flights — the reason to put non-travel charges here at all." },
+      { kind:"watch", name:"No Admirals Club access", note:"This card gets you nothing at the lounge door. That's the Executive card." },
+      { kind:"watch", name:"The $125 discount needs $20,000 of spend", note:"It's all-or-nothing over the cardmember year. If you're not near it by month nine, stop counting on it." },
+      { kind:"watch", name:"Miles expire after 24 months of no activity", note:"Any earn or redeem resets the clock — even a small shopping-portal purchase." }
+    ]
+  },
+
+  /* ── United Explorer ────────────────────────────────────── */
+  { id:"united", short:"United", name:"United℠ Explorer Card", label:"United Airlines · Chase",
+    fee:95, feeWord:"annual fee", mark:"globe",
+    light:{ a:"#0057B8", a2:"#3D86DC", soft:"#E2EDFA", ink:"#00417F" },
+    dark: { a:"#7FB6FF", a2:"#A8CEFF", soft:"#0C2444", ink:"#AED0FF" },
+    face:["#00142E","#00224D","#0057B8","#001A3A"], hi:"rgba(130,180,255,.42)",
+    signin:{ text:"United", href:"https://www.united.com/" },
+    feeNote:"Waived the first year on most offers — set 0 for year one.",
+
+    once:[
+      { id:"globalentry", name:"Global Entry / TSA PreCheck credit", value:100,
+        note:"Up to $100, once every four years — counts toward the fee the year you use it" },
+      { id:"linkmp", name:"MileagePlus number linked to the card",
+        note:"The bag waiver and priority boarding attach to the number on the reservation" }
+    ],
+    uses:[
+      { id:"clubpass", name:"United Club one-time passes", unit:"pass", per:59, cap:2,
+        note:"Two a year, and they don't roll over. A walk-up United Club day pass runs about $59, so these are worth using rather than saving." },
+      { id:"bag", name:"Checked bags waived", unit:"bag", per:40,
+        note:"First bag free for you and one companion on the same reservation. Count each person, each direction." },
+      { id:"drink", name:"Drink vouchers used", unit:"voucher", per:12,
+        note:"Beverage certificates — the ones that turn up as a Premier perk, a cardmember mailer, or a flight attendant's apology. No statement credit behind them, but a pour onboard is about $12 you didn't spend. Log each one you actually use." },
+      { id:"inflight", name:"Inflight purchases at 25% off", unit:"purchase", per:5,
+        note:"Food, drinks and Wi-Fi on United flights come back as a statement credit. Log what the discount saved." }
+    ],
+    spend:{ mode:"miles", cpp:1.3, title:"Miles by category", periodNote:"Enter what you expect to charge to this card over the year.",
+      cats:[
+        { id:"united", label:"United purchases", rate:2 },
+        { id:"dining", label:"Dining, including takeout", rate:2 },
+        { id:"hotel", label:"Hotel stays", rate:2 },
+        { id:"other", label:"Everything else", rate:1 }
+      ] },
+    status:{ label:"Premier Qualifying Points", short:"PQP",
+      note:"PQP run on the calendar year, and each Premier level also has a flight-segment path you can take instead. The card itself adds PQP for heavy spending, capped well below what flying earns. No cash value — this is what buys upgrades and better award space. Confirm the current thresholds on united.com; United moves them.",
+      tiers:[ { n:"Premier Silver", v:5000 }, { n:"Premier Gold", v:10000 },
+              { n:"Premier Platinum", v:15000 }, { n:"Premier 1K", v:24000 } ] },
+    points:{ label:"MileagePlus miles balance", unit:"Miles", cpp:1.3,
+      note:"Valued at 1.3¢. United prices awards dynamically, so this is an average — short domestic hops often beat it and last-minute long-haul rarely does. Ultimate Rewards points transfer here 1:1 if you need to top up." },
+    perks:[
+      { name:"Two United Club passes a year", note:"Counted above. Each admits you alone, on the day you use it — a guest needs a second pass." },
+      { name:"First checked bag free", note:"You and one companion on the same reservation. Two round-trips a year and the fee is gone." },
+      { name:"Priority boarding", note:"Board ahead of general boarding on United-operated flights." },
+      { name:"Expanded award availability", note:"Cardmembers see saver award seats that don't show up for everyone else — the quietest but often most valuable benefit here." },
+      { name:"25% back on inflight purchases", note:"Statement credit on United food, drinks and Wi-Fi." },
+      { name:"No foreign transaction fees", note:"Fine to use abroad." },
+      { name:"Rental car and trip protections", note:"Auto rental collision damage waiver, baggage delay, trip cancellation and interruption cover when you pay with the card." },
+      { kind:"watch", name:"Club passes expire with the cardmember year", note:"Unused passes vanish at renewal. If it's month eleven and both are sitting there, use them on the next trip." },
+      { kind:"watch", name:"The Global Entry credit is once every four years", note:"Don't let a family member burn it on a renewal you could have covered another way." }
+    ]
+  }
+  ];
+
+  var BY_ID = {};
+  CARDS.forEach(function (c) { BY_ID[c.id] = c; });
+
+  /* ---- dates ---- */
+  function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function nowDay() { return startOfDay(new Date()); }
+  function parseISO(s) {
+    if (!s) return null;
+    var p = String(s).split("-");
+    if (p.length !== 3) return null;
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return isFinite(d.getTime()) ? d : null;
+  }
+  function iso(d) {
+    function pad(n) { return (n < 10 ? "0" : "") + n; }
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+  function daysUntil(d) { return Math.round((startOfDay(d) - nowDay()) / 86400000); }
+  function fmtDate(d) { return MONTHS[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear(); }
+  function countdown(d) {
+    var n = daysUntil(d);
+    if (n < 0) return "expired";
+    if (n === 0) return "today";
+    if (n === 1) return "tomorrow";
+    return n + " days";
+  }
+  // Null once the window has closed, so callers phrase that case themselves
+  // instead of emitting "expired left".
+  function timeLeft(d) {
+    var n = daysUntil(d);
+    if (n < 0) return null;
+    if (n === 0) return "last day";
+    if (n === 1) return "1 day left";
+    return n + " days left";
+  }
+
+  var TODAY = nowDay();
+  var YEAR  = TODAY.getFullYear();
+  var MONTH = TODAY.getMonth();
+
+  /* ---- numbers ---- */
+  function num(v) { var n = parseFloat(v); return isFinite(n) ? n : 0; }
+  function money(n) { return "$" + Math.round(n).toLocaleString("en-US"); }
+  function money2(n) {
+    return "$" + n.toLocaleString("en-US", { minimumFractionDigits:2, maximumFractionDigits:2 });
+  }
+  function count(n) { return Math.round(n).toLocaleString("en-US"); }
+  function pct(r) { return (r * 100).toFixed(r * 100 % 1 ? 1 : 0) + "%"; }
+
+  /* ---- availability ---- */
+  function endsThisYear(item) {
+    var t = parseISO(item.through);
+    return t && t.getFullYear() === YEAR;
+  }
+  function expired(item) {
+    var t = parseISO(item.through);
+    return !!t && t < TODAY;
+  }
+  // A monthly credit only counts for months that start on or before its end date.
+  function monthLive(item, i) {
+    var t = parseISO(item.through);
+    return !t || new Date(YEAR, i, 1) <= t;
+  }
+  function liveMonths(item) {
+    var n = 0;
+    for (var i = 0; i < 12; i++) if (monthLive(item, i)) n++;
+    return n;
+  }
+  function endOfMonth(i) { return new Date(YEAR, i + 1, 0); }
+  function endOfHalf(h) { return h === 0 ? new Date(YEAR, 5, 30) : new Date(YEAR, 11, 31); }
+  function endOfYear() { return new Date(YEAR, 11, 31); }
+  function slotDeadline(s, i) { return s.halves ? endOfHalf(i) : endOfYear(); }
+
+  /* ---- per-card state ---- */
+  function blankCard(c) {
+    var s = { year:YEAR, monthly:{}, semi:{}, annual:{}, once:{}, uses:{}, spend:{},
+              points:"", status:"", anniversary:"", travelPeriod:"", fee:"", include:true };
+    (c.monthly || []).forEach(function (m) {
+      s.monthly[m.id] = [];
+      for (var i = 0; i < 12; i++) s.monthly[m.id].push(false);
+    });
+    (c.semi   || []).forEach(function (x) { s.semi[x.id] = boolArray(null, x.slots.length); });
+    (c.annual || []).forEach(function (x) { s.annual[x.id] = false; });
+    (c.once   || []).forEach(function (x) { s.once[x.id] = false; });
+    (c.uses   || []).forEach(function (u) { s.uses[u.id] = { n:0, per:u.per }; });
+    if (c.spend) c.spend.cats.forEach(function (x) { s.spend[x.id] = ""; });
+    return s;
+  }
+  function boolArray(v, n) {
+    var out = [], i;
+    for (i = 0; i < n; i++) out.push(!!(v && v[i]));
+    return out;
+  }
+
+  var WALLET = { active:CARDS[0].id, cards:{} };
+  CARDS.forEach(function (c) { WALLET.cards[c.id] = blankCard(c); });
+
+  function card() { return BY_ID[WALLET.active] || CARDS[0]; }
+  function st(c) { return WALLET.cards[(c || card()).id]; }
+
+  function feeOf(c, s) { return s.fee === "" || s.fee === null ? c.fee : Math.max(0, num(s.fee)); }
+
+  /* ---- what each module is worth ---- */
+  // Usage counters and set-once benefits have no fixed ceiling — they're worth
+  // whatever you've actually used, so they raise the claimed figure and the
+  // available figure together rather than sitting in a fixed pool. A counter
+  // with a cap is the exception: the cap is a real ceiling.
+  function useWorth(c, s, u) {
+    if (u.monetary === false) return 0;
+    var rec = s.uses[u.id];
+    return Math.max(0, rec.n) * Math.max(0, num(rec.per));
+  }
+  function usesWorth(c, s) {
+    var t = 0;
+    (c.uses || []).forEach(function (u) { t += useWorth(c, s, u); });
+    return t;
+  }
+  function usesValue(c, s) { return s.include ? usesWorth(c, s) : 0; }
+  function usesAvail(c, s) {
+    if (!s.include) return 0;
+    var t = 0;
+    (c.uses || []).forEach(function (u) {
+      if (u.monetary === false) return;
+      var rec = s.uses[u.id], per = Math.max(0, num(rec.per));
+      t += u.cap ? u.cap * per : Math.max(0, rec.n) * per;
+    });
+    return t;
+  }
+  function catReward(cat, spend) {
+    var r;
+    if (cat.cap && spend > cat.cap) r = cat.cap * cat.rate + (spend - cat.cap) * (cat.after || 0);
+    else r = spend * cat.rate;
+    return r;
+  }
+  // Returns { units, dollars } — units are miles on an airline card, dollars on a
+  // cash-back card, and the fee math only ever looks at dollars.
+  function spendReward(c, s) {
+    if (!c.spend) return { units:0, dollars:0 };
+    var units = 0;
+    c.spend.cats.forEach(function (cat) { units += catReward(cat, Math.max(0, num(s.spend[cat.id]))); });
+    var dollars = c.spend.mode === "miles" ? units * (c.spend.cpp / 100) : units;
+    return { units:units, dollars:dollars };
+  }
+  function onceValue(c, s) {
+    var t = 0;
+    (c.once || []).forEach(function (o) { if (o.value && s.once[o.id] && !expired(o)) t += o.value; });
+    return t;
+  }
+
+  function claimedTotal(c, s) {
+    var t = 0;
+    (c.monthly || []).forEach(function (m) {
+      for (var i = 0; i < 12; i++) if (s.monthly[m.id][i] && monthLive(m, i)) t += m.per;
+    });
+    (c.semi || []).forEach(function (x) {
+      if (expired(x)) return;
+      t += s.semi[x.id].filter(Boolean).length * x.per;
+    });
+    (c.annual || []).forEach(function (a) { if (s.annual[a.id] && !expired(a)) t += a.value; });
+    return t + onceValue(c, s) + usesValue(c, s) + spendReward(c, s).dollars;
+  }
+  function availableTotal(c, s) {
+    var t = 0;
+    (c.monthly || []).forEach(function (m) { t += m.per * liveMonths(m); });
+    (c.semi || []).forEach(function (x) { if (!expired(x)) t += x.per * x.slots.length; });
+    (c.annual || []).forEach(function (a) { if (!expired(a)) t += a.value; });
+    return t + onceValue(c, s) + usesAvail(c, s) + spendReward(c, s).dollars;
+  }
+
+  /* ---- anniversary ---- */
+  function anniversaryPeriod(s) {
+    var d = parseISO(s.anniversary);
+    if (!d) return null;
+    var start = new Date(YEAR, d.getMonth(), d.getDate());
+    if (start > TODAY) start = new Date(YEAR - 1, d.getMonth(), d.getDate());
+    return start;
+  }
+  function nextAnniversary(s) {
+    var start = anniversaryPeriod(s);
+    return start ? new Date(start.getFullYear() + 1, start.getMonth(), start.getDate()) : null;
+  }
+  function annualDeadline(a, s) {
+    if (a.anniversary) {
+      var next = nextAnniversary(s);
+      if (next) return next;
+    }
+    var t = parseISO(a.through);
+    return t && t < endOfYear() ? t : endOfYear();
+  }
+
+  /* ---- load, merge, roll over ---- */
+  function mergeCard(c, saved) {
+    var s = WALLET.cards[c.id];
+    if (!saved) return;
+    (c.monthly || []).forEach(function (m) {
+      if (saved.monthly && saved.monthly[m.id] !== undefined)
+        s.monthly[m.id] = boolArray(saved.monthly[m.id], 12);
+    });
+    (c.semi || []).forEach(function (x) {
+      if (saved.semi && saved.semi[x.id] !== undefined)
+        s.semi[x.id] = boolArray(saved.semi[x.id], x.slots.length);
+    });
+    (c.annual || []).forEach(function (a) {
+      if (saved.annual && saved.annual[a.id] !== undefined) s.annual[a.id] = !!saved.annual[a.id];
+    });
+    (c.once || []).forEach(function (o) {
+      if (saved.once && saved.once[o.id] !== undefined) s.once[o.id] = !!saved.once[o.id];
+    });
+    (c.uses || []).forEach(function (u) {
+      var v = saved.uses && saved.uses[u.id];
+      if (!v) return;
+      s.uses[u.id].n = Math.max(0, Math.round(num(v.n)));
+      if (u.cap) s.uses[u.id].n = Math.min(u.cap, s.uses[u.id].n);
+      if (v.per !== undefined && v.per !== "") s.uses[u.id].per = Math.max(0, num(v.per));
+    });
+    if (c.spend) c.spend.cats.forEach(function (x) {
+      if (saved.spend && saved.spend[x.id] !== undefined) s.spend[x.id] = saved.spend[x.id];
+    });
+    if (saved.points) s.points = saved.points;
+    if (saved.status) s.status = saved.status;
+    if (saved.anniversary) s.anniversary = saved.anniversary;
+    if (saved.travelPeriod) s.travelPeriod = saved.travelPeriod;
+    if (saved.fee !== undefined && saved.fee !== null) s.fee = saved.fee;
+    if (saved.include !== undefined) s.include = !!saved.include;
+    s.year = saved.year || s.year;
+    rollover(c, s);
+  }
+
+  // Recurring credits reset on Jan 1; anniversary-dated credits reset on the
+  // card anniversary. "Set up once" items survive both.
+  var rolledYear = 0, rolledAnniv = false;
+  function rollover(c, s) {
+    if (s.year !== YEAR) {
+      rolledYear = s.year;
+      (c.monthly || []).forEach(function (m) { s.monthly[m.id] = boolArray(null, 12); });
+      (c.semi || []).forEach(function (x) { s.semi[x.id] = boolArray(null, x.slots.length); });
+      (c.annual || []).forEach(function (a) { if (!a.anniversary) s.annual[a.id] = false; });
+      // Counts are per-year; the per-use valuation is a standing preference.
+      (c.uses || []).forEach(function (u) { s.uses[u.id].n = 0; });
+      if (c.spend) c.spend.cats.forEach(function (x) { s.spend[x.id] = ""; });
+      s.status = "";
+      s.year = YEAR;
+    }
+    var period = anniversaryPeriod(s);
+    if (period) {
+      var key = iso(period);
+      if (s.travelPeriod !== key) {
+        if (s.travelPeriod) {
+          (c.annual || []).forEach(function (a) { if (a.anniversary) s.annual[a.id] = false; });
+          rolledAnniv = true;
+        }
+        s.travelPeriod = key;
+      }
+    }
+  }
+
+  function loadLocal() {
+    var raw = null, parsed = null;
+    try { raw = localStorage.getItem(LS_KEY); } catch (e) {}
+    if (raw) {
+      try { parsed = JSON.parse(raw); } catch (e) {}
+    }
+    if (parsed && parsed.cards) {
+      CARDS.forEach(function (c) { mergeCard(c, parsed.cards[c.id]); });
+      if (parsed.active && BY_ID[parsed.active]) WALLET.active = parsed.active;
+      return;
+    }
+    // First run on this browser: adopt whatever the standalone Sapphire tracker
+    // left behind rather than making the user start the year over.
+    var legacy = null;
+    try {
+      for (var i = 0; i < LEGACY_CSR.length && !legacy; i++) {
+        var r = localStorage.getItem(LEGACY_CSR[i]);
+        if (r) legacy = JSON.parse(r);
+      }
+    } catch (e) {}
+    if (legacy) {
+      if (legacy.lounge) {   // the old shape kept lounge visits outside `uses`
+        legacy.uses = { lounge:{ n:legacy.lounge.visits, per:legacy.lounge.per } };
+        if (legacy.lounge.include !== undefined) legacy.include = legacy.lounge.include;
+      }
+      mergeCard(BY_ID.csr, legacy);
+      adopted = true;
+    }
+    CARDS.forEach(function (c) { if (c.id !== "csr" || !legacy) rollover(c, WALLET.cards[c.id]); });
+  }
+  var adopted = false;
+
+  /* ---- storage ---- */
+  var flashTimer;
+  function flash(msg) {
+    var el = document.getElementById("status");
+    el.textContent = msg;
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () { el.textContent = ""; }, 1800);
+  }
+  function saveLocal() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(WALLET)); return true; }
+    catch (e) { return false; }
+  }
+  function save() { flash(saveLocal() ? "Saved" : "Couldn't save — browser storage is blocked"); }
+
+  /* ---- tiny DOM helpers ---- */
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+  function tag(text, cls) { return el("span", "tag" + (cls ? " " + cls : ""), text); }
+  function panel(title, cls) {
+    var p = el("div", "panel" + (cls ? " " + cls : ""));
+    if (title) p.appendChild(el("p", "eyebrow", title));
+    return p;
+  }
+  function input(type, cls) {
+    var i = document.createElement("input");
+    i.type = type;
+    if (cls) i.className = cls;
+    return i;
+  }
+
+  // Every module registers its own repaint, so changing one number refreshes
+  // the page without rebuilding the DOM under the user's finger.
+  var repainters = [];
+  function onPaint(fn) { repainters.push(fn); fn(); }
+
+  /* ---- theme ---- */
+  var darkQ = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function applyTheme() {
+    var c = card(), t = (darkQ && darkQ.matches ? c.dark : c.light), r = document.documentElement.style;
+    r.setProperty("--accent", t.a);
+    r.setProperty("--accent-2", t.a2);
+    r.setProperty("--accent-soft", t.soft);
+    r.setProperty("--accent-ink", t.ink);
+    r.setProperty("--punch-1", c.light.a);
+    r.setProperty("--punch-2", c.light.a2);
+    r.setProperty("--punch-3", c.light.ink);
+    for (var i = 0; i < 4; i++) r.setProperty("--card-" + (i + 1), c.face[i]);
+    r.setProperty("--face-hi", c.hi);
+  }
+  if (darkQ && darkQ.addEventListener) darkQ.addEventListener("change", function () { applyTheme(); buildBar(); });
+
+  /* ══ card switcher ═══════════════════════════════════════════ */
+  function buildBar() {
+    var bar = document.getElementById("cardbar");
+    bar.textContent = "";
+    CARDS.forEach(function (c) {
+      var s = WALLET.cards[c.id];
+      var t = (darkQ && darkQ.matches ? c.dark : c.light);
+      var b = el("button", "cardtab");
+      b.type = "button";
+      b.setAttribute("aria-selected", String(c.id === WALLET.active));
+      b.style.setProperty("--tab", t.a);
+      b.style.setProperty("--tab-ink", t.ink);
+      b.appendChild(el("span", "swatch"));
+      b.appendChild(document.createTextNode(c.short));
+      var net = claimedTotal(c, s) - feeOf(c, s);
+      b.appendChild(el("span", "mini", (net >= 0 ? "+" : "−") + money(Math.abs(net))));
+      b.addEventListener("click", function () {
+        if (c.id === WALLET.active) return;
+        WALLET.active = c.id;
+        saveLocal();
+        render();
+        window.scrollTo({ top:0, behavior:"smooth" });
+      });
+      bar.appendChild(b);
+      // The strip scrolls on a phone; the card you're looking at should be the
+      // one in view, not whatever happens to sit at scroll position zero.
+      if (c.id === WALLET.active && bar.scrollWidth > bar.clientWidth) {
+        bar.scrollLeft = Math.max(0, b.offsetLeft - (bar.clientWidth - b.offsetWidth) / 2);
+      }
+    });
+  }
+
+  /* ══ card face ═══════════════════════════════════════════════ */
+  function buildFace() {
+    var c = card(), s = st(c);
+    document.getElementById("mark").innerHTML = MARKS[c.mark];
+    document.getElementById("cardLabel").textContent = c.label + " · " + YEAR;
+    document.getElementById("cardTitle").textContent = c.name;
+    var link = document.getElementById("signin");
+    link.href = c.signin.href;
+    link.textContent = "Sign in";
+    link.setAttribute("aria-label", "Sign in to " + c.signin.text + " — opens in a new tab");
+    var long = el("span", "signin-long", " to " + c.signin.text);
+    link.appendChild(long);
+
+    var host = document.getElementById("faceFields");
+    host.textContent = "";
+
+    /* annual cost — editable, because a waived first year is the common case */
+    var f1 = el("div", "field");
+    var feeIn = input("number", "money");
+    feeIn.id = "feeIn"; feeIn.min = "0"; feeIn.step = "5"; feeIn.inputMode = "numeric";
+    feeIn.value = feeOf(c, s);
+    var feeLab = el("label", null, c.feeWord.charAt(0).toUpperCase() + c.feeWord.slice(1));
+    feeLab.htmlFor = "feeIn";
+    f1.appendChild(feeLab);
+    f1.appendChild(feeIn);
+    f1.appendChild(el("span", null, c.feeNote || "What this card costs you this year."));
+    feeIn.addEventListener("input", function () { s.fee = feeIn.value; paintAll(); });
+    feeIn.addEventListener("change", function () { s.fee = feeIn.value; paintAll(); save(); });
+    host.appendChild(f1);
+
+    /* anniversary — only where a credit actually turns on it */
+    if (c.anniversary) {
+      var f2 = el("div", "field");
+      var av = input("date");
+      av.id = "anniv";
+      av.value = s.anniversary || "";
+      var avLab = el("label", null, "Card anniversary");
+      avLab.htmlFor = "anniv";
+      var avNote = el("span");
+      f2.appendChild(avLab); f2.appendChild(av); f2.appendChild(avNote);
+      av.addEventListener("change", function () {
+        s.anniversary = av.value;
+        var p = anniversaryPeriod(s);
+        s.travelPeriod = p ? iso(p) : "";
+        paintAll();
+        save();
+      });
+      onPaint(function () {
+        var next = nextAnniversary(s);
+        avNote.textContent = next
+          ? "Resets " + fmtDate(next) + " · " + countdown(next) + " away."
+          : c.anniversary;
+        avNote.className = next ? "reset-note" : "";
+      });
+      host.appendChild(f2);
+    }
+
+    /* the usage toggle only means something if a counter carries money */
+    var monetaryUses = (c.uses || []).filter(function (u) { return u.monetary !== false; });
+    if (monetaryUses.length) {
+      var f3 = el("div", "field");
+      var sw = el("button", "switch");
+      sw.type = "button";
+      sw.setAttribute("role", "switch");
+      var trk = el("span", "track"); trk.setAttribute("aria-hidden", "true");
+      trk.appendChild(el("span", "knob"));
+      sw.appendChild(trk);
+      sw.appendChild(document.createTextNode("Count perk usage"));
+      var note = el("span", "switch-note");
+      f3.appendChild(sw); f3.appendChild(note);
+      sw.addEventListener("click", function () { s.include = !s.include; paintAll(); save(); });
+      onPaint(function () {
+        var worth = usesWorth(c, s), used = 0;
+        (c.uses || []).forEach(function (u) { used += s.uses[u.id].n; });
+        sw.setAttribute("aria-checked", String(s.include));
+        note.textContent = !used
+          ? "Nothing logged yet — bags, passes and lounge visits go in below."
+          : s.include ? money(worth) + " from " + used + " logged " + (used === 1 ? "use" : "uses") + " is in the total."
+                      : money(worth) + " from " + used + " logged " + (used === 1 ? "use" : "uses") + " is held out.";
+      });
+      host.appendChild(f3);
+    }
+
+    /* the headline numbers */
+    onPaint(function () {
+      var claimed = claimedTotal(c, s), TOTAL = availableTotal(c, s), FEE = feeOf(c, s);
+      document.getElementById("claimed").textContent = money(claimed);
+      document.getElementById("total").textContent = money(TOTAL);
+      document.getElementById("totalRight").textContent = money(TOTAL);
+      document.getElementById("feeLabel").textContent = money(FEE);
+
+      var fill = document.getElementById("fill");
+      fill.style.width = (TOTAL > 0 ? Math.min(100, (claimed / TOTAL) * 100) : 0) + "%";
+      var paid = claimed >= FEE;
+      fill.className = "fill" + (paid ? " paid" : "");
+
+      // A fee marker past the end of the bar would sit outside it, so drop the
+      // marker entirely when what's left can't reach the fee.
+      var reachable = TOTAL >= FEE && FEE > 0;
+      var tick = document.getElementById("tick");
+      tick.style.display = reachable ? "" : "none";
+      if (reachable) tick.style.left = ((FEE / TOTAL) * 100) + "%";
+      document.getElementById("tickLabel").textContent =
+        FEE <= 0 ? "no cost this year" :
+        reachable ? "covered at " + money(FEE) : money(FEE) + " · more than what's left";
+
+      var v = document.getElementById("verdict");
+      v.className = "verdict" + (paid ? " paid" : "");
+      v.textContent = FEE <= 0
+        ? "Nothing to earn back this year — " + money(claimed) + " is pure upside."
+        : paid ? "Cost covered. " + money(claimed - FEE) + " ahead."
+               : money(FEE - claimed) + " to go before this card pays for itself.";
+    });
+  }
+
+  /* ══ what's about to expire ══════════════════════════════════ */
+  function riskList(c, s) {
+    var out = [];
+    (c.monthly || []).forEach(function (m) {
+      if (expired(m) || !monthLive(m, MONTH) || s.monthly[m.id][MONTH]) return;
+      out.push({ what:m.name, amt:m.per, when:endOfMonth(MONTH), note:MONTHS_LONG[MONTH] });
+    });
+    (c.semi || []).forEach(function (x) {
+      if (expired(x)) return;
+      if (x.halves) {
+        var h = MONTH < 6 ? 0 : 1;   // the other half isn't at risk yet
+        if (!s.semi[x.id][h])
+          out.push({ what:x.name, amt:x.per, when:slotDeadline(x, h), note:x.slots[h] });
+        return;
+      }
+      // Booking-style slots share one deadline, so they're one line at the
+      // combined amount rather than two identical rows.
+      var open = s.semi[x.id].filter(function (v) { return !v; }).length;
+      if (open) out.push({ what:x.name, amt:x.per * open, when:slotDeadline(x, 0),
+                           note:open + (open === 1 ? " booking left" : " bookings left") });
+    });
+    (c.annual || []).forEach(function (a) {
+      if (expired(a) || s.annual[a.id]) return;
+      out.push({ what:a.name, amt:a.value, when:annualDeadline(a, s), note:"" });
+    });
+    // Capped counters expire the same way a credit does — an unused United Club
+    // pass in December is money on the floor.
+    (c.uses || []).forEach(function (u) {
+      if (!u.cap || u.monetary === false || !s.include) return;
+      var left = u.cap - s.uses[u.id].n;
+      if (left <= 0) return;
+      var when = c.anniversary && nextAnniversary(s) ? nextAnniversary(s) : endOfYear();
+      out.push({ what:u.name, amt:left * Math.max(0, num(s.uses[u.id].per)), when:when,
+                 note:left + " of " + u.cap + " unused" });
+    });
+    out.sort(function (x, y) { return x.when - y.when; });
+    return out;
+  }
+
+  var riskOpen = false;
+  function buildRisk(host) {
+    var c = card(), s = st(c);
+    if (!(c.monthly || c.semi || c.annual || (c.uses || []).some(function (u) { return u.cap; }))) return;
+    var p = el("div", "panel risk");
+    host.appendChild(p);
+
+    function paint() {
+      p.textContent = "";
+      var items = riskList(c, s);
+      var soon = items.filter(function (r) { return daysUntil(r.when) <= 45; });
+      var urgent = soon.length > 0;
+      var base = urgent ? soon : items.slice(0, 3);
+      var show = riskOpen ? items : base;
+      // The headline covers every deadline it's speaking for — when nothing is
+      // urgent the list is trimmed to three, but the money still counts them all.
+      var atRisk = (urgent ? soon : items).reduce(function (n, r) { return n + r.amt; }, 0);
+
+      p.className = "panel risk" + (show.length ? (urgent ? "" : " later") : " clear");
+      var head = el("div", "risk-head");
+      head.appendChild(el("p", "eyebrow",
+        show.length ? (urgent ? "Expiring soon" : "Next up") : "Nothing expiring"));
+      if (show.length) head.appendChild(el("span", "risk-total num",
+        money(atRisk) + (urgent ? " at risk" : " unclaimed")));
+      p.appendChild(head);
+
+      if (!show.length) {
+        p.appendChild(el("p", "risk-none", "Every dated credit on this card is claimed for " + YEAR + ". Nice."));
+        return;
+      }
+      var ul = el("ul", "risk-list");
+      show.forEach(function (r) {
+        var li = el("li");
+        li.appendChild(el("span", "risk-what",
+          r.what + (r.note ? " · " + r.note : "") + "  " + money(r.amt)));
+        var days = daysUntil(r.when);
+        li.appendChild(el("span", "risk-when" + (days <= 7 ? " soon" : days > 45 ? " far" : ""),
+          countdown(r.when) + " · " + fmtDate(r.when)));
+        ul.appendChild(li);
+      });
+      p.appendChild(ul);
+
+      var rest = items.length - base.length;
+      if (rest > 0) {
+        var more = el("button", "risk-more", riskOpen
+          ? "Show less"
+          : "+ " + rest + (rest === 1 ? " more deadline" : " more deadlines") + " further out");
+        more.type = "button";
+        more.setAttribute("aria-expanded", String(riskOpen));
+        more.addEventListener("click", function () { riskOpen = !riskOpen; paint(); });
+        p.appendChild(more);
+      }
+    }
+    onPaint(paint);
+  }
+
+  /* ══ rewards balance ═════════════════════════════════════════ */
+  function buildPoints(host) {
+    var c = card(), s = st(c);
+    if (!c.points) return;
+    var p = panel(c.points.label, "points");
+    var row = el("div", "points-row");
+    var left = el("div");
+    var lab = el("label", "fieldlab", c.points.unit);
+    lab.htmlFor = "pts";
+    var inp = input("number");
+    inp.id = "pts"; inp.min = "0"; inp.step = c.points.money ? "1" : "1000";
+    inp.inputMode = "numeric"; inp.placeholder = "0";
+    inp.value = s.points || "";
+    left.appendChild(lab); left.appendChild(inp);
+    var out = el("div", "points-out");
+    out.appendChild(el("div", "cap", c.points.money ? "Redemption value"
+      : "Cash value at " + c.points.cpp + "¢"));
+    var amt = el("div", "amt num", "$0.00");
+    out.appendChild(amt);
+    row.appendChild(left); row.appendChild(out);
+    p.appendChild(row);
+    p.appendChild(el("p", "panel-note", c.points.note));
+    host.appendChild(p);
+
+    function read() { s.points = inp.value; paintPts(); }
+    function paintPts() {
+      var raw = parseFloat(s.points);
+      var n = isFinite(raw) && raw > 0 ? raw : 0;
+      amt.textContent = money2(c.points.money ? n : n * c.points.cpp / 100);
+    }
+    inp.addEventListener("input", read);
+    inp.addEventListener("change", function () { read(); save(); });
+    onPaint(paintPts);
+  }
+
+  /* ══ earn by category ════════════════════════════════════════ */
+  function buildSpend(host) {
+    var c = card(), s = st(c);
+    if (!c.spend) return;
+    var miles = c.spend.mode === "miles";
+    var p = panel(c.spend.title, "spend");
+    p.appendChild(el("p", "secsub", c.spend.periodNote));
+    var ul = el("ul", "earn");
+
+    c.spend.cats.forEach(function (cat) {
+      var li = el("li");
+      var top = el("div", "earn-top");
+      var nm = el("div", "earn-name", cat.label);
+      nm.appendChild(el("span", "earn-rate", miles ? cat.rate + "×" : pct(cat.rate)));
+      var inWrap = el("div", "earn-in");
+      inWrap.appendChild(el("span", null, "$"));
+      var inp = input("number");
+      inp.min = "0"; inp.step = "100"; inp.inputMode = "numeric"; inp.placeholder = "0";
+      inp.value = s.spend[cat.id] || "";
+      inp.setAttribute("aria-label", cat.label + " — annual spend");
+      inWrap.appendChild(inp);
+      var out = el("div", "earn-out");
+      var big = el("b"); var sub = el("span");
+      out.appendChild(big); out.appendChild(sub);
+      top.appendChild(nm); top.appendChild(inWrap); top.appendChild(out);
+      li.appendChild(top);
+      if (cat.note) li.appendChild(el("p", "earn-note", cat.note));
+
+      var bar = null, barFill = null;
+      if (cat.cap) {
+        bar = el("div", "capbar");
+        barFill = el("i");
+        bar.appendChild(barFill);
+        li.appendChild(bar);
+      }
+      ul.appendChild(li);
+
+      function paint() {
+        var spend = Math.max(0, num(s.spend[cat.id]));
+        var r = catReward(cat, spend);
+        big.textContent = miles ? count(r) : money2(r);
+        sub.textContent = miles ? "miles · " + money2(r * c.spend.cpp / 100) : "back";
+        if (bar) {
+          var f = Math.min(100, (spend / cat.cap) * 100);
+          barFill.style.width = f + "%";
+          bar.className = "capbar" + (spend >= cat.cap ? " full" : "");
+        }
+      }
+      function read() { s.spend[cat.id] = inp.value; paintAll(); }
+      inp.addEventListener("input", read);
+      inp.addEventListener("change", function () { read(); save(); });
+      onPaint(paint);
+    });
+
+    p.appendChild(ul);
+    var sum = el("div", "earn-sum");
+    sum.appendChild(el("span", "eyebrow", miles ? "Miles a year" : "Cash back a year"));
+    var sumB = el("b", "num");
+    sum.appendChild(sumB);
+    p.appendChild(sum);
+    var sumNote = el("p", "panel-note");
+    p.appendChild(sumNote);
+    host.appendChild(p);
+
+    onPaint(function () {
+      var r = spendReward(c, s), FEE = feeOf(c, s);
+      sumB.textContent = miles ? count(r.units) + " mi" : money2(r.dollars);
+      sumNote.textContent = miles
+        ? "Worth about " + money(r.dollars) + " at " + c.spend.cpp + "¢ a mile, and that dollar figure is what counts toward the "
+          + money(FEE) + " " + c.feeWord + " above."
+        : "This is real money back, so it counts toward the " + money(FEE) + " " + c.feeWord + " above.";
+    });
+  }
+
+  /* ══ perk usage counters ═════════════════════════════════════ */
+  function buildUses(host) {
+    var c = card(), s = st(c);
+    if (!(c.uses || []).length) return;
+    var p = panel("Perk usage", "uses");
+    p.appendChild(el("p", "secsub",
+      "Count what you actually use. Anything with a dollar figure feeds the total above."));
+
+    c.uses.forEach(function (u) {
+      var rec = s.uses[u.id];
+      var box = el("div", "use");
+      var top = el("div", "use-top");
+      var nm = el("div", "use-name", u.name);
+      if (u.monetary === false) nm.appendChild(el("span", "nocash", "no cash value"));
+      nm.appendChild(el("span", null, u.note));
+      var stepper = el("div", "stepper");
+      var minus = el("button", "step", "−");
+      minus.type = "button";
+      minus.setAttribute("aria-label", "One fewer " + u.unit);
+      var cnt = el("span", "num use-count", "0");
+      cnt.setAttribute("aria-live", "polite");
+      var plus = el("button", "step", "+");
+      plus.type = "button";
+      plus.setAttribute("aria-label", "One more " + u.unit);
+      stepper.appendChild(minus); stepper.appendChild(cnt); stepper.appendChild(plus);
+      var val = el("div", "use-val");
+      var valB = el("b", "num"); var valS = el("span");
+      val.appendChild(valB); val.appendChild(valS);
+      top.appendChild(nm); top.appendChild(stepper); top.appendChild(val);
+      box.appendChild(top);
+
+      var per = el("div", "use-per");
+      var perIn = null, capPill = null;
+      if (u.monetary !== false) {
+        var perLab = el("label", null, "Worth per " + u.unit);
+        perIn = input("number");
+        perIn.id = "per-" + c.id + "-" + u.id;
+        perLab.htmlFor = perIn.id;
+        perIn.min = "0"; perIn.step = "1"; perIn.inputMode = "numeric";
+        perIn.value = rec.per;
+        per.appendChild(perLab); per.appendChild(perIn);
+        per.appendChild(el("span", null, "Set 0 to log uses without valuing them."));
+      }
+      if (u.cap) {
+        capPill = el("span", "use-cap");
+        per.appendChild(capPill);
+      }
+      if (per.childNodes.length) box.appendChild(per);
+      p.appendChild(box);
+
+      function bump(d) {
+        var n = rec.n + d;
+        if (n < 0) n = 0;
+        if (u.cap && n > u.cap) n = u.cap;
+        rec.n = n;
+        paintAll();
+        save();
+      }
+      minus.addEventListener("click", function () { bump(-1); });
+      plus.addEventListener("click", function () { bump(1); });
+      if (perIn) {
+        perIn.addEventListener("input", function () { rec.per = Math.max(0, num(perIn.value)); paintAll(); });
+        perIn.addEventListener("change", function () { rec.per = Math.max(0, num(perIn.value)); paintAll(); save(); });
+      }
+      onPaint(function () {
+        cnt.textContent = String(rec.n);
+        minus.disabled = rec.n <= 0;
+        plus.disabled = !!(u.cap && rec.n >= u.cap);
+        if (u.monetary === false) {
+          val.className = "use-val use-nomoney";
+          valB.textContent = rec.n ? "logged" : "—";
+          valS.textContent = rec.n + " " + (rec.n === 1 ? u.unit : u.unit + "s");
+        } else {
+          var w = useWorth(c, s, u);
+          val.className = "use-val" + (s.include ? "" : " use-off");
+          valB.textContent = money(w);
+          valS.textContent = s.include ? "counted" : "held out";
+        }
+        if (capPill) {
+          var left = u.cap - rec.n;
+          capPill.className = "use-cap" + (left <= 0 ? " done" : "");
+          capPill.textContent = left <= 0
+            ? "Both used" : rec.n + " of " + u.cap + " used · " + left + " left this year";
+        }
+      });
+    });
+    host.appendChild(p);
+  }
+
+  /* ══ status ladder ═══════════════════════════════════════════ */
+  function buildStatus(host) {
+    var c = card(), s = st(c);
+    if (!c.status) return;
+    var p = panel(c.status.label + " — status, not cash", "ladder-panel");
+    var row = el("div", "ladder-now");
+    var left = el("div");
+    var lab = el("label", "fieldlab", c.status.label + " so far");
+    var inp = input("number");
+    inp.id = "statusIn"; lab.htmlFor = inp.id;
+    inp.min = "0"; inp.step = "1000"; inp.inputMode = "numeric"; inp.placeholder = "0";
+    inp.value = s.status || "";
+    inp.className = "";
+    inp.style.font = "inherit";
+    left.appendChild(lab); left.appendChild(inp);
+    left.className = "points";
+    var out = el("div", "points-out");
+    out.appendChild(el("div", "cap", "Standing"));
+    var now = el("div", "amt");
+    now.style.fontSize = "20px";
+    out.appendChild(now);
+    row.appendChild(left); row.appendChild(out);
+    p.appendChild(row);
+
+    var lad = el("div", "ladder");
+    var bar = el("div", "ladder-bar");
+    var barFill = el("i");
+    bar.appendChild(barFill);
+    lad.appendChild(bar);
+    var gap = el("p", "secsub");
+    lad.appendChild(gap);
+    var rows = el("ul", "ladder-rows");
+    var lis = c.status.tiers.map(function (t) {
+      var li = el("li");
+      li.appendChild(el("span", null, t.n));
+      li.appendChild(el("span", "num", count(t.v) + " " + c.status.short));
+      rows.appendChild(li);
+      return li;
+    });
+    lad.appendChild(rows);
+    p.appendChild(lad);
+    p.appendChild(el("p", "panel-note", c.status.note));
+    host.appendChild(p);
+
+    function read() { s.status = inp.value; paintAll(); }
+    inp.addEventListener("input", read);
+    inp.addEventListener("change", function () { read(); save(); });
+
+    onPaint(function () {
+      var v = Math.max(0, num(s.status));
+      var tiers = c.status.tiers;
+      var hit = null, next = null;
+      tiers.forEach(function (t) { if (v >= t.v) hit = t; else if (!next) next = t; });
+      now.textContent = hit ? hit.n : "No status yet";
+      var span = next ? next.v : tiers[tiers.length - 1].v;
+      barFill.style.width = Math.min(100, span ? (v / span) * 100 : 100) + "%";
+      lis.forEach(function (li, i) {
+        li.className = v >= tiers[i].v ? "hit" : (next && tiers[i].v === next.v ? "next" : "");
+      });
+      gap.textContent = next
+        ? count(next.v - v) + " " + c.status.short + " to go for " + next.n
+        : "Top tier reached — nothing left to chase this year.";
+    });
+  }
+
+  /* ══ perks that never post as a credit ═══════════════════════ */
+  function buildPerks(host) {
+    var c = card();
+    if (!(c.perks || []).length) return;
+    var p = panel("Perks that don't post as a credit", "perks");
+    p.appendChild(el("p", "secsub",
+      "No statement credit, no checkbox — but these are half of what you're paying for. The amber ones are the traps."));
+    var ul = el("ul", "perk-list");
+    c.perks.forEach(function (k) {
+      var li = el("li", k.kind === "watch" ? "watch" : "");
+      li.appendChild(el("span", "pip"));
+      var body = el("div");
+      body.appendChild(el("b", null, k.name));
+      body.appendChild(el("p", null, k.note));
+      li.appendChild(body);
+      ul.appendChild(li);
+    });
+    p.appendChild(ul);
+    host.appendChild(p);
+  }
+
+  /* ══ credit sections ═════════════════════════════════════════ */
+  function sectionHead(title, rightText, mono, sub) {
+    var frag = document.createDocumentFragment();
+    var head = el("div", "sechead");
+    head.appendChild(el("h2", "eyebrow", title));
+    head.appendChild(el("span", mono ? "num val" : "val", rightText));
+    frag.appendChild(head);
+    if (sub) frag.appendChild(el("p", "secsub", sub));
+    return frag;
+  }
+
+  function buildSections(host) {
+    var c = card(), s = st(c);
+
+    /* monthly */
+    if ((c.monthly || []).length) {
+      var s1 = el("section", "sec");
+      var monthlyTotal = 0;
+      c.monthly.forEach(function (m) { monthlyTotal += m.per * liveMonths(m); });
+      s1.appendChild(sectionHead("Every month — use it or lose it", money(monthlyTotal) + "/yr", true,
+        "This month is outlined. Tap a month to punch it."));
+
+      c.monthly.forEach(function (m) {
+        // A credit that ended mid-year keeps its live months tappable — only a
+        // year with no live months at all greys the row out.
+        var dead = liveMonths(m) === 0;
+        var row = el("div", "row" + (dead ? " expired" : ""));
+        var top = el("div", "rowtop");
+        var nm = el("span", "name", m.name);
+        if (dead) nm.appendChild(tag("Expired"));
+        else if (expired(m)) nm.appendChild(tag("Ended " + fmtDate(parseISO(m.through)), "ends"));
+        else if (endsThisYear(m)) nm.appendChild(tag("Ends " + fmtDate(parseISO(m.through)), "ends"));
+        top.appendChild(nm);
+        top.appendChild(el("span", "num val", money(m.per) + "/mo"));
+        row.appendChild(top);
+        row.appendChild(el("p", "detail", m.detail));
+
+        var strip = el("div", "strip");
+        var lab = el("p", "striplab num");
+        var buttons = [];
+
+        MONTHS.forEach(function (mo, i) {
+          var live = monthLive(m, i);
+          var cls = "punch";
+          if (!live) cls += " gone";
+          else if (i === MONTH) cls += " now";
+          else if (i > MONTH) cls += " future";
+          var b = el("button", cls, mo.charAt(0));
+          b.type = "button";
+          b.disabled = !live;
+          b.setAttribute("aria-label", m.name + ", " + MONTHS_LONG[i] + (live ? "" : " — credit ended"));
+          if (live) {
+            b.addEventListener("click", function () {
+              s.monthly[m.id][i] = !s.monthly[m.id][i];
+              paintAll();
+              save();
+            });
+          }
+          buttons.push(b);
+          strip.appendChild(b);
+        });
+
+        row.appendChild(strip);
+        row.appendChild(lab);
+        onPaint(function () {
+          var done = 0, i;
+          for (i = 0; i < 12; i++) if (s.monthly[m.id][i] && monthLive(m, i)) done++;
+          var avail = liveMonths(m);
+          lab.textContent = done + "/" + avail + " punched · " +
+            money(done * m.per) + " of " + money(m.per * avail);
+          buttons.forEach(function (b, idx) {
+            b.setAttribute("aria-pressed", String(!!s.monthly[m.id][idx]));
+          });
+        });
+        s1.appendChild(row);
+      });
+      host.appendChild(s1);
+    }
+
+    /* semiannual */
+    if ((c.semi || []).length) {
+      var s2 = el("section", "sec");
+      var semiTotal = 0;
+      c.semi.forEach(function (x) { if (!expired(x)) semiTotal += x.per * x.slots.length; });
+      s2.appendChild(sectionHead("Two shots a year", money(semiTotal) + "/yr", true));
+
+      c.semi.forEach(function (x) {
+        var dead = expired(x);
+        var row = el("div", "row" + (dead ? " expired" : ""));
+        var top = el("div", "rowtop");
+        var nm = el("span", "name", x.name);
+        if (dead) nm.appendChild(tag("Expired"));
+        top.appendChild(nm);
+        top.appendChild(el("span", "num val", money(x.per) + " × " + x.slots.length));
+        row.appendChild(top);
+        row.appendChild(el("p", "detail", x.detail));
+
+        var slots = el("div", "slots");
+        x.slots.forEach(function (label, i) {
+          var live = x.halves ? (i === (MONTH < 6 ? 0 : 1)) : true;
+          var b = el("button");
+          b.type = "button";
+          b.disabled = dead;
+          var sub = el("span");
+          b.appendChild(document.createTextNode(label));
+          b.appendChild(sub);
+          onPaint(function () {
+            var claimed = !!s.semi[x.id][i];
+            var left = timeLeft(slotDeadline(x, i));
+            // A window whose date has passed stays tappable — credits post late —
+            // but it shouldn't look like an open opportunity.
+            var closed = !claimed && !left;
+            b.className = "slot" + (live && !dead ? " live" : "") + (closed || dead ? " closed" : "");
+            b.setAttribute("aria-pressed", String(claimed));
+            if (claimed) sub.textContent = money(x.per) + " claimed";
+            else if (dead) sub.textContent = "Expired unused";
+            else if (closed) sub.textContent = "Window closed unused";
+            else sub.textContent = "Unused · " + left;
+          });
+          if (!dead) {
+            b.addEventListener("click", function () {
+              s.semi[x.id][i] = !s.semi[x.id][i];
+              paintAll();
+              save();
+            });
+          }
+          slots.appendChild(b);
+        });
+        row.appendChild(slots);
+        s2.appendChild(row);
+      });
+      host.appendChild(s2);
+    }
+
+    /* annual */
+    if ((c.annual || []).length) {
+      var s3 = el("section", "sec");
+      var annualTotal = 0;
+      c.annual.forEach(function (x) { if (!expired(x)) annualTotal += x.value; });
+      s3.appendChild(sectionHead("Once this year", money(annualTotal), true));
+
+      c.annual.forEach(function (a) {
+        var dead = expired(a);
+        var row = el("div", "row" + (dead ? " expired" : ""));
+        var b = el("button", "check");
+        b.type = "button";
+        b.disabled = dead;
+        var box = el("span", "box", "✓");
+        box.setAttribute("aria-hidden", "true");
+        var grow = el("span", "grow");
+        var top = el("span", "rowtop");
+        var nm = el("span", "name", a.name);
+        if (dead) nm.appendChild(tag("Expired"));
+        else if (endsThisYear(a)) nm.appendChild(tag("Ends " + fmtDate(parseISO(a.through)), "ends"));
+        top.appendChild(nm);
+        top.appendChild(el("span", "num val", money(a.value)));
+        grow.appendChild(top);
+        var d = el("span", "detail", a.detail);
+        d.style.display = "block";
+        grow.appendChild(d);
+        var when = el("span", "detail");
+        when.style.display = "block";
+        grow.appendChild(when);
+        b.appendChild(box); b.appendChild(grow);
+        onPaint(function () {
+          b.setAttribute("aria-pressed", String(!!s.annual[a.id]));
+          if (dead) { when.textContent = ""; return; }
+          var dl = annualDeadline(a, s);
+          var left = timeLeft(dl);
+          when.textContent = s.annual[a.id]
+            ? "Claimed · resets " + fmtDate(dl)
+            : left ? "Unused · " + left + " (" + fmtDate(dl) + ")"
+                   : "Unused · window closed " + fmtDate(dl);
+        });
+        if (!dead) {
+          b.addEventListener("click", function () {
+            s.annual[a.id] = !s.annual[a.id];
+            paintAll();
+            save();
+          });
+        }
+        row.appendChild(b);
+        s3.appendChild(row);
+      });
+      host.appendChild(s3);
+    }
+
+    /* set once */
+    if ((c.once || []).length) {
+      var s4 = el("section", "sec");
+      var s4head = el("div", "sechead");
+      var s4val = el("span", "val");
+      s4head.appendChild(el("h2", "eyebrow", "Set up once, then forget"));
+      s4head.appendChild(s4val);
+      s4.appendChild(s4head);
+      // Only the ones carrying a value count, and only once ticked.
+      onPaint(function () {
+        var got = onceValue(c, s);
+        s4val.textContent = got ? money(got) + " counted" : "counted when used";
+        s4val.className = got ? "num val" : "val";
+      });
+
+      c.once.forEach(function (o) {
+        var dead = expired(o);
+        var row = el("div", "row" + (dead ? " expired" : ""));
+        var b = el("button", "check");
+        b.type = "button";
+        b.disabled = dead;
+        var box = el("span", "box", "✓");
+        box.setAttribute("aria-hidden", "true");
+        var grow = el("span", "grow");
+        var top = el("span", "rowtop");
+        var n = el("span", "name", o.name);
+        if (dead) n.appendChild(tag("Expired"));
+        top.appendChild(n);
+        if (o.value) top.appendChild(el("span", "num val", money(o.value)));
+        var d = el("span", "detail", o.note);
+        d.style.display = "block";
+        grow.appendChild(top); grow.appendChild(d);
+        b.appendChild(box); b.appendChild(grow);
+        onPaint(function () { b.setAttribute("aria-pressed", String(!!s.once[o.id])); });
+        if (!dead) {
+          b.addEventListener("click", function () {
+            s.once[o.id] = !s.once[o.id];
+            paintAll();
+            save();
+          });
+        }
+        row.appendChild(b);
+        s4.appendChild(row);
+      });
+      host.appendChild(s4);
+    }
+  }
+
+  /* ══ the whole wallet ════════════════════════════════════════ */
+  function buildWallet() {
+    var host = document.getElementById("wallet");
+    host.textContent = "";
+    host.appendChild(el("p", "eyebrow", "The whole wallet"));
+    var ul = el("ul", "wtable");
+    var rows = [];
+
+    CARDS.forEach(function (c) {
+      var s = WALLET.cards[c.id];
+      var li = el("li");
+      var b = el("button", "wrow");
+      b.type = "button";
+      var t = (darkQ && darkQ.matches ? c.dark : c.light);
+      var sw = el("span", "swatch");
+      sw.style.background = t.a;
+      var nm = el("div", "wname", c.short);
+      var sub = el("span");
+      nm.appendChild(sub);
+      var net = el("div", "wnet");
+      var netB = document.createTextNode("");
+      var netS = el("span");
+      net.appendChild(netB); net.appendChild(netS);
+      b.appendChild(sw); b.appendChild(nm); b.appendChild(net);
+      b.addEventListener("click", function () {
+        if (c.id === WALLET.active) return;
+        WALLET.active = c.id;
+        saveLocal();
+        render();
+        window.scrollTo({ top:0, behavior:"smooth" });
+      });
+      li.appendChild(b);
+      ul.appendChild(li);
+      rows.push({ c:c, s:s, sub:sub, net:net, netB:netB, netS:netS });
+    });
+    host.appendChild(ul);
+
+    var sum = el("div", "wsum");
+    var big = el("div", "wsum-big num");
+    var lab = el("div", "wsum-lab");
+    sum.appendChild(big); sum.appendChild(lab);
+    host.appendChild(sum);
+
+    onPaint(function () {
+      var fees = 0, got = 0;
+      rows.forEach(function (r) {
+        var f = feeOf(r.c, r.s), g = claimedTotal(r.c, r.s), n = g - f;
+        fees += f; got += g;
+        r.sub.textContent = money(g) + " captured against " + money(f);
+        r.netB.textContent = (n >= 0 ? "+" : "−") + money(Math.abs(n));
+        r.net.className = "wnet num " + (n >= 0 ? "up" : "down");
+        r.netS.textContent = n >= 0 ? "ahead" : "to go";
+      });
+      var net = got - fees;
+      big.textContent = (net >= 0 ? "+" : "−") + money(Math.abs(net));
+      big.className = "wsum-big num " + (net >= 0 ? "up" : "down");
+      lab.textContent = money(got) + " captured across five cards against " + money(fees) +
+        " in fees and dues" + (net >= 0 ? " — the wallet is ahead." : " — the wallet is behind.");
+    });
+  }
+
+  /* ══ render ══════════════════════════════════════════════════ */
+  function paintAll() {
+    repainters.forEach(function (fn) { fn(); });
+    buildBar();
+  }
+
+  function render() {
+    repainters = [];
+    riskOpen = false;
+    applyTheme();
+    buildFace();
+    var board = document.getElementById("board");
+    board.textContent = "";
+    buildRisk(board);
+    buildPoints(board);
+    buildSpend(board);
+    buildUses(board);
+    buildStatus(board);
+    buildPerks(board);
+    buildSections(board);
+    buildWallet();
+    buildBar();
+  }
+
+  loadLocal();
+  render();
+
+  document.getElementById("reset").addEventListener("click", function () {
+    var c = card(), s = st(c);
+    if (!confirm("Clear every entry on the " + c.short + " card and start the year over?\n\n" +
+                 "Your other cards aren't touched.")) return;
+    var keepAnniv = s.anniversary, keepFee = s.fee, keepInc = s.include, keepPer = {};
+    (c.uses || []).forEach(function (u) { keepPer[u.id] = s.uses[u.id].per; });
+    WALLET.cards[c.id] = blankCard(c);
+    var ns = WALLET.cards[c.id];
+    ns.anniversary = keepAnniv;   // these are settings, not a year's data
+    ns.fee = keepFee;
+    ns.include = keepInc;
+    (c.uses || []).forEach(function (u) { ns.uses[u.id].per = keepPer[u.id]; });
+    var p = anniversaryPeriod(ns);
+    ns.travelPeriod = p ? iso(p) : "";
+    render();
+    save();
+  });
+
+  // Lock in a rollover or an adoption right away so it survives a reload.
+  if (rolledYear || rolledAnniv || adopted) saveLocal();
+  if (adopted) flash("Picked up your Sapphire tracker");
+  else if (rolledYear) flash("New year — recurring credits reset");
+  else if (rolledAnniv) flash("Card anniversary passed — that credit reset");
+})();
+</script>
+</body>
+</html>
