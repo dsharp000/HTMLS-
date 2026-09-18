@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="icon" href="sapphire-icon-32.png" sizes="32x32">
-  <link rel="icon" href="sapphire-icon-180.png" sizes="180x180">
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" href="razor-icon-32.png" sizes="32x32">
+  <link rel="icon" href="razor-icon-180.png" sizes="180x180">
+  <link rel="apple-touch-icon" sizes="180x180" href="razor-icon-180.png">
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,6 +14,9 @@
   <meta property="og:description" content="A collection of tools, games, and trackers built for everyday use.">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -43,7 +46,7 @@
 
     /* ── Hero ── */
     .hero {
-      padding: 5rem 2rem 4rem;
+      padding: 3.5rem 2rem 2.75rem;
       text-align: center;
       position: relative;
       overflow: hidden;
@@ -73,15 +76,17 @@
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: var(--accent);
-      margin-bottom: 1.25rem;
+      margin-bottom: 1rem;
     }
 
     .hero h1 {
+      /* Display face for the wordmark only; body text stays on the system stack. */
+      font-family: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       /* min must stay small enough that "Razor's Edge" fits a 360px phone
          on one line — an oversized min overflows and clips the last letters. */
       font-size: clamp(2.5rem, 11.5vw, 7rem);
-      font-weight: 800;
-      letter-spacing: -0.03em;
+      font-weight: 900;
+      letter-spacing: -0.035em;
       /* line-height must clear the descender on "g" — background-clip:text
          paints only inside the box, so a tight box shears the tail off. */
       line-height: 1.18;
@@ -102,7 +107,7 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 1.25rem;
+      margin-bottom: 1rem;
       animation: sheen 9s ease-in-out infinite;
     }
 
@@ -127,7 +132,7 @@
         var(--accent-bright) 50%,
         rgba(159,179,198,0.35) 75%,
         transparent 100%);
-      margin: 0 auto 1.5rem;
+      margin: 0 auto 1.25rem;
     }
 
     .hero-sub {
@@ -144,7 +149,7 @@
       flex-wrap: wrap;
       justify-content: center;
       gap: 0.5rem;
-      margin-top: 2rem;
+      margin-top: 1.75rem;
       position: relative;
       z-index: 1;
     }
@@ -159,15 +164,17 @@
       padding: 0.45rem 0.95rem;
       transition: color 0.2s, border-color 0.2s;
     }
-    .jump-chip:hover {
+    .jump-chip:hover,
+    .jump-chip:focus-visible {
       color: var(--accent);
       border-color: var(--accent);
+      outline: none;
     }
 
     /* ── Search ── */
     .search-wrap {
       max-width: 420px;
-      margin: 1.75rem auto 0;
+      margin: 1.5rem auto 0;
       position: relative;
       z-index: 1;
     }
@@ -185,6 +192,27 @@
     }
     .search-wrap input::placeholder { color: var(--muted); }
     .search-wrap input:focus { border-color: var(--accent); }
+
+    /* Filled in by script from each card's data-added date. */
+    .recent {
+      position: relative;
+      z-index: 1;
+      margin-top: 1rem;
+      font-size: 0.78rem;
+      color: var(--dim);
+      min-height: 1.2em;
+      line-height: 1.8;
+    }
+    .recent a { white-space: nowrap; }
+    .recent a {
+      color: var(--muted);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .recent a:hover, .recent a:focus-visible { color: var(--accent); border-color: var(--accent); outline: none; }
+    .recent .sep { margin: 0 0.4rem; color: var(--dim); }
+
     .no-results {
       display: none;
       text-align: center;
@@ -246,30 +274,52 @@
       overflow: hidden;
     }
 
+    /* Accent bar: faint at rest so each card has an identity, full on hover. */
     .card::before {
       content: '';
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 2px;
       background: var(--card-accent, var(--accent));
-      opacity: 0;
+      opacity: 0.45;
       transition: opacity 0.2s;
     }
 
-    .card:hover {
+    .card:hover,
+    .card:focus-visible {
       border-color: var(--card-accent, var(--accent));
       transform: translateY(-3px);
       box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      outline: none;
     }
 
-    .card:hover::before { opacity: 1; }
+    .card:hover::before,
+    .card:focus-visible::before { opacity: 1; }
 
+    /* Icon sits on a tinted chip in the card's accent colour. */
     .card-icon {
-      font-size: 1.8rem;
-      margin-bottom: 0.9rem;
-      display: block;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      font-size: 1.45rem;
       line-height: 1;
+      margin-bottom: 0.9rem;
+      border-radius: 10px;
     }
+    .card-icon::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: var(--card-accent, var(--accent));
+      opacity: 0.16;
+      transition: opacity 0.2s;
+    }
+    .card:hover .card-icon::before,
+    .card:focus-visible .card-icon::before { opacity: 0.26; }
 
     .card-title {
       font-size: 1rem;
@@ -282,6 +332,11 @@
       font-size: 0.82rem;
       color: var(--muted);
       line-height: 1.5;
+      padding-right: 1.5rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .card-arrow {
@@ -293,9 +348,47 @@
       transition: color 0.2s, transform 0.2s;
     }
 
-    .card:hover .card-arrow {
+    .card:hover .card-arrow,
+    .card:focus-visible .card-arrow {
       color: var(--card-accent, var(--accent));
       transform: translate(2px, -2px);
+    }
+    .card:not(.external):hover .card-arrow,
+    .card:not(.external):focus-visible .card-arrow { transform: translateX(3px); }
+
+    /* Cards that leave the site. */
+    .card-ext {
+      position: absolute;
+      bottom: 1.3rem;
+      right: 2.4rem;
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    /* "New" pill, added by script to the newest cards. */
+    .card-new {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--card-accent, var(--accent));
+      padding: 0.22rem 0.5rem;
+      border-radius: 999px;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px; height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
     }
 
     /* ── Footer ── */
@@ -307,10 +400,51 @@
       border-top: 1px solid var(--border);
     }
 
+    /* ── Phone: compact row layout ── */
     @media (max-width: 480px) {
-      .hero { padding: 3.5rem 1.25rem 3rem; }
+      .hero { padding: 2.5rem 1.25rem 2.25rem; }
       .grid-section { padding: 1rem 1.25rem 3rem; }
-      .grid { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; gap: 0.6rem; }
+
+      .card {
+        display: grid;
+        grid-template-columns: 40px 1fr;
+        grid-template-rows: auto auto;
+        column-gap: 0.85rem;
+        align-items: start;
+        padding: 0.9rem 1rem 0.9rem 0.9rem;
+        border-radius: 10px;
+      }
+      .card:hover, .card:focus-visible { transform: none; }
+      .card-icon {
+        grid-row: 1 / span 2;
+        width: 40px;
+        height: 40px;
+        font-size: 1.3rem;
+        margin: 0;
+        border-radius: 9px;
+      }
+      .card-title {
+        font-size: 0.95rem;
+        margin-bottom: 0.15rem;
+        padding-right: 1.25rem;
+      }
+      .card-desc { -webkit-line-clamp: 2; font-size: 0.78rem; }
+      .card-arrow {
+        top: 0.95rem;
+        bottom: auto;
+        right: 0.9rem;
+        font-size: 0.85rem;
+      }
+      .card-ext { display: none; }
+      .card-new {
+        position: static;
+        display: inline-block;
+        vertical-align: 2px;
+        margin-left: 0.4rem;
+        font-size: 0.56rem;
+        padding: 0.18rem 0.42rem;
+      }
     }
   </style>
 </head>
@@ -330,210 +464,273 @@
     <div class="search-wrap">
       <input id="app-search" type="search" placeholder="Search apps…" autocomplete="off" aria-label="Search apps">
     </div>
+    <p class="recent" id="recent"></p>
   </div>
 
   <div class="grid-section">
 
     <section class="app-section" id="outdoors">
-    <p class="section-label"><span class="sec-icon">🏔️</span> Parks &amp; Outdoors <span class="sec-count">5 apps</span></p>
+    <p class="section-label"><span class="sec-icon">🏔️</span> Parks &amp; Outdoors <span class="sec-count"></span></p>
     <div class="grid">
 
-      <a class="card" href="national-parks.html" style="--card-accent: #7eb8a0;">
-        <span class="card-icon">🏔️</span>
+      <a class="card" href="national-parks.html" style="--card-accent: #7eb8a0;" data-added="2026-04-15">
+        <span class="card-icon">🏞️</span>
         <div class="card-title">63 National Parks Checklist</div>
-        <div class="card-desc">All 63 designated national parks on an interactive US map. Alaska, Hawaii, American Samoa, and the Virgin Islands shown in corner insets.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">All 63 national parks on an interactive US map, with Alaska, Hawaii, American Samoa, and the Virgin Islands in corner insets.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="parks-checklist-newton-nj.html" style="--card-accent: #6abf8f;">
+      <a class="card" href="stokes-trails.html" style="--card-accent: #c98a4b;" data-added="2026-09-13">
+        <span class="card-icon">🥾</span>
+        <div class="card-title">Stokes Trail Log</div>
+        <div class="card-desc">All 22 marked trails of Stokes State Forest on a blaze-coloured map. Tick off hikes, grade them A+ to F, and keep notes.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a class="card" href="parks-checklist-newton-nj.html" style="--card-accent: #6abf8f;" data-added="2026-04-07">
         <span class="card-icon">🗺️</span>
         <div class="card-title">Parks Near Newton, NJ</div>
-        <div class="card-desc">Interactive checklist of state parks, national park units, and nature preserves within 90 minutes. Includes a live map and dog-friendly filters.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">State parks, national park units, and preserves within 90 minutes of Newton, NJ. Live map and dog-friendly filters.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="parks-checklist-audubon-pa.html" style="--card-accent: #8fbf6a;">
-        <span class="card-icon">🗺️</span>
+      <a class="card" href="parks-checklist-audubon-pa.html" style="--card-accent: #8fbf6a;" data-added="2026-03-28">
+        <span class="card-icon">🌳</span>
         <div class="card-title">Parks Near Audubon, PA</div>
-        <div class="card-desc">Interactive checklist of state parks, national park units, and nature preserves within 90 minutes. Includes a live map and dog-friendly filters.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">The same checklist centred on Audubon, PA: parks and preserves within 90 minutes of the Philadelphia suburbs.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="national-parks-checklist.html" style="--card-accent: #6aab8f;">
+      <a class="card" href="national-parks-checklist.html" style="--card-accent: #6aab8f;" data-added="2026-04-01">
         <span class="card-icon">🏕️</span>
         <div class="card-title">National Park Sites Checklist</div>
         <div class="card-desc">Track every National Park Service unit across the country. Check them off as you go.</div>
-        <span class="card-arrow">↗</span>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="alaska-packer.html" style="--card-accent: #6abf8a;">
+      <a class="card" href="alaska-packer.html" style="--card-accent: #6abf8a;" data-added="2026-05-11">
         <span class="card-icon">🛩️</span>
         <div class="card-title">Alaska Fly-In Packer</div>
-        <div class="card-desc">4-person bush plane weight tracker. 850 lb limit includes bodies and gear. Enter your weight, check off your gear, and watch the live total in real time.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">Bush plane weight tracker for four. Enter body weights, check off gear, and watch the live total against the 850 lb limit.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a class="card" href="glacier-bay-wildlife-log.html" style="--card-accent: #5aa9c4;" data-added="2026-08-15">
+        <span class="card-icon">🐋</span>
+        <div class="card-title">Glacier Bay Sightings Log</div>
+        <div class="card-desc">Set your position as the boat moves up the bay, then tap each animal you spot. Sightings are time-stamped and scored by rarity.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
     </div>
     </section>
 
     <section class="app-section" id="family">
-    <p class="section-label"><span class="sec-icon">🎈</span> Family &amp; Fun <span class="sec-count">6 apps</span></p>
+    <p class="section-label"><span class="sec-icon">🎈</span> Family &amp; Fun <span class="sec-count"></span></p>
     <div class="grid">
 
-      <a class="card" href="drum-machine.html" style="--card-accent: #ff8a3d;">
+      <a class="card" href="drum-machine.html" style="--card-accent: #ff8a3d;" data-added="2026-07-28">
         <span class="card-icon">🥁</span>
         <div class="card-title">PULSE-16 Drum Machine</div>
-        <div class="card-desc">A 16-step, 8-voice drum machine you play in the browser. Program beats on the grid, dial in tempo and swing, and jam over House, Trap, Funk, and Techno presets. All sounds synthesized live.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">A 16-step, 8-voice drum machine in the browser. Program beats, set tempo and swing, and jam over House, Trap, Funk, and Techno presets.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="summer-planner.html" style="--card-accent: #FF7043;">
+      <a class="card" href="summer-planner.html" style="--card-accent: #FF7043;" data-added="2026-04-19">
         <span class="card-icon">☀️</span>
         <div class="card-title">Summer Plans 2026</div>
-        <div class="card-desc">Shared availability planner for June–August. Add your name, mark the days you're free, and see the top overlap days across the whole group.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">Shared availability planner for June to August. Mark the days you're free and see the top overlap days across the group.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="screen-time.html" style="--card-accent: #FFB23E;">
+      <a class="card" href="screen-time.html" style="--card-accent: #FFB23E;" data-added="2026-06-14">
         <span class="card-icon">⏱️</span>
         <div class="card-title">Road Trip Screen Time</div>
-        <div class="card-desc">Per-kid screen-time timers with reward and penalty minutes and an activity log. Timer or stopwatch style, synced live across every device on the trip.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">Per-kid screen-time timers with reward and penalty minutes and an activity log, synced live across every device on the trip.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="family-dinner.html" style="--card-accent: #818cf8;">
+      <a class="card" href="family-dinner.html" style="--card-accent: #818cf8;" data-added="2026-05-23">
         <span class="card-icon">🍽️</span>
         <div class="card-title">Family Dinner Picker</div>
         <div class="card-desc">Can't agree on takeout? Spin for 3 options and vote for tonight's dinner.</div>
-        <span class="card-arrow">↗</span>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="lunch-picker.html" style="--card-accent: #c87a6e;">
+      <a class="card" href="lunch-picker.html" style="--card-accent: #c87a6e;" data-added="2026-04-01">
         <span class="card-icon">🍜</span>
         <div class="card-title">Friday Lunch Picker</div>
         <div class="card-desc">Can't decide where to eat? Let the wheel decide. Spin for a random lunch spot.</div>
-        <span class="card-arrow">↗</span>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="doll-dressup.html" style="--card-accent: #ff69b4;">
+      <a class="card" href="doll-dressup.html" style="--card-accent: #ff69b4;" data-added="2026-07-08">
         <span class="card-icon">🎀</span>
         <div class="card-title">Doll Designer</div>
-        <div class="card-desc">Dress-up doll studio with outfits, hairstyles, skin tones, scenes, and accessories. Hit Surprise for a random look and save your creation as a picture.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">Dress-up studio with outfits, hairstyles, skin tones, scenes, and accessories. Hit Surprise for a random look and save it as a picture.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
     </div>
     </section>
 
     <section class="app-section" id="games">
-    <p class="section-label"><span class="sec-icon">🏆</span> Games &amp; Sports <span class="sec-count">5 apps</span></p>
+    <p class="section-label"><span class="sec-icon">🏆</span> Games &amp; Sports <span class="sec-count"></span></p>
     <div class="grid">
 
-      <a class="card" href="fantasy-football.html" style="--card-accent: #22C55E;">
+      <a class="card" href="fantasy-football.html" style="--card-accent: #22C55E;" data-added="2026-08-01">
         <span class="card-icon">🏈</span>
         <div class="card-title">Fantasy Draft Date Picker</div>
-        <div class="card-desc">Pick a draft night everyone can make. Mark August and September days green, yellow, or red, and the Best Days board ranks the dates that work for the most managers. Runs two leagues side by side.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">Pick a draft night everyone can make. Rate August and September days green, yellow, or red, and the Best Days board ranks them.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="https://dsharp000.github.io/castle-quest/" style="--card-accent: #c8a96e;">
+      <a class="card external" href="https://dsharp000.github.io/castle-quest/" rel="noopener" style="--card-accent: #c8a96e;" data-added="2026-07-11">
         <span class="card-icon">🏰</span>
         <div class="card-title">Castle Quest: Forest of Shadows</div>
-        <div class="card-desc">Side-scrolling adventure — chop trees, mine iron, battle goblins, and build your castle before the raids hit. Beat the troll, then race the speedrun clock for the best-times table.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">Side-scrolling adventure: chop trees, mine iron, battle goblins, and build your castle before the raids hit. Beat the troll, then chase the speedrun clock.</div>
+        <span class="card-ext" aria-hidden="true">External</span>
+        <span class="card-arrow" aria-hidden="true">↗</span>
+        <span class="visually-hidden">(opens an external site)</span>
       </a>
 
-      <a class="card" href="worldcup-pool.html" style="--card-accent: #ffd600;">
+      <a class="card" href="worldcup-pool.html" style="--card-accent: #ffd600;" data-added="2026-05-31">
         <span class="card-icon">🏆</span>
         <div class="card-title">World Cup 2026 Pool</div>
         <div class="card-desc">Pick group finishers, knockout winners, and champion. Live leaderboard updates as results sync in from ESPN.</div>
-        <span class="card-arrow">↗</span>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="soccer-tracker.html" style="--card-accent: #7fff7f;">
+      <a class="card" href="soccer-tracker.html" style="--card-accent: #7fff7f;" data-added="2026-04-07">
         <span class="card-icon">⚽</span>
         <div class="card-title">Soccer Match Tracker</div>
         <div class="card-desc">Live match clock, player time tracking, substitution log, goals, and season stats. Shared in real time across all coaches via Firebase.</div>
-        <span class="card-arrow">↗</span>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="sub-rotation.html" style="--card-accent: #1b7f3b;">
+      <a class="card" href="sub-rotation.html" style="--card-accent: #1b7f3b;" data-added="2026-09-18">
         <span class="card-icon">🔄</span>
         <div class="card-title">Sub Rotation</div>
-        <div class="card-desc">The simple sideline version: one list, tap OUT and the next kid walks on. Game clock, time on and off for every player, a goalie slot, goals, and undo. Works offline on any phone.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">The simple sideline version: one list, tap OUT and the next kid walks on. Game clock, time on and off per player, goalie slot, goals, and undo.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
     </div>
     </section>
 
     <section class="app-section" id="home">
-    <p class="section-label"><span class="sec-icon">🏠</span> Home, Money &amp; Tools <span class="sec-count">6 apps</span></p>
+    <p class="section-label"><span class="sec-icon">🏠</span> Home, Money &amp; Tools <span class="sec-count"></span></p>
     <div class="grid">
 
-      <a class="card" href="csr-tracker.html" style="--card-accent: #2242C7;">
+      <a class="card" href="csr-tracker.html" style="--card-accent: #2242C7;" data-added="2026-08-08">
         <span class="card-icon">💎</span>
         <div class="card-title">Sapphire Reserve Credits</div>
-        <div class="card-desc">Punch off every Chase Sapphire Reserve credit &mdash; monthly, semiannual, and annual &mdash; and watch the running total climb toward the $795 fee. Flags what expires soonest.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">Punch off every Chase Sapphire Reserve credit and watch the running total climb toward the $795 fee. Flags what expires soonest.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="bathroom-designer.html" style="--card-accent: #2dd4bf;">
+      <a class="card" href="bathroom-designer.html" style="--card-accent: #2dd4bf;" data-added="2026-05-02">
         <span class="card-icon">🚿</span>
         <div class="card-title">Bathroom Designer</div>
-        <div class="card-desc">Drag-and-drop 2D floor plan builder for bathrooms. Add toilets, tubs, showers, vanities, and more with custom measurements. Shared saves via Firebase.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">Drag-and-drop 2D floor plan builder for bathrooms. Toilets, tubs, showers, and vanities with custom measurements. Shared saves via Firebase.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="kitchen-designer.html" style="--card-accent: #818cf8;">
-        <span class="card-icon">🏠</span>
+      <a class="card" href="kitchen-designer.html" style="--card-accent: #818cf8;" data-added="2026-04-05">
+        <span class="card-icon">🍳</span>
         <div class="card-title">Kitchen Designer</div>
-        <div class="card-desc">Drag-and-drop 2D floor plan builder. Add cabinets, appliances, windows, doors, fireplace and more with custom measurements. Shared saves via Firebase.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">Drag-and-drop 2D floor plan builder. Cabinets, appliances, windows, doors, and more with custom measurements. Shared saves via Firebase.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="amortization.html" style="--card-accent: #38bdf8;">
-        <span class="card-icon">🏠</span>
+      <a class="card" href="amortization.html" style="--card-accent: #38bdf8;" data-added="2026-04-04">
+        <span class="card-icon">🏦</span>
         <div class="card-title">Loan Tracker</div>
-        <div class="card-desc">Pick any month to see total principal & interest paid, remaining balance, and time left on the loan.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">Pick any month to see total principal &amp; interest paid, remaining balance, and time left on the loan.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="family-loan.html" style="--card-accent: #a16207;">
+      <a class="card" href="family-loan.html" style="--card-accent: #a16207;" data-added="2026-05-07">
         <span class="card-icon">🤝</span>
         <div class="card-title">Family Loan Tracker</div>
-        <div class="card-desc">Track a private loan with daily interest accrual. Log regular and principal-only payments, see the running balance, and chart how the loan shrinks over time.</div>
-        <span class="card-arrow">↗</span>
+        <div class="card-desc">Track a private loan with daily interest accrual. Log regular and principal-only payments and chart how the balance shrinks.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="call-recorder.html" style="--card-accent: #667eea;">
+      <a class="card" href="trip-split.html" style="--card-accent: #0B7A68;" data-added="2026-08-16">
+        <span class="card-icon">🧾</span>
+        <div class="card-title">Trip Split</div>
+        <div class="card-desc">Split shared trip costs across the group. Log who paid and who's in on each expense, and it boils down to who pays whom. Invite links via Firebase.</div>
+        <span class="card-arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a class="card" href="call-recorder.html" style="--card-accent: #667eea;" data-added="2026-05-21">
         <span class="card-icon">📞</span>
         <div class="card-title">Call Recorder</div>
         <div class="card-desc">Record phone calls with live transcription and get an AI-powered summary when the call ends.</div>
-        <span class="card-arrow">↗</span>
+        <span class="card-arrow" aria-hidden="true">→</span>
       </a>
 
     </div>
     </section>
 
+    <div class="no-results" id="no-results">No apps match “<span id="nr-term"></span>”.</div>
+
   </div>
 
-  <footer>Razor's Edge · 21 apps and counting</footer>
-
-  <div class="no-results" id="no-results">No apps match “<span id="nr-term"></span>”.</div>
+  <footer>Razor's Edge · <span id="total-count"></span> apps and counting</footer>
 
   <script>
-    // Live client-side filter over the app cards.
     (function () {
-      const input = document.getElementById('app-search');
       const sections = Array.from(document.querySelectorAll('.app-section'));
       const cards = Array.from(document.querySelectorAll('.card'));
+
+      // ── Counts: derived from the markup so they can never drift. ──
+      sections.forEach(s => {
+        const n = s.querySelectorAll('.card').length;
+        s.querySelector('.sec-count').textContent = n + (n === 1 ? ' app' : ' apps');
+      });
+      document.getElementById('total-count').textContent = cards.length;
+
+      // Plain title text and searchable text, captured before any badge is added.
+      cards.forEach(c => {
+        c.dataset.title = c.querySelector('.card-title').textContent.trim();
+        c.dataset.search = (c.dataset.title + ' ' +
+                            c.querySelector('.card-desc').textContent).toLowerCase();
+      });
+
+      // ── Freshness: "New" pill on the two newest cards added in the last 60 days,
+      //    plus a "Recently added" line under the search box. ──
+      const dated = cards
+        .filter(c => c.dataset.added)
+        .sort((a, b) => b.dataset.added.localeCompare(a.dataset.added));
+      const cutoff = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
+      dated.filter(c => c.dataset.added >= cutoff).slice(0, 2).forEach(c => {
+        const pill = document.createElement('span');
+        pill.className = 'card-new';
+        pill.textContent = 'New';
+        c.querySelector('.card-title').appendChild(pill);
+      });
+      const recent = document.getElementById('recent');
+      if (dated.length) {
+        recent.appendChild(document.createTextNode('Recently added: '));
+        dated.slice(0, 3).forEach((c, i) => {
+          if (i) { const s = document.createElement('span'); s.className = 'sep'; s.textContent = '·'; recent.appendChild(s); }
+          const a = document.createElement('a');
+          a.href = c.getAttribute('href');
+          a.textContent = c.dataset.title;
+          recent.appendChild(a);
+        });
+      }
+
+      // ── Live client-side filter over the app cards. ──
+      const input = document.getElementById('app-search');
       const jumpNav = document.querySelector('.jump-nav');
       const noResults = document.getElementById('no-results');
       const nrTerm = document.getElementById('nr-term');
 
-      // Precompute searchable text per card once.
-      cards.forEach(c => { c.dataset.search = c.textContent.toLowerCase(); });
+      // Searchable text is title + description only, not badges or arrows.
+
 
       input.addEventListener('input', function () {
         const q = input.value.trim().toLowerCase();
@@ -541,20 +738,25 @@
 
         cards.forEach(c => {
           const match = q === '' || c.dataset.search.includes(q);
-          c.style.display = match ? '' : 'none';
+          c.hidden = !match;
           if (match) anyVisible = true;
         });
 
         // Hide a section header when all its cards are filtered out.
         sections.forEach(s => {
-          const visible = s.querySelectorAll('.card:not([style*="display: none"])').length;
-          s.style.display = visible ? '' : 'none';
+          s.hidden = s.querySelectorAll('.card:not([hidden])').length === 0;
         });
 
-        // The jump-nav is meaningless while filtering.
-        jumpNav.style.display = q === '' ? '' : 'none';
+        // The jump-nav and recent line are meaningless while filtering.
+        jumpNav.hidden = q !== '';
+        recent.hidden = q !== '';
         noResults.style.display = anyVisible ? 'none' : 'block';
         nrTerm.textContent = input.value;
+      });
+
+      // "/" focuses the search box from anywhere on the page.
+      document.addEventListener('keydown', e => {
+        if (e.key === '/' && document.activeElement !== input) { e.preventDefault(); input.focus(); }
       });
     })();
   </script>
