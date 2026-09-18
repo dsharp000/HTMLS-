@@ -280,6 +280,17 @@
   .subbtn.in:active { transform: translateY(1px); box-shadow: 0 1px 0 #183b80; }
   .subbtn.ghost { visibility: hidden; }
 
+  .pick-hint {
+    margin: 0 2px 6px;
+    padding: 12px 14px;
+    border: 2px dashed var(--green-line);
+    border-radius: 12px;
+    color: var(--green);
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.4;
+  }
   .empty {
     text-align: center;
     color: var(--muted);
@@ -463,6 +474,7 @@
     return {
       players,
       order: players.map(p => p.id),  // rotation queue, top = on pitch first
+      lineup: 0,                      // how many from the top of the queue are on the pitch
       gk: null,                       // player id pinned as goalie
       pitchSize: 9,                   // on the pitch including the goalie
       elapsed: 0,                     // game seconds accumulated while paused
@@ -483,6 +495,7 @@
       if (!raw) return null;
       const s = JSON.parse(raw);
       if (!s || !Array.isArray(s.players) || !Array.isArray(s.order)) return null;
+      if (s.lineup === undefined) s.lineup = (s.elapsed > 0 || s.runningSince) ? 99 : 0;
       return { ...freshState(), ...s };
     } catch (e) { return null; }
   }
@@ -522,7 +535,7 @@
     if (!p || !p.present) return 'absent';
     if (gkPlayer() && id === S.gk) return 'gk';
     const idx = queue().findIndex(q => q.id === id);
-    return idx > -1 && idx < fieldSlots() ? 'on' : 'off';
+    return idx > -1 && idx < S.lineup ? 'on' : 'off';
   }
   function statusMap() {
     const m = {};
@@ -530,6 +543,11 @@
     return m;
   }
   function isPlaying(status) { return status === 'on' || status === 'gk'; }
+  function pitchFull() { return S.lineup >= fieldSlots(); }
+  // lineup can never exceed the open field slots or the number of kids in the queue
+  function clampLineup() {
+    S.lineup = Math.max(0, Math.min(S.lineup, fieldSlots(), queue().length));
+  }
 
   function stintOf(p, t) { return Math.max(0, t - (p.changedAt || 0)); }
   function totalOf(p, t, status) {
@@ -545,6 +563,7 @@
     const before = statusMap();
     undoSnapshot = JSON.stringify(S);
     mutate();
+    clampLineup();
     const after = statusMap();
     S.players.forEach(p => {
       if (before[p.id] === after[p.id]) return;
@@ -566,29 +585,43 @@
   }
 
   // ── ACTIONS ──────────────────────────────────────────────────────────────
+  // Put `id` into the queue directly after `anchor` (or at the front).
+  function placeAfter(order, id, anchor) {
+    const rest = order.filter(x => x !== id);
+    const at = anchor ? rest.indexOf(anchor.id) + 1 : 0;
+    rest.splice(at, 0, id);
+    return rest;
+  }
   function subOut(id) {
     const p = byId(id);
-    if (!p) return;
     const q = queue();
-    const next = q[fieldSlots()];
-    change(next ? `${p.name} off · ${next.name} on` : `${p.name} to the bottom`, () => {
+    const i = q.findIndex(x => x.id === id);
+    if (!p || i < 0 || i >= S.lineup) return;
+    const next = S.lineup < q.length ? q[S.lineup] : null;   // first on the bench
+    change(next ? `${p.name} off · ${next.name} on` : `${p.name} off`, () => {
       S.order = S.order.filter(x => x !== id).concat(id);
+      if (!next) S.lineup -= 1;
     });
   }
   function subIn(id) {
-    // Bring a bench player on now: they take the last pitch slot and whoever
-    // was there drops to the bottom of the bench.
     const p = byId(id);
     const q = queue();
-    const slots = fieldSlots();
-    if (!p || slots === 0) return;
-    const leaving = q[slots - 1];
-    if (!leaving || leaving.id === id) return;
+    const i = q.findIndex(x => x.id === id);
+    if (!p || i < 0 || i < S.lineup) return;
+    if (!pitchFull()) {
+      // Open slot: step on, taking the last pitch position.
+      change(`${p.name} on`, () => {
+        S.order = placeAfter(S.order, id, q[S.lineup - 1]);
+        S.lineup += 1;
+      });
+      return;
+    }
+    // Pitch is full: take the last slot and send whoever had it to the bottom.
+    const leaving = q[S.lineup - 1];
+    if (!leaving) return;
     change(`${p.name} on · ${leaving.name} off`, () => {
-      const rest = S.order.filter(x => x !== id && x !== leaving.id);
-      const at = rest.indexOf(q[slots - 2] ? q[slots - 2].id : null);
-      rest.splice(at + 1, 0, id);
-      S.order = rest.concat(leaving.id);
+      const placed = placeAfter(S.order.filter(x => x !== leaving.id), id, q[S.lineup - 2]);
+      S.order = placed.concat(leaving.id);
     });
   }
   function move(id, dir) {
@@ -612,25 +645,28 @@
   }
   function setGoalie(id) {
     const wasGk = S.gk;
+    const newWasOn = id ? statusOf(id) === 'on' : false;
     change(id ? `🧤 ${byId(id).name} in goal` : 'No goalie set', () => {
       S.gk = id || null;
-      // The old goalie rejoins the rotation as next in line.
+      // Taking a field player into goal shrinks the field lineup by one.
+      if (newWasOn) S.lineup -= 1;
+      // The old goalie rejoins right behind the last field player. If the new
+      // keeper came off the field (a mid-game keeper swap), the old keeper takes
+      // that field spot; otherwise they wait as next in line.
       if (wasGk && wasGk !== id) {
-        const slots = fieldSlots();
         const q = queue().filter(p => p.id !== wasGk);
-        const anchor = q[slots - 1];
-        const rest = S.order.filter(x => x !== wasGk);
-        const at = anchor ? rest.indexOf(anchor.id) + 1 : rest.length;
-        rest.splice(at, 0, wasGk);
-        S.order = rest;
+        S.order = placeAfter(S.order, wasGk, q[S.lineup - 1]);
+        if (newWasOn) S.lineup += 1;
       }
     });
   }
   function togglePresent(id) {
     const p = byId(id);
     if (!p) return;
+    const wasOn = statusOf(id) === 'on';
     change(p.present ? `${p.name} out today` : `${p.name} is here`, () => {
       p.present = !p.present;
+      if (wasOn) S.lineup -= 1;
       // A returning player joins the back of the line.
       if (p.present) S.order = S.order.filter(x => x !== id).concat(id);
     });
@@ -651,7 +687,9 @@
   function removePlayer(id) {
     const p = byId(id);
     if (!p || !confirm(`Remove ${p.name} from the roster?`)) return;
+    const wasOn = statusOf(id) === 'on';
     change(`${p.name} removed`, () => {
+      if (wasOn) S.lineup -= 1;
       S.players = S.players.filter(x => x.id !== id);
       S.order = S.order.filter(x => x !== id);
       if (S.gk === id) S.gk = null;
@@ -688,13 +726,14 @@
     S.elapsed = 0;
     S.runningSince = null;
     S.them = 0;
+    S.lineup = 0;
     S.players.forEach(p => { p.played = 0; p.changedAt = 0; p.goals = 0; });
     undoSnapshot = null;
     save();
     releaseWake();
     render();
     closeSheet();
-    showToast('New game — clock at 00:00', false);
+    showToast('New game — everyone\'s on the bench, pick your starters', false);
   }
   function resetAll() {
     if (!confirm('Reset EVERYTHING?\n\nRoster goes back to the default list and all times and scores are cleared.')) return;
@@ -799,19 +838,26 @@
     const q = queue();
     const slots = fieldSlots();
     const gk = gkPlayer();
-    const onPitch = q.slice(0, slots);
-    const bench = q.slice(slots);
+    const onPitch = q.slice(0, S.lineup);
+    const bench = q.slice(S.lineup);
+    const open = slots - onPitch.length;
+    const full = open <= 0;
 
     if (!q.length && !gk) {
       list.innerHTML = '<div class="empty">Nobody\'s marked as here today.<br>Tap ⚙ to set up the roster.</div>';
       return;
     }
 
-    let html = `<div class="divider pitch">On the pitch · ${onPitch.length + (gk ? 1 : 0)} of ${S.pitchSize}</div>`;
+    let html = `<div class="divider pitch">On the pitch · ${onPitch.length + (gk ? 1 : 0)} of ${S.pitchSize}` +
+               `${open > 0 && bench.length ? ` · pick ${Math.min(open, bench.length)} more` : ''}</div>`;
     if (gk) html += rowHtml(gk, 'gk', t, {});
     html += onPitch.map(p => rowHtml(p, 'on', t, {})).join('');
-    html += `<div class="divider">Bench · ${bench.length}${bench.length ? ' · next in at top' : ''}</div>`;
-    html += bench.map((p, i) => rowHtml(p, 'off', t, { next: i === 0 })).join('');
+    if (!onPitch.length && !gk) {
+      html += '<div class="pick-hint">Nobody on yet — tap <b>IN</b> on each starter' +
+              (S.gk ? '' : ', and pick a 🧤 goalie up top') + '.</div>';
+    }
+    html += `<div class="divider">Bench · ${bench.length}${bench.length && full ? ' · next in at top' : ''}</div>`;
+    html += bench.map((p, i) => rowHtml(p, 'off', t, { next: full && i === 0 })).join('');
     list.innerHTML = html;
   }
 
@@ -915,6 +961,7 @@
   });
 
   // ── INIT ─────────────────────────────────────────────────────────────────
+  clampLineup();
   render();
   if (S.runningSince) requestWake();
 
