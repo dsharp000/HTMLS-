@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Subs">
+<meta name="theme-color" content="#1b7f3b">
+<meta name="description" content="One-tap soccer substitution rotation with a game clock, playing-time per kid, goalie slot, and goals.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Ctext%20y%3D%27.9em%27%20font-size%3D%2790%27%3E%E2%9A%BD%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Sub Rotation</title>
+<style>
+  :root {
+    --bg: #eef1ee;
+    --card: #ffffff;
+    --ink: #14211a;
+    --muted: #6b7a70;
+    --line: #d9e0db;
+    --green: #1b7f3b;
+    --green-soft: #e3f4e8;
+    --green-line: #8fd1a5;
+    --amber: #b7791f;
+    --amber-soft: #fff4d6;
+    --amber-line: #f0c96a;
+    --red: #c0392b;
+    --red-soft: #fdecea;
+    --blue: #2455b5;
+    --blue-soft: #e6eefb;
+    --shadow: 0 1px 2px rgba(20,33,26,.08), 0 4px 12px rgba(20,33,26,.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.25;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+  button {
+    font: inherit;
+    color: inherit;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  button:active { transform: scale(.96); }
+  .mono { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
+  }
+  .clock-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  #clock {
+    font-size: 44px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+    min-width: 132px;
+    color: var(--ink);
+  }
+  #clock.running { color: var(--green); }
+  #btn-start {
+    flex: 1;
+    height: 52px;
+    border-radius: 14px;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: .3px;
+    background: var(--green);
+    color: #fff;
+    box-shadow: 0 3px 0 #135d2b;
+  }
+  #btn-start.running { background: var(--amber); box-shadow: 0 3px 0 #8a5a14; }
+  #btn-start:active { transform: translateY(2px); box-shadow: 0 1px 0 #135d2b; }
+
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .score {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 4px 8px 4px 10px;
+  }
+  .score b { font-size: 20px; color: var(--ink); }
+  .score .mini {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .spacer { flex: 1; }
+  #gk-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--amber-soft);
+    border: 1px solid var(--amber-line);
+    border-radius: 10px;
+    padding: 0 6px 0 8px;
+    height: 34px;
+    color: var(--amber);
+    font-weight: 700;
+    position: relative;
+    max-width: 44vw;
+  }
+  #gk-chip select {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-weight: 700;
+    color: var(--amber);
+    padding-right: 14px;
+    max-width: 100%;
+    text-overflow: ellipsis;
+  }
+  #gk-chip::after {
+    content: "▾";
+    position: absolute;
+    right: 8px;
+    pointer-events: none;
+  }
+  #btn-settings {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-size: 18px;
+  }
+
+  /* ── LIST ── */
+  main { padding: 10px 10px 0; }
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 2px 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .divider.pitch { color: var(--green); margin-top: 2px; }
+  .divider.pitch::before, .divider.pitch::after { background: var(--green-line); }
+
+  .row {
+    display: grid;
+    grid-template-columns: 30px 1fr auto auto auto;
+    align-items: center;
+    gap: 6px;
+    height: 50px;
+    margin-bottom: 6px;
+    padding: 0 6px 0 4px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  .row.on  { border-left-color: var(--green); background: var(--green-soft); }
+  .row.gk  { border-left-color: var(--amber); background: var(--amber-soft); }
+  .row.next { border-left-color: var(--blue); border-style: dashed; border-left-style: solid; }
+  .row.absent { opacity: .45; }
+
+  .arrows {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .arr {
+    flex: 1;
+    width: 30px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1;
+  }
+  .arr:active { color: var(--ink); background: rgba(0,0,0,.05); border-radius: 6px; }
+  .row.gk .arrows { visibility: hidden; }
+
+  .who { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .name {
+    font-size: 17px;
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sub-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .sub-label b { color: var(--ink); font-weight: 800; }
+  .tag {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    padding: 1px 5px;
+    border-radius: 5px;
+    vertical-align: 1px;
+    margin-right: 4px;
+  }
+  .tag.gk   { background: var(--amber); color: #fff; }
+  .tag.next { background: var(--blue); color: #fff; }
+
+  .stint {
+    text-align: right;
+    min-width: 58px;
+    line-height: 1.05;
+  }
+  .stint .val { font-size: 19px; font-weight: 800; }
+  .stint .lbl { font-size: 9px; font-weight: 800; letter-spacing: 1.2px; color: var(--muted); }
+  .row.on .stint .val, .row.gk .stint .val { color: var(--green); }
+  .row.on .stint .val.long { color: var(--amber); }
+  .row.off .stint .val { color: var(--muted); }
+  .row.off .stint .val.long { color: var(--red); }
+
+  .goal {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 38px;
+    padding: 0 8px 0 6px;
+    border-radius: 10px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    font-size: 20px;
+  }
+  .goal .gcount { font-size: 14px; font-weight: 800; min-width: 10px; text-align: center; }
+  .goal .gcount:empty { display: none; }
+
+  .subbtn {
+    height: 38px;
+    width: 54px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: .5px;
+  }
+  .subbtn.out { background: var(--red); color: #fff; box-shadow: 0 2px 0 #8e2a20; }
+  .subbtn.out:active { transform: translateY(1px); box-shadow: 0 1px 0 #8e2a20; }
+  .subbtn.in  { background: var(--blue); color: #fff; box-shadow: 0 2px 0 #183b80; }
+  .subbtn.in:active { transform: translateY(1px); box-shadow: 0 1px 0 #183b80; }
+  .subbtn.ghost { visibility: hidden; }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 30px 20px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    left: 12px; right: 12px;
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--ink);
+    color: #fff;
+    border-radius: 14px;
+    padding: 12px 8px 12px 16px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    transform: translateY(120%);
+    opacity: 0;
+    transition: transform .22s ease, opacity .22s ease;
+    pointer-events: none;
+  }
+  #toast.show { transform: none; opacity: 1; pointer-events: auto; }
+  #toast-msg { flex: 1; }
+  #toast-undo {
+    background: #fff;
+    color: var(--ink);
+    font-weight: 900;
+    letter-spacing: .5px;
+    border-radius: 9px;
+    padding: 8px 14px;
+  }
+  #toast-undo.hidden { display: none; }
+
+  /* ── SETTINGS SHEET ── */
+  #sheet-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(20,33,26,.45);
+    z-index: 40;
+    display: none;
+  }
+  #sheet-backdrop.open { display: block; }
+  #sheet {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 41;
+    background: var(--card);
+    border-radius: 18px 18px 0 0;
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 14px 16px calc(24px + env(safe-area-inset-bottom));
+    transform: translateY(100%);
+    transition: transform .25s ease;
+  }
+  #sheet.open { transform: none; }
+  .sheet-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: 0 auto 14px; }
+  .sheet h3 { font-size: 12px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin: 18px 0 8px; }
+  .sheet h3:first-of-type { margin-top: 0; }
+  .roster-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    height: 42px;
+    padding: 0 6px 0 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-weight: 700;
+    text-align: left;
+    overflow: hidden;
+  }
+  .chip.here { background: var(--green-soft); border-color: var(--green-line); }
+  .chip.here::before { content: "✓ "; color: var(--green); }
+  .chip:not(.here) { color: var(--muted); text-decoration: line-through; }
+  .chip span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip .del { width: 28px; height: 28px; border-radius: 7px; color: var(--muted); font-size: 16px; }
+  .chip .del:active { background: var(--red-soft); color: var(--red); }
+  .add-row { display: flex; gap: 8px; margin-top: 8px; }
+  .add-row input {
+    flex: 1;
+    height: 44px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    padding: 0 12px;
+    font: inherit;
+    font-size: 16px;
+  }
+  .btn {
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 10px;
+    font-weight: 800;
+    background: var(--green);
+    color: #fff;
+  }
+  .btn.secondary { background: var(--bg); color: var(--ink); border: 1px solid var(--line); }
+  .btn.danger { background: var(--red-soft); color: var(--red); border: 1px solid #f3c1bb; }
+  .btn.block { width: 100%; margin-top: 8px; }
+  .stepper { display: flex; align-items: center; gap: 12px; }
+  .stepper button {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .stepper b { font-size: 24px; min-width: 36px; text-align: center; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+  .stat-line { font-size: 13px; color: var(--muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="clock-row">
+    <div id="clock" class="mono">00:00</div>
+    <button id="btn-start">▶ Start</button>
+  </div>
+  <div class="score-row">
+    <div class="score"><b id="score-us" class="mono">0</b> US</div>
+    <div class="score">THEM <b id="score-them" class="mono">0</b><button class="mini" id="btn-them" title="Opponent goal">+</button></div>
+    <div class="spacer"></div>
+    <label id="gk-chip" title="Goalie">🧤<select id="gk-select"></select></label>
+    <button id="btn-settings" title="Roster &amp; settings">⚙</button>
+  </div>
+</header>
+
+<main id="list"></main>
+
+<div id="toast"><span id="toast-msg"></span><button id="toast-undo">UNDO</button></div>
+
+<div id="sheet-backdrop"></div>
+<div id="sheet" class="sheet">
+  <div class="sheet-handle"></div>
+
+  <h3>Who's here today</h3>
+  <div class="roster-grid" id="roster-grid"></div>
+  <div class="add-row">
+    <input type="text" id="add-name" placeholder="Add a player…" autocomplete="off" autocapitalize="words">
+    <button class="btn" id="btn-add">Add</button>
+  </div>
+  <p class="hint">Tap a name to mark them out for today. ✕ removes them from the roster for good.</p>
+
+  <h3>Players on the pitch</h3>
+  <div class="stepper">
+    <button id="pitch-minus">−</button><b id="pitch-size">9</b><button id="pitch-plus">+</button>
+    <span class="hint" style="margin:0">including the goalie</span>
+  </div>
+
+  <h3>Game</h3>
+  <p class="stat-line" id="game-stat"></p>
+  <button class="btn secondary block" id="btn-reset-game">↺ New game — reset clock, times &amp; score</button>
+  <button class="btn danger block" id="btn-reset-all">Reset everything to the default roster</button>
+  <button class="btn block" id="btn-close">Done</button>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── DEFAULTS ─────────────────────────────────────────────────────────────
+  const DEFAULT_ROSTER = ['Abel','Andrew','Anthony','Blake','Braxton','Daniel','Gavin',
+                          'Graham','Isaac','Jake','Logan','Max','Ryan','Sebastian','Xavier'];
+  const KEY = 'sub-rotation-v1';
+  const LONG_STINT = 10 * 60;   // seconds before an on-pitch stint reads as "long"
+  const LONG_SIT   = 8 * 60;    // seconds before a bench sit reads as "long"
+
+  function freshState() {
+    const players = DEFAULT_ROSTER.map((name, i) => ({
+      id: 'p' + i, name, present: true, played: 0, changedAt: 0, goals: 0
+    }));
+    return {
+      players,
+      order: players.map(p => p.id),  // rotation queue, top = on pitch first
+      gk: null,                       // player id pinned as goalie
+      pitchSize: 9,                   // on the pitch including the goalie
+      elapsed: 0,                     // game seconds accumulated while paused
+      runningSince: null,             // Date.now() when the clock was started
+      them: 0
+    };
+  }
+
+  // ── STATE + PERSISTENCE ──────────────────────────────────────────────────
+  let S = load() || freshState();
+  let undoSnapshot = null;
+  let toastTimer = null;
+  let wakeLock = null;
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return null;
+      const s = JSON.parse(raw);
+      if (!s || !Array.isArray(s.players) || !Array.isArray(s.order)) return null;
+      return { ...freshState(), ...s };
+    } catch (e) { return null; }
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+  }
+
+  // ── TIME MODEL ───────────────────────────────────────────────────────────
+  // Everything is measured in game seconds, so pausing the clock freezes every
+  // stint and bench sit at once.
+  function now() {
+    return S.elapsed + (S.runningSince ? (Date.now() - S.runningSince) / 1000 : 0);
+  }
+  function fmt(secs) {
+    const s = Math.max(0, Math.floor(secs));
+    return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  }
+  function fmtMin(secs) {
+    const m = Math.round(secs / 60);
+    return m + ' min';
+  }
+
+  // ── DERIVED ──────────────────────────────────────────────────────────────
+  function byId(id) { return S.players.find(p => p.id === id); }
+  function gkPlayer() {
+    const g = S.gk ? byId(S.gk) : null;
+    return g && g.present ? g : null;
+  }
+  function fieldSlots() { return Math.max(0, S.pitchSize - (gkPlayer() ? 1 : 0)); }
+  // The rotation queue: present players, goalie excluded, in order.
+  function queue() {
+    return S.order.map(byId).filter(p => p && p.present && p.id !== S.gk);
+  }
+  // 'gk' | 'on' | 'off' | 'absent'
+  function statusOf(id) {
+    const p = byId(id);
+    if (!p || !p.present) return 'absent';
+    if (gkPlayer() && id === S.gk) return 'gk';
+    const idx = queue().findIndex(q => q.id === id);
+    return idx > -1 && idx < fieldSlots() ? 'on' : 'off';
+  }
+  function statusMap() {
+    const m = {};
+    S.players.forEach(p => { m[p.id] = statusOf(p.id); });
+    return m;
+  }
+  function isPlaying(status) { return status === 'on' || status === 'gk'; }
+
+  function stintOf(p, t) { return Math.max(0, t - (p.changedAt || 0)); }
+  function totalOf(p, t, status) {
+    return (p.played || 0) + (isPlaying(status) ? stintOf(p, t) : 0);
+  }
+
+  // ── MUTATION WRAPPER ─────────────────────────────────────────────────────
+  // Every roster/order change goes through here so playing time is closed out
+  // correctly for anyone whose on/off status flipped, and so it can be undone.
+  function change(label, mutate, opts) {
+    opts = opts || {};
+    const t = now();
+    const before = statusMap();
+    undoSnapshot = JSON.stringify(S);
+    mutate();
+    const after = statusMap();
+    S.players.forEach(p => {
+      if (before[p.id] === after[p.id]) return;
+      if (isPlaying(before[p.id])) p.played = (p.played || 0) + stintOf(p, t);
+      p.changedAt = t;
+    });
+    save();
+    render();
+    if (label) showToast(label, !opts.noUndo);
+  }
+
+  function undo() {
+    if (!undoSnapshot) return;
+    S = JSON.parse(undoSnapshot);
+    undoSnapshot = null;
+    save();
+    render();
+    hideToast();
+  }
+
+  // ── ACTIONS ──────────────────────────────────────────────────────────────
+  function subOut(id) {
+    const p = byId(id);
+    if (!p) return;
+    const q = queue();
+    const next = q[fieldSlots()];
+    change(next ? `${p.name} off · ${next.name} on` : `${p.name} to the bottom`, () => {
+      S.order = S.order.filter(x => x !== id).concat(id);
+    });
+  }
+  function subIn(id) {
+    // Bring a bench player on now: they take the last pitch slot and whoever
+    // was there drops to the bottom of the bench.
+    const p = byId(id);
+    const q = queue();
+    const slots = fieldSlots();
+    if (!p || slots === 0) return;
+    const leaving = q[slots - 1];
+    if (!leaving || leaving.id === id) return;
+    change(`${p.name} on · ${leaving.name} off`, () => {
+      const rest = S.order.filter(x => x !== id && x !== leaving.id);
+      const at = rest.indexOf(q[slots - 2] ? q[slots - 2].id : null);
+      rest.splice(at + 1, 0, id);
+      S.order = rest.concat(leaving.id);
+    });
+  }
+  function move(id, dir) {
+    const q = queue();
+    const i = q.findIndex(p => p.id === id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= q.length) return;
+    const a = S.order.indexOf(id), b = S.order.indexOf(q[j].id);
+    change(null, () => {
+      S.order[a] = q[j].id;
+      S.order[b] = id;
+    });
+  }
+  function goal(id) {
+    const p = byId(id);
+    if (!p) return;
+    change(`⚽ GOAL — ${p.name}!`, () => { p.goals = (p.goals || 0) + 1; });
+  }
+  function themGoal() {
+    change('Opponent goal', () => { S.them = (S.them || 0) + 1; });
+  }
+  function setGoalie(id) {
+    const wasGk = S.gk;
+    change(id ? `🧤 ${byId(id).name} in goal` : 'No goalie set', () => {
+      S.gk = id || null;
+      // The old goalie rejoins the rotation as next in line.
+      if (wasGk && wasGk !== id) {
+        const slots = fieldSlots();
+        const q = queue().filter(p => p.id !== wasGk);
+        const anchor = q[slots - 1];
+        const rest = S.order.filter(x => x !== wasGk);
+        const at = anchor ? rest.indexOf(anchor.id) + 1 : rest.length;
+        rest.splice(at, 0, wasGk);
+        S.order = rest;
+      }
+    });
+  }
+  function togglePresent(id) {
+    const p = byId(id);
+    if (!p) return;
+    change(p.present ? `${p.name} out today` : `${p.name} is here`, () => {
+      p.present = !p.present;
+      // A returning player joins the back of the line.
+      if (p.present) S.order = S.order.filter(x => x !== id).concat(id);
+    });
+  }
+  function addPlayer(name) {
+    name = String(name || '').trim();
+    if (!name) return;
+    if (S.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+      showToast(`${name} is already on the roster`, false);
+      return;
+    }
+    const id = 'p' + Date.now().toString(36);
+    change(`${name} added`, () => {
+      S.players.push({ id, name, present: true, played: 0, changedAt: now(), goals: 0 });
+      S.order.push(id);
+    });
+  }
+  function removePlayer(id) {
+    const p = byId(id);
+    if (!p || !confirm(`Remove ${p.name} from the roster?`)) return;
+    change(`${p.name} removed`, () => {
+      S.players = S.players.filter(x => x.id !== id);
+      S.order = S.order.filter(x => x !== id);
+      if (S.gk === id) S.gk = null;
+    });
+  }
+  function setPitchSize(n) {
+    n = Math.max(1, Math.min(15, n));
+    if (n === S.pitchSize) return;
+    change(null, () => { S.pitchSize = n; });
+  }
+
+  // ── CLOCK ────────────────────────────────────────────────────────────────
+  function startClock() {
+    if (S.runningSince) return;
+    S.runningSince = Date.now();
+    save();
+    requestWake();
+    renderClock();
+    renderList();
+  }
+  function pauseClock() {
+    if (!S.runningSince) return;
+    S.elapsed = now();
+    S.runningSince = null;
+    save();
+    releaseWake();
+    renderClock();
+    renderList();
+  }
+  function toggleClock() { S.runningSince ? pauseClock() : startClock(); }
+
+  function resetGame() {
+    if (!confirm('New game?\n\nThis resets the clock, everyone\'s playing time, and the score. The roster and order stay.')) return;
+    S.elapsed = 0;
+    S.runningSince = null;
+    S.them = 0;
+    S.players.forEach(p => { p.played = 0; p.changedAt = 0; p.goals = 0; });
+    undoSnapshot = null;
+    save();
+    releaseWake();
+    render();
+    closeSheet();
+    showToast('New game — clock at 00:00', false);
+  }
+  function resetAll() {
+    if (!confirm('Reset EVERYTHING?\n\nRoster goes back to the default list and all times and scores are cleared.')) return;
+    S = freshState();
+    undoSnapshot = null;
+    save();
+    releaseWake();
+    render();
+    closeSheet();
+  }
+
+  // Keep the phone awake while the clock runs so the coach isn't unlocking it
+  // every sub. Silently ignored where unsupported.
+  async function requestWake() {
+    try {
+      if ('wakeLock' in navigator && !wakeLock) {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => { wakeLock = null; });
+      }
+    } catch (e) { wakeLock = null; }
+  }
+  function releaseWake() {
+    try { if (wakeLock) wakeLock.release(); } catch (e) {}
+    wakeLock = null;
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      if (S.runningSince) requestWake();
+      render();
+    }
+  });
+
+  // ── RENDER ───────────────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
+  function render() {
+    renderClock();
+    renderScore();
+    renderGkSelect();
+    renderList();
+    renderSheet();
+  }
+
+  function renderClock() {
+    const el = document.getElementById('clock');
+    el.textContent = fmt(now());
+    el.classList.toggle('running', !!S.runningSince);
+    const b = document.getElementById('btn-start');
+    b.textContent = S.runningSince ? '❚❚ Pause' : (S.elapsed > 0 ? '▶ Resume' : '▶ Start');
+    b.classList.toggle('running', !!S.runningSince);
+  }
+
+  function renderScore() {
+    const us = S.players.reduce((a, p) => a + (p.goals || 0), 0);
+    document.getElementById('score-us').textContent = us;
+    document.getElementById('score-them').textContent = S.them || 0;
+  }
+
+  function renderGkSelect() {
+    const sel = document.getElementById('gk-select');
+    const present = S.players.filter(p => p.present);
+    sel.innerHTML = '<option value="">No GK</option>' + present.map(p =>
+      `<option value="${p.id}" ${p.id === S.gk ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+    if (S.gk && !gkPlayer()) sel.value = '';
+  }
+
+  function rowHtml(p, status, t, extra) {
+    const stint = stintOf(p, t);
+    const total = totalOf(p, t, status);
+    const playing = isPlaying(status);
+    const long = playing ? stint >= LONG_STINT : stint >= LONG_SIT;
+    const tag = status === 'gk' ? '<span class="tag gk">GK</span>'
+              : extra.next      ? '<span class="tag next">NEXT</span>' : '';
+    const subBtn = status === 'on'  ? '<button class="subbtn out" data-act="out">OUT</button>'
+                 : status === 'off' ? '<button class="subbtn in" data-act="in">IN</button>'
+                 : '<button class="subbtn ghost" tabindex="-1"></button>';
+    const lbl = status === 'gk' ? 'IN GOAL' : playing ? 'ON FOR' : 'OFF FOR';
+    return `
+      <div class="row ${status} ${extra.next ? 'next' : ''}" data-id="${p.id}">
+        <div class="arrows">
+          <button class="arr" data-act="up" aria-label="Move up">▲</button>
+          <button class="arr" data-act="down" aria-label="Move down">▼</button>
+        </div>
+        <div class="who">
+          <div class="name">${tag}${esc(p.name)}</div>
+          <div class="sub-label">played <b class="mono" data-total="${p.id}">${fmtMin(total)}</b></div>
+        </div>
+        <div class="stint">
+          <div class="lbl">${lbl}</div>
+          <div class="val mono ${long ? 'long' : ''}" data-stint="${p.id}">${fmt(stint)}</div>
+        </div>
+        <button class="goal" data-act="goal" aria-label="Goal for ${esc(p.name)}">⚽<span class="gcount">${p.goals ? p.goals : ''}</span></button>
+        ${subBtn}
+      </div>`;
+  }
+
+  function renderList() {
+    const t = now();
+    const list = document.getElementById('list');
+    const q = queue();
+    const slots = fieldSlots();
+    const gk = gkPlayer();
+    const onPitch = q.slice(0, slots);
+    const bench = q.slice(slots);
+
+    if (!q.length && !gk) {
+      list.innerHTML = '<div class="empty">Nobody\'s marked as here today.<br>Tap ⚙ to set up the roster.</div>';
+      return;
+    }
+
+    let html = `<div class="divider pitch">On the pitch · ${onPitch.length + (gk ? 1 : 0)} of ${S.pitchSize}</div>`;
+    if (gk) html += rowHtml(gk, 'gk', t, {});
+    html += onPitch.map(p => rowHtml(p, 'on', t, {})).join('');
+    html += `<div class="divider">Bench · ${bench.length}${bench.length ? ' · next in at top' : ''}</div>`;
+    html += bench.map((p, i) => rowHtml(p, 'off', t, { next: i === 0 })).join('');
+    list.innerHTML = html;
+  }
+
+  // Once a second, update only the time cells so taps aren't disrupted by a
+  // full re-render mid-press.
+  function tick() {
+    const t = now();
+    document.getElementById('clock').textContent = fmt(t);
+    if (!S.runningSince) return;
+    S.players.forEach(p => {
+      const status = statusOf(p.id);
+      if (status === 'absent') return;
+      const st = document.querySelector(`[data-stint="${p.id}"]`);
+      const tot = document.querySelector(`[data-total="${p.id}"]`);
+      if (!st) return;
+      const stint = stintOf(p, t);
+      const playing = isPlaying(status);
+      st.textContent = fmt(stint);
+      st.classList.toggle('long', playing ? stint >= LONG_STINT : stint >= LONG_SIT);
+      if (tot) tot.textContent = fmtMin(totalOf(p, t, status));
+    });
+  }
+  setInterval(tick, 1000);
+
+  function renderSheet() {
+    const grid = document.getElementById('roster-grid');
+    grid.innerHTML = S.players.map(p => `
+      <div class="chip ${p.present ? 'here' : ''}" data-id="${p.id}">
+        <span data-act="toggle">${esc(p.name)}</span>
+        <button class="del" data-act="remove" aria-label="Remove ${esc(p.name)}">✕</button>
+      </div>`).join('');
+    document.getElementById('pitch-size').textContent = S.pitchSize;
+    const here = S.players.filter(p => p.present).length;
+    document.getElementById('game-stat').textContent =
+      `${here} here today · clock at ${fmt(now())}${S.runningSince ? ' (running)' : ''}`;
+  }
+
+  // ── TOAST ────────────────────────────────────────────────────────────────
+  function showToast(msg, canUndo) {
+    const el = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    document.getElementById('toast-undo').classList.toggle('hidden', !canUndo);
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, canUndo ? 5000 : 2200);
+  }
+  function hideToast() {
+    document.getElementById('toast').classList.remove('show');
+  }
+
+  // ── SHEET ────────────────────────────────────────────────────────────────
+  function openSheet() {
+    renderSheet();
+    document.getElementById('sheet-backdrop').classList.add('open');
+    document.getElementById('sheet').classList.add('open');
+  }
+  function closeSheet() {
+    document.getElementById('sheet-backdrop').classList.remove('open');
+    document.getElementById('sheet').classList.remove('open');
+  }
+
+  // ── EVENTS ───────────────────────────────────────────────────────────────
+  document.getElementById('list').addEventListener('click', e => {
+    const btn = e.target.closest('[data-act]');
+    if (!btn) return;
+    const row = btn.closest('.row');
+    if (!row) return;
+    const id = row.dataset.id;
+    switch (btn.dataset.act) {
+      case 'out':  subOut(id); break;
+      case 'in':   subIn(id); break;
+      case 'up':   move(id, -1); break;
+      case 'down': move(id, +1); break;
+      case 'goal': goal(id); break;
+    }
+  });
+
+  document.getElementById('btn-start').addEventListener('click', toggleClock);
+  document.getElementById('btn-them').addEventListener('click', themGoal);
+  document.getElementById('gk-select').addEventListener('change', e => setGoalie(e.target.value || null));
+  document.getElementById('toast-undo').addEventListener('click', undo);
+  document.getElementById('btn-settings').addEventListener('click', openSheet);
+  document.getElementById('sheet-backdrop').addEventListener('click', closeSheet);
+  document.getElementById('btn-close').addEventListener('click', closeSheet);
+  document.getElementById('btn-reset-game').addEventListener('click', resetGame);
+  document.getElementById('btn-reset-all').addEventListener('click', resetAll);
+  document.getElementById('pitch-minus').addEventListener('click', () => setPitchSize(S.pitchSize - 1));
+  document.getElementById('pitch-plus').addEventListener('click', () => setPitchSize(S.pitchSize + 1));
+
+  const addInput = document.getElementById('add-name');
+  function submitAdd() { addPlayer(addInput.value); addInput.value = ''; }
+  document.getElementById('btn-add').addEventListener('click', submitAdd);
+  addInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitAdd(); } });
+
+  document.getElementById('roster-grid').addEventListener('click', e => {
+    const el = e.target.closest('[data-act]');
+    if (!el) return;
+    const id = el.closest('.chip').dataset.id;
+    if (el.dataset.act === 'toggle') togglePresent(id);
+    if (el.dataset.act === 'remove') removePlayer(id);
+  });
+
+  // ── INIT ─────────────────────────────────────────────────────────────────
+  render();
+  if (S.runningSince) requestWake();
+
+  // Exposed for testing only.
+  window.__subs = { state: () => S, now, statusOf, subOut, subIn, move, goal, setGoalie, togglePresent, toggleClock };
+})();
+</script>
+</body>
+</html>
