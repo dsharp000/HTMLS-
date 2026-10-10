@@ -639,5 +639,51 @@
   // Run on load
   update();
 </script>
+<!-- razors-edge-home: floating link back to the Razor's Edge hub. Identical in every app; update them together. -->
+<a id="re-home" href="index.html" aria-label="Back to Razor's Edge" title="Razor's Edge">
+  <img src="razor-icon-180.png" alt="" width="26" height="26" onerror="this.onerror=null;this.src='https://razors-edge.xyz/razor-icon-180.png'">
+  <span>Razor's Edge</span>
+</a>
+<style>
+  #re-home {
+    position: fixed; z-index: 2147483000;
+    top: calc(10px + env(safe-area-inset-top, 0px)); left: calc(10px + env(safe-area-inset-left, 0px));
+    display: flex; align-items: center; gap: 0; box-sizing: border-box;
+    height: 38px; margin: 0; padding: 5px;
+    border-radius: 11px; border: 1px solid rgba(216,227,238,.18);
+    background: rgba(11,13,16,.72);
+    -webkit-backdrop-filter: blur(10px) saturate(1.4); backdrop-filter: blur(10px) saturate(1.4);
+    box-shadow: 0 4px 14px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.07);
+    color: #d8e3ee; text-decoration: none;
+    font: 600 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing: .01em;
+    opacity: .85; -webkit-tap-highlight-color: transparent;
+    transition: opacity .2s, transform .25s ease, gap .25s ease, padding .25s ease, background .2s;
+  }
+  #re-home img { display: block; flex: none; width: 26px; height: 26px; margin: 0; border-radius: 7px; }
+  #re-home span { display: block; max-width: 0; opacity: 0; overflow: hidden; white-space: nowrap; transition: max-width .25s ease, opacity .2s; }
+  @media (hover: hover) {
+    #re-home:hover { opacity: 1; gap: 8px; padding-right: 12px; background: rgba(11,13,16,.9); }
+    #re-home:hover span { max-width: 120px; opacity: 1; }
+  }
+  #re-home:focus-visible { opacity: 1; gap: 8px; padding-right: 12px; outline: 2px solid #9fb3c6; outline-offset: 2px; }
+  #re-home:focus-visible span { max-width: 120px; opacity: 1; }
+  #re-home:active { transform: scale(.94); }
+  /* Tucks away while scrolling down, returns on scroll up. */
+  #re-home.re-tuck { transform: translateY(calc(-100% - 24px)); opacity: 0; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { #re-home, #re-home span { transition: none; } }
+  @media print { #re-home { display: none; } }
+</style>
+<script>
+  (function () {
+    var a = document.getElementById('re-home'), y = window.scrollY;
+    window.addEventListener('scroll', function () {
+      var n = window.scrollY;
+      if (Math.abs(n - y) < 8) return;
+      a.classList.toggle('re-tuck', n > y && n > 80);
+      y = n;
+    }, { passive: true });
+  })();
+</script>
+<!-- /razors-edge-home -->
 </body>
 </html>
