@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Olympic Trip Planner</title>
+<link rel="icon" href="razor-icon-180.png">
+<style>
+:root {
+  --bg: #eef2ec;
+  --panel: #ffffff;
+  --ink: #1d2a24;
+  --muted: #627168;
+  --line: #d6ded6;
+  --forest: #2f6b4f;
+  --forest-ink: #ffffff;
+  --ok: #cfe9d6;
+  --ok-ink: #1f5136;
+  --short: #f3eedc;
+  --short-ink: #7a6a3a;
+  --out: #f6d9d4;
+  --out-ink: #8a2f22;
+  --mine: #c2412d;
+  --shadow: 0 1px 2px rgba(20,40,30,.06), 0 4px 16px rgba(20,40,30,.06);
+  --p0: #2f7fbf; --p1: #d0782a; --p2: #8a55c4; --p3: #2a9d8f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121a16; --panel: #1b2520; --ink: #e4ece6; --muted: #93a39a; --line: #2c3a33;
+    --forest: #5fae86; --forest-ink: #0d1a13;
+    --ok: #1f4331; --ok-ink: #bfe8cf; --short: #3a3524; --short-ink: #d9c98f;
+    --out: #4a2622; --out-ink: #f2b8ae; --mine: #ff7a63;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+    --p0: #5aa7e6; --p1: #f09a4c; --p2: #b388ee; --p3: #4fc4b5;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121a16; --panel: #1b2520; --ink: #e4ece6; --muted: #93a39a; --line: #2c3a33;
+  --forest: #5fae86; --forest-ink: #0d1a13;
+  --ok: #1f4331; --ok-ink: #bfe8cf; --short: #3a3524; --short-ink: #d9c98f;
+  --out: #4a2622; --out-ink: #f2b8ae; --mine: #ff7a63;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+  --p0: #5aa7e6; --p1: #f09a4c; --p2: #b388ee; --p3: #4fc4b5;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 60px; }
+header { padding-left: 52px; margin-bottom: 18px; }
+h1 { margin: 0; font-size: 26px; letter-spacing: -.01em; }
+.sub { color: var(--muted); margin-top: 4px; }
+.status { display: inline-block; margin-top: 8px; font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); color: var(--muted); }
+.status.live { color: var(--ok-ink); background: var(--ok); border-color: transparent; }
+.status.local { color: var(--out-ink); background: var(--out); border-color: transparent; }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
+.panel h2 { margin: 0 0 10px; font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+
+.people { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.person { border: 2px solid var(--line); border-radius: 12px; padding: 10px 12px; cursor: pointer; background: var(--panel); text-align: left; color: inherit; font: inherit; }
+.person.active { border-color: var(--pc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pc) 22%, transparent); }
+.person .top { display: flex; align-items: center; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--pc); flex: none; }
+.person .name { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.person .edit { border: none; background: none; color: var(--muted); cursor: pointer; padding: 2px 4px; font-size: 13px; }
+.person .meta { font-size: 12.5px; color: var(--muted); margin-top: 4px; display: flex; justify-content: space-between; gap: 6px; }
+.done-tag { color: var(--ok-ink); font-weight: 600; }
+.hint { font-size: 13.5px; color: var(--muted); margin-top: 12px; }
+.hint b { color: var(--ink); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
+.btn { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 9px; padding: 7px 12px; font: inherit; font-size: 13.5px; cursor: pointer; }
+.btn.primary { background: var(--forest); color: var(--forest-ink); border-color: transparent; font-weight: 600; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+.seg button { border: none; background: var(--panel); color: var(--ink); padding: 7px 12px; font: inherit; font-size: 13.5px; cursor: pointer; }
+.seg button.on { background: var(--forest); color: var(--forest-ink); font-weight: 600; }
+
+.summary { font-size: 17px; margin-bottom: 10px; }
+.summary b { color: var(--forest); }
+.windows { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.win { border: 1px solid var(--line); border-left: 4px solid var(--forest); border-radius: 10px; padding: 10px 12px; cursor: pointer; background: var(--panel); text-align: left; color: inherit; font: inherit; }
+.win:hover { border-color: var(--forest); }
+.win .dates { font-weight: 650; }
+.win .len { font-size: 12.5px; color: var(--forest); font-weight: 600; }
+.win .wx { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+.empty { color: var(--muted); font-style: italic; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--muted); margin-bottom: 12px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; border: 1px solid var(--line); }
+
+.months { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.month h3 { margin: 0 0 8px; font-size: 17px; }
+.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.dow { font-size: 11px; text-align: center; color: var(--muted); font-weight: 600; padding-bottom: 2px; }
+.day { position: relative; min-height: 66px; border-radius: 7px; border: 1px solid transparent; padding: 3px 4px 4px; cursor: pointer; background: var(--short); color: var(--short-ink); font: inherit; text-align: left; display: flex; flex-direction: column; }
+.day.ok { background: var(--ok); color: var(--ok-ink); }
+.day.out { background: var(--out); color: var(--out-ink); }
+.day.mine { border-color: var(--mine); border-width: 2px; padding: 2px 3px 3px; }
+.day.flash { animation: flash 1.2s ease-out; }
+@keyframes flash { 0% { box-shadow: 0 0 0 3px var(--forest); } 100% { box-shadow: 0 0 0 3px transparent; } }
+.day .n { font-weight: 700; font-size: 13px; line-height: 1.1; }
+.day .t { font-size: 10.5px; line-height: 1.2; margin-top: 2px; white-space: nowrap; }
+.day .s { font-size: 10px; line-height: 1.2; opacity: .8; white-space: nowrap; }
+.day .who { display: flex; gap: 2px; position: absolute; top: 4px; right: 4px; }
+.day .who i { width: 7px; height: 7px; border-radius: 50%; background: var(--pc); display: block; }
+.blank { min-height: 66px; }
+.foot { font-size: 12px; color: var(--muted); margin-top: 18px; line-height: 1.5; }
+
+@media (max-width: 760px) {
+  .months { grid-template-columns: 1fr; }
+  .people { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 420px) {
+  .day { min-height: 60px; padding: 2px 2px 3px; }
+  .day.mine { padding: 1px 1px 2px; }
+  .day .t { font-size: 9.5px; letter-spacing: -.02em; }
+  .day .s { font-size: 9px; letter-spacing: -.02em; }
+  .day .who { top: 3px; right: 2px; }
+  .day .who i { width: 6px; height: 6px; }
+  h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🌲 Olympic Guys Trip 2027</h1>
+    <div class="sub">Sol Duc Falls · June – September 2027 · find 7 straight days that work for all four</div>
+    <span class="status" id="status">Connecting…</span>
+  </header>
+
+  <section class="panel">
+    <h2>Who are you?</h2>
+    <div class="people" id="people"></div>
+    <div class="hint" id="hint"></div>
+    <div class="row">
+      <button class="btn primary" id="doneBtn"></button>
+      <button class="btn" id="clearBtn">Clear my days</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Open windows</h2>
+    <div class="row" style="margin-top:0;margin-bottom:12px">
+      <span style="font-size:13.5px;color:var(--muted)">Trip length</span>
+      <div class="seg" id="lenSeg">
+        <button data-len="6">6 days</button>
+        <button data-len="7">7 days</button>
+      </div>
+    </div>
+    <div class="summary" id="summary"></div>
+    <div class="windows" id="windows"></div>
+  </section>
+
+  <section class="panel">
+    <div class="legend">
+      <span><i class="sw" style="background:var(--ok)"></i>Part of an open window</span>
+      <span><i class="sw" style="background:var(--short)"></i>Free, but gap too short</span>
+      <span><i class="sw" style="background:var(--out)"></i>Someone can't make it</span>
+      <span><i class="sw" style="border:2px solid var(--mine)"></i>You marked it</span>
+    </div>
+    <div class="months" id="months"></div>
+    <div class="foot">
+      High / low are typical temperatures for each date at Sol Duc Falls (about 1,900 ft): 30-year daily averages, 1996–2025, from the ERA5 reanalysis via Open-Meteo, adjusted for elevation and smoothed. They are normals, not a forecast. Sunset times are calculated for 2027 at the falls, in Pacific Daylight Time; the sun drops behind the ridges in the valley earlier than this.
+    </div>
+  </section>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, set, onValue }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCp2PBbqdj_g6NPR9iYQb7Z6tgXbqLtHIA",
+  authDomain:        "lunch-f7021.firebaseapp.com",
+  databaseURL:       "https://lunch-f7021-default-rtdb.firebaseio.com",
+  projectId:         "lunch-f7021",
+  storageBucket:     "lunch-f7021.firebasestorage.app",
+  messagingSenderId: "1053755216064",
+  appId:             "1:1053755216064:web:14b749200f825a4e9bdd25",
+};
+
+const fbApp = initializeApp(firebaseConfig);
+signInAnonymously(getAuth(fbApp)).catch(e => console.warn('anon auth:', e));
+const db = getDatabase(fbApp);
+const ROOT = 'olympic-trip-2027';
+
+window._fbSet = (path, val) => set(ref(db, ROOT + '/' + path), val);
+window._fbOn  = (cb, onErr) => onValue(ref(db, ROOT), snap => cb(snap.val()), onErr);
+window.dispatchEvent(new Event('fb-ready'));
+</script>
+
+<script>
+// [high °F, low °F, sunset minutes after midnight PDT] for each day, 2027-06-01 .. 2027-09-30
+const WX = [[59,45,1265],[59,45,1266],[59,45,1267],[59,45,1268],[60,45,1269],[60,45,1270],[60,45,1271],[60,45,1271],[60,45,1272],[60,45,1273],[60,45,1273],[60,45,1274],[60,46,1275],[60,46,1275],[60,46,1276],[60,46,1276],[61,46,1277],[61,46,1277],[62,47,1277],[62,47,1278],[62,47,1278],[63,48,1278],[63,48,1278],[63,48,1278],[64,49,1279],[64,49,1279],[64,49,1279],[65,49,1279],[65,50,1279],[65,50,1278],[65,50,1278],[66,50,1278],[66,51,1278],[66,51,1277],[66,51,1277],[67,51,1277],[67,51,1276],[67,51,1276],[67,51,1275],[67,52,1275],[67,52,1274],[68,52,1274],[68,52,1273],[68,52,1272],[68,52,1271],[68,52,1271],[69,53,1270],[69,53,1269],[69,53,1268],[69,53,1267],[70,53,1266],[70,53,1265],[70,54,1264],[70,54,1263],[71,54,1262],[71,54,1260],[71,54,1259],[71,54,1258],[71,54,1257],[71,54,1255],[71,54,1254],[71,54,1253],[71,54,1251],[71,55,1250],[71,54,1248],[71,54,1247],[71,54,1245],[71,54,1244],[71,55,1242],[71,55,1241],[71,55,1239],[71,55,1237],[71,55,1236],[71,55,1234],[70,54,1232],[70,54,1231],[70,54,1229],[70,54,1227],[70,54,1225],[70,54,1223],[70,54,1222],[69,53,1220],[69,53,1218],[69,53,1216],[68,53,1214],[68,53,1212],[68,52,1210],[68,52,1208],[67,52,1206],[67,52,1205],[67,52,1203],[67,52,1201],[67,52,1199],[67,52,1197],[67,52,1195],[67,51,1193],[66,51,1190],[66,51,1188],[66,51,1186],[66,51,1184],[66,51,1182],[65,51,1180],[65,51,1178],[65,50,1176],[64,50,1174],[64,50,1172],[64,50,1170],[64,49,1168],[63,49,1166],[63,49,1163],[63,49,1161],[62,49,1159],[62,48,1157],[62,48,1155],[62,48,1153],[61,48,1151],[61,48,1149],[61,47,1147],[61,47,1145],[61,47,1143],[60,47,1141],[60,47,1138]];
+const START = new Date(2027, 5, 1);
+const PEOPLE = ['p0', 'p1', 'p2', 'p3'];
+const DEFAULT_NAMES = ['Guy 1', 'Guy 2', 'Guy 3', 'Guy 4'];
+const LS_KEY = 'olympic-trip-2027';
+const LS_ME = 'olympic-trip-2027-me';
+const LS_LEN = 'olympic-trip-2027-len';
+
+const days = WX.map((w, i) => {
+  const d = new Date(START); d.setDate(d.getDate() + i);
+  const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  return { i, d, key, hi: w[0], lo: w[1], sun: w[2] };
+});
+
+let state = { names: {}, blocked: {}, done: {} };
+let me = lsGet(LS_ME) || 'p0';
+let tripLen = Number(lsGet(LS_LEN)) || 7;
+let mode = 'connecting';   // connecting | live | local
+
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+function nameOf(p) { return (state.names && state.names[p]) || DEFAULT_NAMES[PEOPLE.indexOf(p)]; }
+function blockedOf(p) { return (state.blocked && state.blocked[p]) || {}; }
+function isDone(p) { return !!(state.done && state.done[p]); }
+function fmtSun(m) { const h = Math.floor(m / 60), mm = m % 60; return (h > 12 ? h - 12 : h) + ':' + String(mm).padStart(2, '0'); }
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function fmtDate(d) { return DOW[d.getDay()] + ' ' + MON[d.getMonth()] + ' ' + d.getDate(); }
+
+// ── Writes ────────────────────────────────────────────────────────────────────
+function write(path, val) {
+  lsSet(LS_KEY, JSON.stringify(state));
+  if (mode === 'live' && window._fbSet) {
+    try { window._fbSet(path, val).catch(err => goLocal(err)); } catch (err) { goLocal(err); }
+  }
+}
+
+function toggleDay(key) {
+  const b = Object.assign({}, blockedOf(me));
+  const val = b[key] ? null : true;
+  if (val) b[key] = true; else delete b[key];
+  state.blocked = Object.assign({}, state.blocked, { [me]: b });
+  render();
+  write('blocked/' + me + '/' + key, val);
+}
+
+// ── Availability ──────────────────────────────────────────────────────────────
+function compute() {
+  const whoOut = days.map(day => PEOPLE.filter(p => blockedOf(p)[day.key]));
+  const runs = [];
+  let s = null;
+  for (let i = 0; i <= days.length; i++) {
+    const free = i < days.length && whoOut[i].length === 0;
+    if (free && s === null) s = i;
+    if (!free && s !== null) { runs.push([s, i - 1]); s = null; }
+  }
+  const okDay = new Array(days.length).fill(false);
+  const windows = runs.filter(([a, b]) => b - a + 1 >= tripLen);
+  windows.forEach(([a, b]) => { for (let i = a; i <= b; i++) okDay[i] = true; });
+  return { whoOut, windows, okDay };
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  const { whoOut, windows, okDay } = compute();
+
+  const st = document.getElementById('status');
+  st.className = 'status' + (mode === 'live' ? ' live' : mode === 'local' ? ' local' : '');
+  st.textContent = mode === 'live' ? '● Live: everyone sees changes instantly'
+    : mode === 'local' ? '⚠ Not syncing: changes are saved on this device only'
+    : 'Connecting…';
+
+  document.getElementById('people').innerHTML = PEOPLE.map((p, i) => {
+    const n = Object.keys(blockedOf(p)).length;
+    return `<div class="person${p === me ? ' active' : ''}" style="--pc:var(--${p})" data-p="${p}" role="button" tabindex="0">
+      <div class="top"><span class="dot"></span><span class="name">${esc(nameOf(p))}</span>
+        <button class="edit" data-rename="${p}" title="Rename">✎</button></div>
+      <div class="meta"><span>${n} day${n === 1 ? '' : 's'} out</span>${isDone(p) ? '<span class="done-tag">✓ done</span>' : '<span>entering…</span>'}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('hint').innerHTML =
+    `Editing as <b>${esc(nameOf(me))}</b>. Tap every day you <b>can't</b> go; tap again to undo. Pick your name above first.`;
+  document.getElementById('doneBtn').textContent = isDone(me) ? '✓ I\'m done (tap to undo)' : 'I\'m done entering my days';
+
+  document.querySelectorAll('#lenSeg button').forEach(b => b.classList.toggle('on', Number(b.dataset.len) === tripLen));
+
+  const doneCount = PEOPLE.filter(isDone).length;
+  const starts = windows.reduce((t, [a, b]) => t + (b - a + 2 - tripLen), 0);
+  document.getElementById('summary').innerHTML = windows.length
+    ? `<b>${starts}</b> possible start date${starts === 1 ? '' : 's'} for a ${tripLen}-day trip, in <b>${windows.length}</b> open window${windows.length === 1 ? '' : 's'}. <span style="color:var(--muted);font-size:14px">(${doneCount} of 4 finished entering)</span>`
+    : `No ${tripLen} straight days work for everyone. <span style="color:var(--muted);font-size:14px">(${doneCount} of 4 finished entering)</span>`;
+
+  document.getElementById('windows').innerHTML = windows.length ? windows.map(([a, b]) => {
+    const seg = days.slice(a, b + 1), len = b - a + 1;
+    const hi = Math.round(avg(seg.map(d => d.hi))), lo = Math.round(avg(seg.map(d => d.lo)));
+    const lastStart = days[b - tripLen + 1].d;
+    const sunA = fmtSun(seg[0].sun), sunB = fmtSun(seg[seg.length - 1].sun);
+    return `<button class="win" data-jump="${days[a].key}">
+      <div class="dates">${fmtDate(days[a].d)} – ${fmtDate(days[b].d)}</div>
+      <div class="len">${len} days free${len > tripLen ? ` · start any day ${MON[days[a].d.getMonth()]} ${days[a].d.getDate()} – ${MON[lastStart.getMonth()]} ${lastStart.getDate()}` : ''}</div>
+      <div class="wx">Avg ${hi}° / ${lo}° · sunset ${sunA === sunB ? sunA : sunA + ' → ' + sunB} PM</div>
+    </button>`;
+  }).join('') : '<div class="empty">Try 6 days, or see which red days are blocking a long stretch.</div>';
+
+  let html = '';
+  for (let m = 5; m <= 8; m++) {
+    const md = days.filter(d => d.d.getMonth() === m);
+    html += `<div class="month"><h3>${['June','July','August','September'][m - 5]} 2027</h3><div class="grid">`;
+    html += DOW.map(d => `<div class="dow">${d[0]}</div>`).join('');
+    for (let k = 0; k < md[0].d.getDay(); k++) html += '<div class="blank"></div>';
+    md.forEach(day => {
+      const out = whoOut[day.i];
+      const cls = out.length ? 'out' : okDay[day.i] ? 'ok' : '';
+      const mine = blockedOf(me)[day.key] ? ' mine' : '';
+      const title = `${fmtDate(day.d)}: high ${day.hi}°F, low ${day.lo}°F, sunset ${fmtSun(day.sun)} PM` +
+        (out.length ? '\nOut: ' + out.map(nameOf).join(', ') : '');
+      html += `<button class="day ${cls}${mine}" data-key="${day.key}" title="${esc(title)}">
+        <span class="n">${day.d.getDate()}</span>
+        <span class="t">${day.hi}°/${day.lo}°</span>
+        <span class="s">☀ ${fmtSun(day.sun)}</span>
+        <span class="who">${out.map(p => `<i style="--pc:var(--${p})"></i>`).join('')}</span>
+      </button>`;
+    });
+    html += '</div></div>';
+  }
+  document.getElementById('months').innerHTML = html;
+}
+
+function avg(a) { return a.reduce((s, x) => s + x, 0) / a.length; }
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+// ── Events ────────────────────────────────────────────────────────────────────
+document.addEventListener('click', e => {
+  const rn = e.target.closest('[data-rename]');
+  if (rn) {
+    e.stopPropagation();
+    const p = rn.dataset.rename;
+    const n = prompt('Name for this person:', nameOf(p));
+    if (n === null) return;
+    const v = n.trim().slice(0, 30) || null;
+    state.names = Object.assign({}, state.names, { [p]: v });
+    render(); write('names/' + p, v);
+    return;
+  }
+  const per = e.target.closest('[data-p]');
+  if (per) { me = per.dataset.p; lsSet(LS_ME, me); render(); return; }
+  const day = e.target.closest('[data-key]');
+  if (day) { toggleDay(day.dataset.key); return; }
+  const len = e.target.closest('[data-len]');
+  if (len) { tripLen = Number(len.dataset.len); lsSet(LS_LEN, tripLen); render(); return; }
+  const jump = e.target.closest('[data-jump]');
+  if (jump) {
+    const el = document.querySelector(`.day[data-key="${jump.dataset.jump}"]`);
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1300); }
+  }
+});
+document.getElementById('doneBtn').addEventListener('click', () => {
+  const v = isDone(me) ? null : true;
+  state.done = Object.assign({}, state.done, { [me]: v });
+  render(); write('done/' + me, v);
+});
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (!Object.keys(blockedOf(me)).length) return;
+  if (!confirm(`Clear all of ${nameOf(me)}'s blocked days?`)) return;
+  state.blocked = Object.assign({}, state.blocked, { [me]: {} });
+  render(); write('blocked/' + me, null);
+});
+
+// ── Firebase hookup (falls back to this device if the database is unreachable) ─
+function goLocal(err) {
+  if (err) console.warn('Firebase:', err);
+  if (mode === 'local') return;
+  mode = 'local';
+  try { const s = JSON.parse(lsGet(LS_KEY)); if (s && mode !== 'live') state = Object.assign({ names: {}, blocked: {}, done: {} }, s); } catch (e) {}
+  render();
+}
+function connect() {
+  if (!window._fbOn || mode !== 'connecting') return;
+  window._fbOn(val => {
+    mode = 'live';
+    state = Object.assign({ names: {}, blocked: {}, done: {} }, val || {});
+    lsSet(LS_KEY, JSON.stringify(state));
+    render();
+  }, err => { mode = 'connecting'; goLocal(err); });
+}
+window.addEventListener('fb-ready', connect);
+connect();
+setTimeout(() => { if (mode === 'connecting') goLocal(new Error('timeout')); }, 8000);
+try { const s = JSON.parse(lsGet(LS_KEY)); if (s) state = Object.assign(state, s); } catch (e) {}
+render();
+</script>
+<!-- razors-edge-home: floating link back to the Razor's Edge hub. Identical in every app; update them together. -->
+<a id="re-home" href="index.html" aria-label="Back to Razor's Edge" title="Razor's Edge">
+  <img src="razor-icon-180.png" alt="" width="26" height="26" onerror="this.onerror=null;this.src='https://razors-edge.xyz/razor-icon-180.png'">
+  <span>Razor's Edge</span>
+</a>
+<style>
+  #re-home {
+    position: fixed; z-index: 2147483000;
+    top: calc(10px + env(safe-area-inset-top, 0px)); left: calc(10px + env(safe-area-inset-left, 0px));
+    display: flex; align-items: center; gap: 0; box-sizing: border-box;
+    height: 38px; margin: 0; padding: 5px;
+    border-radius: 11px; border: 1px solid rgba(216,227,238,.18);
+    background: rgba(11,13,16,.72);
+    -webkit-backdrop-filter: blur(10px) saturate(1.4); backdrop-filter: blur(10px) saturate(1.4);
+    box-shadow: 0 4px 14px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.07);
+    color: #d8e3ee; text-decoration: none;
+    font: 600 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing: .01em;
+    opacity: .85; -webkit-tap-highlight-color: transparent;
+    transition: opacity .2s, transform .25s ease, gap .25s ease, padding .25s ease, background .2s;
+  }
+  #re-home img { display: block; flex: none; width: 26px; height: 26px; margin: 0; border-radius: 7px; }
+  #re-home span { display: block; max-width: 0; opacity: 0; overflow: hidden; white-space: nowrap; transition: max-width .25s ease, opacity .2s; }
+  @media (hover: hover) {
+    #re-home:hover { opacity: 1; gap: 8px; padding-right: 12px; background: rgba(11,13,16,.9); }
+    #re-home:hover span { max-width: 120px; opacity: 1; }
+  }
+  #re-home:focus-visible { opacity: 1; gap: 8px; padding-right: 12px; outline: 2px solid #9fb3c6; outline-offset: 2px; }
+  #re-home:focus-visible span { max-width: 120px; opacity: 1; }
+  #re-home:active { transform: scale(.94); }
+  /* Tucks away while scrolling down, returns on scroll up. */
+  #re-home.re-tuck { transform: translateY(calc(-100% - 24px)); opacity: 0; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { #re-home, #re-home span { transition: none; } }
+  @media print { #re-home { display: none; } }
+</style>
+<script>
+  (function () {
+    var a = document.getElementById('re-home'), y = window.scrollY;
+    window.addEventListener('scroll', function () {
+      var n = window.scrollY;
+      if (Math.abs(n - y) < 8) return;
+      a.classList.toggle('re-tuck', n > y && n > 80);
+      y = n;
+    }, { passive: true });
+  })();
+</script>
+<!-- /razors-edge-home -->
+</body>
+</html>
