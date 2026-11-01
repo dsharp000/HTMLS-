@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>63 National Parks Checklist</title>
-<meta name="description" content="Check off all 63 U.S. national parks on an interactive map.">
+  <title>64 National Parks Checklist</title>
+<meta name="description" content="Check off all 64 U.S. national parks on an interactive map.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Ctext%20y%3D%27.9em%27%20font-size%3D%2790%27%3E%F0%9F%8F%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <meta name="theme-color" content="#7eb8a0">
-<meta property="og:title" content="63 National Parks Checklist">
-<meta property="og:description" content="Check off all 63 U.S. national parks on an interactive map.">
+<meta property="og:title" content="64 National Parks Checklist">
+<meta property="og:description" content="Check off all 64 U.S. national parks on an interactive map.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -364,15 +364,15 @@
 
 <div class="header">
   <p class="header-eyebrow">National Park Service</p>
-  <h1>63 National Parks</h1>
+  <h1>64 National Parks</h1>
   <div class="owner-bar">
     <button class="owner-btn" id="owner-btn" onclick="openOwnerModal()">Whose list?</button>
     <span class="sync-state"><i class="sync-dot" id="sync-dot"></i><span id="sync-label">Local only</span></span>
   </div>
   <div class="stats-bar">
     <div class="stat-pill">Visited: <span id="stat-visited">0</span></div>
-    <div class="stat-pill">Remaining: <span id="stat-remaining">63</span></div>
-    <div class="stat-pill">Total: <span>63</span></div>
+    <div class="stat-pill">Remaining: <span id="stat-remaining">64</span></div>
+    <div class="stat-pill">Total: <span>64</span></div>
   </div>
   <div class="progress-wrap">
     <div class="progress-fill" id="prog-fill" style="width:0%"></div>
@@ -438,7 +438,7 @@ const REGIONS = [
 const REGION_MAP = {};
 REGIONS.forEach(r => REGION_MAP[r.key] = r);
 
-// ── PARKS DATA (all 63) ───────────────────────────────────────────────────────
+// ── PARKS DATA (all 64) ───────────────────────────────────────────────────────
 // inset: null = main map | 'alaska'|'hawaii'|'samoa'|'vi' = inset map
 const PARKS = [
   // Northeast & Appalachian (6)
@@ -465,9 +465,10 @@ const PARKS = [
   { id:'voyageurs',     name:'Voyageurs',                      state:'MN',           region:'plains',    lat:48.49,  lng:-92.83,  inset:null },
   { id:'wind-cave',     name:'Wind Cave',                      state:'SD',           region:'plains',    lat:43.56,  lng:-103.48, inset:null },
 
-  // Southwest (6)
+  // Southwest (7)
   { id:'big-bend',      name:'Big Bend',                       state:'TX',           region:'southwest', lat:29.13,  lng:-103.24, inset:null },
   { id:'carlsbad',      name:'Carlsbad Caverns',               state:'NM',           region:'southwest', lat:32.15,  lng:-104.56, inset:null },
+  { id:'chiricahua',    name:'Chiricahua',                     state:'AZ',           region:'southwest', lat:32.01,  lng:-109.36, inset:null },
   { id:'guadalupe',     name:'Guadalupe Mountains',            state:'TX',           region:'southwest', lat:31.92,  lng:-104.87, inset:null },
   { id:'petrified',     name:'Petrified Forest',               state:'AZ',           region:'southwest', lat:35.07,  lng:-109.78, inset:null },
   { id:'saguaro',       name:'Saguaro',                        state:'AZ',           region:'southwest', lat:32.25,  lng:-110.50, inset:null },
@@ -587,8 +588,8 @@ function setSyncDot(state) {
 function updateStats() {
   const count = Object.values(visited).filter(Boolean).length;
   document.getElementById('stat-visited').textContent   = count;
-  document.getElementById('stat-remaining').textContent = 63 - count;
-  document.getElementById('prog-fill').style.width = (count / 63 * 100).toFixed(1) + '%';
+  document.getElementById('stat-remaining').textContent = PARKS.length - count;
+  document.getElementById('prog-fill').style.width = (count / PARKS.length * 100).toFixed(1) + '%';
 }
 
 // ── MAP SETUP ─────────────────────────────────────────────────────────────────
