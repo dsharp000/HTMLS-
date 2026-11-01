@@ -456,7 +456,7 @@
     <div id="stats">
         <div class="stat"><div class="val"><span id="stat-checked">0</span><span class="of"> / <span id="stat-total">0</span></span></div><div class="lbl">Sites Visited</div></div>
         <div class="stat"><div class="val"><span id="stat-trails-checked">0</span><span class="of"> / <span id="stat-trails-total">0</span></span></div><div class="lbl">Trails Visited</div></div>
-        <div class="stat"><div class="val"><span id="stat-np-checked">0</span><span class="of"> / 63</span></div><div class="lbl">National Parks</div></div>
+        <div class="stat"><div class="val"><span id="stat-np-checked">0</span><span class="of"> / <span id="stat-np-total">0</span></span></div><div class="lbl">National Parks</div></div>
         <div class="stat"><div class="val"><span id="stat-states">0</span><span class="of"> / 56</span></div><div class="lbl">States Started</div></div>
         <div class="stat"><div class="val" id="stat-complete">0</div><div class="lbl">States Completed</div></div>
     </div>
@@ -486,7 +486,7 @@
 
     <div id="legend">
         <span class="legend-np"></span>
-        <span>Bold orange = one of the 63 official National Parks</span>
+        <span>Bold orange = one of the <span id="legend-np-total">64</span> official National Parks</span>
     </div>
 </div>
 
@@ -575,7 +575,7 @@ const parkData = {
     {name:"Butterfield Overland National Historic Trail"},
     {name:"Canyon de Chelly National Monument"},
     {name:"Casa Grande Ruins National Monument"},
-    {name:"Chiricahua National Monument"},
+    {name:"Chiricahua National Park", np:true},
     {name:"Coronado National Memorial"},
     {name:"Fort Bowie National Historic Site"},
     {name:"Glen Canyon National Recreation Area"},
@@ -1302,14 +1302,17 @@ const RENAMES = {
     'Illinois::Pullman National Monument': 'Illinois::Pullman National Historical Park',
     'Maryland::Harriet Tubman Underground Railroad National Monument': 'Maryland::Harriet Tubman Underground Railroad National Historical Park',
     'Hawaii::World War II Valor in the Pacific National Monument': 'Hawaii::Pearl Harbor National Memorial',
+    'Arizona::Chiricahua National Monument': 'Arizona::Chiricahua National Park',
     'Massachusetts::Salem Maritime National Historic Site': 'Massachusetts::Salem Maritime National Historical Park',
     'Massachusetts::John F. Kennedy National Historic Site': 'Massachusetts::John Fitzgerald Kennedy National Historic Site',
     "District of Columbia::White House": "District of Columbia::The White House and President's Park",
 };
-function applyRenames() {
+function applyRenames(obj = checked) {
+    let changed = false;
     for (const [oldKey, newKey] of Object.entries(RENAMES)) {
-        if (checked[oldKey]) { checked[newKey] = true; delete checked[oldKey]; }
+        if (obj[oldKey]) { obj[newKey] = true; delete obj[oldKey]; changed = true; }
     }
+    return changed;
 }
 
 // --- Firebase sync ---
@@ -1359,12 +1362,15 @@ function onRemote(data) {
     for (const id of Object.values(data.checked || {})) {
         if (typeof id === 'string') remote[id] = true;
     }
+    // Lists saved before a rename still carry the old name in the cloud
+    const renamed = applyRenames(remote);
     if (JSON.stringify(prune(remote)) !== JSON.stringify(prune(checked))) {
         checked = prune(remote);
         saveLocal();
         applyCheckedToDOM();
     }
-    setSyncDot('synced');
+    if (renamed) pushRemote();
+    else setSyncDot('synced');
 }
 
 let watchTries = 0;
@@ -1558,7 +1564,7 @@ function updateStats() {
     // under every state they touch — count each unique site once.
     // Unique names, split into sites vs trails
     const allPlain = new Set(), allTrails = new Set();
-    const visPlain = new Set(), visTrails = new Set(), npVisited = new Set();
+    const visPlain = new Set(), visTrails = new Set(), npVisited = new Set(), npAll = new Set();
     let statesStarted = 0, statesComplete = 0;
 
     for (const [state, sites] of Object.entries(parkData)) {
@@ -1566,6 +1572,7 @@ function updateStats() {
         for (const site of sites) {
             const trail = isTrail(site.name);
             (trail ? allTrails : allPlain).add(site.name);
+            if (site.np) npAll.add(site.name);
             const id = siteId(state, site.name);
             if (checked[id]) {
                 done++;
@@ -1582,6 +1589,8 @@ function updateStats() {
     document.getElementById('stat-trails-checked').textContent = visTrails.size;
     document.getElementById('stat-trails-total').textContent = allTrails.size;
     document.getElementById('stat-np-checked').textContent = npVisited.size;
+    document.getElementById('stat-np-total').textContent = npAll.size;
+    document.getElementById('legend-np-total').textContent = npAll.size;
     document.getElementById('stat-states').textContent = statesStarted;
     document.getElementById('stat-complete').textContent = statesComplete;
 
