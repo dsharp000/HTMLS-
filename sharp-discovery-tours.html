@@ -602,7 +602,7 @@ const TRIPS = [
       { n: 2, date: 'Tue, Dec 29', title: 'Monuments, dinosaurs & garden trains', text: 'Up the Washington Monument, the National Christmas Tree on the Ellipse, and the Natural History Museum at 11:30. Lunch at the Pavilion Café and a skate at the Sculpture Garden rink, hot chocolate back at the hotel, then the Botanic Garden’s “Season’s Greenings” after dark and a 7pm dinner at Old Ebbitt Grill.' },
       { n: 3, date: 'Wed, Dec 30', title: 'Word play, waterfront & home', text: 'Planet Word when it opens at 10, lunch at Lupo Marino, a free afternoon strolling the Wharf piers, Chick-fil-A at Union Station for a train dinner, and the 6:10 home, into 30th Street around 8.' },
     ],
-    scene: { kind: 'skyline', pal: ['#1f3550', '#c98a6a', '#3c4f69', '#22344b', '#121e2e', '#ffe2a8'], seed: 1228 },
+    scene: { kind: 'capitol', pal: ['#1b2c4a', '#d9907a', '#4a5670', '#22324a', '#111b2b', '#ffe2b8'], sun: [.86, .16], seed: 1228 },
   },
   {
     id: 'nz-samoas-2027',
@@ -1743,51 +1743,59 @@ const TRIPS = [
     lat: 30.27, lng: -97.74,
     tagline: 'A winter long weekend visiting Becca: Austin’s parks, brisket at Rudy’s and a night out on Rainey Street.',
     tags: ['Friends', 'Food', 'Parks', 'BBQ'],
-    numbers: [['5', 'Days'], ['4', 'Nights'], ['1', 'BBQ joint'], ['1', 'Night on Rainey Street']],
+    numbers: [['5', 'Days'], ['2', 'Flights'], ['1', 'BBQ joint'], ['1', 'Night on Rainey Street']],
     highlights: [
       'Time with Becca',
-      'Exploring Austin’s parks',
+      'Exploring Austin’s city parks',
       'Texas barbecue at Rudy’s',
       'Food trucks and porch bars on Rainey Street',
     ],
     story: [
-      'Five days in Austin in early February 2017, to visit Becca.',
-      'The days were easygoing: time outdoors in the city’s parks, a proper Texas barbecue feast at Rudy’s, and an evening on Rainey Street, where old bungalows have been turned into bars and food trucks.',
+      'Five days in Austin in early February 2017, flying down from Philadelphia to visit Becca.',
+      'The days were easygoing: time outdoors in Austin’s city parks, a proper Texas barbecue feast at Rudy’s, and an evening on Rainey Street, where old bungalows have been turned into bars and food trucks.',
     ],
     itinerary: [
-      { n: 1, date: 'Fri, Feb 3', title: 'Arrive in Austin', text: 'Into Austin to see Becca.' },
-      { label: 'Days', n: '2–4', date: 'Feb 4–6', title: 'Around Austin', text: 'A few days around the city: the parks, barbecue at Rudy’s and a night out on Rainey Street.' },
-      { n: 5, date: 'Tue, Feb 7', title: 'Head home', text: 'Goodbyes to Becca and the trip home.' },
+      { n: 1, date: 'Fri, Feb 3', title: 'Fly to Austin', text: 'The flight from Philadelphia to Austin to see Becca.' },
+      { label: 'Days', n: '2–4', date: 'Feb 4–6', title: 'Around Austin', text: 'A few days around the city: Austin’s city parks, barbecue at Rudy’s and a night out on Rainey Street.' },
+      { n: 5, date: 'Tue, Feb 7', title: 'Fly home', text: 'Goodbyes to Becca and the flight home to Philadelphia.' },
+    ],
+    flights: [
+      ['Philadelphia', 'Austin', 'Fri Feb 3', ''],
+      ['Austin', 'Philadelphia', 'Tue Feb 7', ''],
     ],
     scene: { kind: 'skyline', pal: ['#2e4a6b', '#f0b070', '#5a6f86', '#33465c', '#1a2533', '#ffe0a0'], seed: 512 },
   },
   {
     id: 'orlando-2017',
     title: 'Safari & Space Coast',
-    place: 'Orlando · Animal Kingdom · Cape Canaveral',
+    place: 'Orlando · Animal Kingdom · Kennedy Space Center',
     region: 'Florida',
     start: '2017-11-11', end: '2017-11-14',
     style: 'Theme parks & space',
     travelers: 'Family',
     pace: 'Active',
     lat: 28.54, lng: -81.38,
-    tagline: 'A November long weekend in Florida: a day at Animal Kingdom with Uncle Steve and Aunt Bop, and a day at Cape Canaveral.',
+    tagline: 'A November long weekend in Florida: a day at Animal Kingdom with Uncle Steve and Aunt Bop, and the Rocket Garden at Kennedy Space Center.',
     tags: ['Theme parks', 'Animals', 'Space', 'Family'],
-    numbers: [['4', 'Days'], ['3', 'Nights at the Ritz-Carlton'], ['1', 'Theme park'], ['1', 'Space coast day']],
+    numbers: [['4', 'Days'], ['2', 'Flights'], ['3', 'Nights at the Ritz-Carlton'], ['1', 'Theme park'], ['1', 'Rocket Garden']],
     highlights: [
       'Animal Kingdom with Uncle Steve and Aunt Bop',
-      'A day at Cape Canaveral',
+      'The Rocket Garden and more at Kennedy Space Center',
       'Three nights at the Ritz-Carlton Orlando',
     ],
     story: [
       'Four days in Orlando in mid-November 2017, with the Ritz-Carlton as home base.',
-      'Sunday was Disney’s Animal Kingdom, with Uncle Steve and Aunt Bop along for the day. Monday headed east to the coast for a day at Cape Canaveral, before the trip home on Tuesday.',
+      'Sunday was Disney’s Animal Kingdom, with Uncle Steve and Aunt Bop along for the day. Monday headed east to Cape Canaveral and the Kennedy Space Center Visitor Complex, with its Rocket Garden, before the flight home on Tuesday.',
     ],
     itinerary: [
-      { n: 1, date: 'Sat, Nov 11', title: 'Arrive in Orlando', text: 'Into Orlando and check in at the Ritz-Carlton.' },
+      { n: 1, date: 'Sat, Nov 11', title: 'Fly to Orlando', text: 'Fly into Orlando and check in at the Ritz-Carlton.' },
       { n: 2, date: 'Sun, Nov 12', title: 'Animal Kingdom', text: 'A day at Disney’s Animal Kingdom with Uncle Steve and Aunt Bop.' },
-      { n: 3, date: 'Mon, Nov 13', title: 'Cape Canaveral', text: 'East to the Space Coast for a day at Cape Canaveral.' },
-      { n: 4, date: 'Tue, Nov 14', title: 'Head home', text: 'Check out of the Ritz-Carlton and the trip home.' },
+      { n: 3, date: 'Mon, Nov 13', title: 'Kennedy Space Center', text: 'East to Cape Canaveral for the Kennedy Space Center Visitor Complex: the Rocket Garden and the rest of the exhibits.' },
+      { n: 4, date: 'Tue, Nov 14', title: 'Fly home', text: 'Check out of the Ritz-Carlton and fly home from Orlando.' },
+    ],
+    flights: [
+      ['Home', 'Orlando', 'Sat Nov 11', ''],
+      ['Orlando', 'Home', 'Tue Nov 14', ''],
     ],
     scene: { kind: 'palms', pal: ['#4f86b0', '#f6dcb4', '#8fb08a', '#4f7f55', '#244232', '#fff1cc'], seed: 1111 },
   },
@@ -1807,17 +1815,18 @@ const TRIPS = [
     highlights: [
       'The National Air and Space Museum on the Mall',
       'The Udvar-Hazy Center out by Dulles Airport',
-      'All the major monuments lit up at night',
+      'All the major monuments lit up at night, just my son and me',
       'Cherry blossoms in bloom around the Tidal Basin',
-      'Oma and Opa along for the weekend',
+      'The whole family, with Oma and Opa along for the weekend',
     ],
     story: [
-      'An early-April weekend in Washington in 2019, in cherry blossom season, with Oma and Opa joining us.',
-      'The first day was all flight and space: the National Air and Space Museum on the Mall, then out to its big annex, the Udvar-Hazy Center by Dulles Airport. That night we made the rounds of all the major monuments, lit up after dark. Another day was spent under the blossoms around the Tidal Basin.',
+      'An early-April weekend in Washington in 2019, in cherry blossom season: the whole family, with Oma and Opa joining us.',
+      'The first day was all flight and space: the National Air and Space Museum on the Mall, then out to its big annex, the Udvar-Hazy Center by Dulles Airport. That night my son and I went back out on our own to make the rounds of all the major monuments, lit up after dark. Sunday was spent under the blossoms around the Tidal Basin.',
     ],
     itinerary: [
-      { n: 1, date: 'Sat, Apr 6', title: 'Air, space & monuments by night', text: 'The National Air and Space Museum on the Mall and the Udvar-Hazy Center at Dulles, then all the major monuments after dark.' },
-      { label: 'Days', n: '2–3', date: 'Apr 7–8', title: 'Cherry blossoms & home', text: 'A walk among the cherry blossoms around the Tidal Basin, and the trip home.' },
+      { n: 1, date: 'Sat, Apr 6', title: 'Air, space & monuments by night', text: 'The National Air and Space Museum on the Mall and the Udvar-Hazy Center at Dulles. After dark, my son and I set out to see all the major monuments.' },
+      { n: 2, date: 'Sun, Apr 7', title: 'Cherry blossoms', text: 'The cherry blossoms in bloom around the Tidal Basin.' },
+      { n: 3, date: 'Mon, Apr 8', title: 'Head home', text: 'The trip home.' },
     ],
     scene: { kind: 'lakes', pal: ['#9fb6d6', '#fbe1e6', '#e8a9bb', '#c97f98', '#5d4a5e', '#fff4ea'], seed: 406 },
   },
@@ -1835,7 +1844,7 @@ const TRIPS = [
     tags: ['National park', 'Beaches', 'Swimming', 'Food'],
     numbers: [['3', 'Days'], ['1', 'National park'], ['1', 'State park'], ['1', 'Key lime pie']],
     highlights: [
-      'A day in Everglades National Park',
+      'Everglades National Park from the Ernest Coe Visitor Center',
       'Feeding the giant tarpon off the dock at Robbie’s of Islamorada',
       'Swimming at John Pennekamp Coral Reef State Park',
       'Key lime pie from Mrs. Mac’s Kitchen',
@@ -1843,12 +1852,13 @@ const TRIPS = [
       'A last-night dinner at The Fish House',
     ],
     story: [
-      'The family met me in Miami at the end of January 2020, and we headed straight for the Everglades before driving down to Key Largo for a couple of nights.',
+      'The family met me in Miami at the end of January 2020, and we headed straight for the Everglades at the Ernest Coe Visitor Center before driving down to Key Largo for a couple of nights.',
       'The Keys days were all water and food: the giant tarpon circling the dock at Robbie’s in Islamorada, a swim at John Pennekamp Coral Reef State Park, time at the beach, pie from Mrs. Mac’s Kitchen, and a final dinner at The Fish House.',
     ],
     itinerary: [
-      { n: 1, date: 'Wed, Jan 29', title: 'Miami & the Everglades', text: 'The family met me in Miami, and we spent the day in the Everglades before heading down to Key Largo.' },
-      { label: 'Days', n: '2–3', date: 'Jan 30–31', title: 'Key Largo & Islamorada', text: 'Feeding the tarpon at Robbie’s, a swim at John Pennekamp Coral Reef State Park, the beach, key lime pie from Mrs. Mac’s, and dinner at The Fish House, before heading home late on the 31st.' },
+      { n: 1, date: 'Wed, Jan 29', title: 'Miami & the Everglades', text: 'The family met me in Miami, and we spent the day in Everglades National Park, starting at the Ernest Coe Visitor Center, before heading down to Key Largo.' },
+      { n: 2, date: 'Thu, Jan 30', title: 'Tarpon & Pennekamp', text: 'Feeding the giant tarpon off the dock at Robbie’s in Islamorada, then a swim at John Pennekamp Coral Reef State Park.' },
+      { n: 3, date: 'Fri, Jan 31', title: 'Beach, pie & home', text: 'A swim at the beach, key lime pie from Mrs. Mac’s Kitchen, and a final dinner at The Fish House before heading home late that night.' },
     ],
     scene: { kind: 'palms', sea: true, pal: ['#2f86b8', '#e2f2ef', '#5aa08e', '#2f7f86', '#163c3c', '#fff6d6'], seed: 129 },
   },
@@ -1863,32 +1873,32 @@ const TRIPS = [
     travelers: 'Family & friends',
     pace: 'Active',
     lat: 25.48, lng: -80.21,
-    tagline: 'South Beach, a private sail across Biscayne Bay to the national park, upside-down jellyfish, then Star Wars, Epcot and the Magic Kingdom with Justine and Oma.',
+    tagline: 'South Beach, a private sail across Biscayne Bay to the national park, upside-down jellyfish, then Galaxy’s Edge, Epcot and the Magic Kingdom with Justine and Oma.',
     tags: ['National park', 'Sailing', 'Snorkeling', 'Theme parks'],
-    numbers: [['7', 'Days'], ['1', 'National park'], ['1', 'All-day sail'], ['3', 'Disney days']],
+    numbers: [['7', 'Days'], ['1', 'National park'], ['1', 'All-day sail'], ['3', 'Disney parks']],
     highlights: [
       'Visiting Justine in Deerfield Beach',
-      'South Beach and the lighthouse',
+      'South Beach and the Cape Florida Lighthouse',
       'An all-day private sail on Biscayne Bay with the Biscayne National Park Institute',
       'Snorkeling and spotting Cassiopea, the upside-down jellyfish',
-      'A Star Wars day',
+      'Star Wars: Galaxy’s Edge at Hollywood Studios',
       'Epcot at night',
       'The Magic Kingdom',
-      'A lazy last day at the pirate pool',
+      'A lazy last day at the condo’s pirate pool',
     ],
     story: [
-      'Spring 2022 started with the family visiting Justine in Deerfield Beach, then meeting me in Miami for South Beach and the lighthouse before heading south to Homestead for the night.',
+      'Spring 2022 started with the family visiting Justine in Deerfield Beach, then meeting me in Miami for South Beach and the Cape Florida Lighthouse on Key Biscayne before heading south to Homestead for the night.',
       'The next morning we set sail across Biscayne Bay into Biscayne National Park on an all-day trip with the Biscayne National Park Institute, with the boat to ourselves. We snorkeled and found Cassiopea, the upside-down jellyfish that rest on the sea floor.',
-      'Then it was up to Orlando with Justine and Oma: a Star Wars day, Epcot that night, the Magic Kingdom, and a slow final day by the pirate pool before the evening trip home.',
+      'Then it was up to a condo near the parks in Orlando with Justine and Oma: Galaxy’s Edge at Hollywood Studios, Epcot that night, the Magic Kingdom, and a slow final day by the pirate pool before the evening trip home.',
     ],
     itinerary: [
       { n: 1, date: 'Wed, Apr 13', title: 'Deerfield Beach', text: 'The family heads down to visit Justine in Deerfield Beach.' },
-      { n: 2, date: 'Thu, Apr 14', title: 'Miami', text: 'Everyone meets up in Miami for South Beach and the lighthouse, then south to Homestead for the night.' },
+      { n: 2, date: 'Thu, Apr 14', title: 'Miami', text: 'Everyone meets up in Miami for South Beach and the Cape Florida Lighthouse on Key Biscayne, then south to Homestead for the night.' },
       { n: 3, date: 'Fri, Apr 15', title: 'Sailing Biscayne', text: 'An all-day sail on Biscayne Bay into Biscayne National Park with the Biscayne National Park Institute, just our family on board. Snorkeling and Cassiopea, the upside-down jellyfish.' },
-      { n: 4, date: 'Sat, Apr 16', title: 'Up to Orlando', text: 'North to Orlando, with Justine and Oma joining us.' },
-      { n: 5, date: 'Sun, Apr 17', title: 'Star Wars & Epcot', text: 'A Star Wars day, then Epcot that night.' },
+      { n: 4, date: 'Sat, Apr 16', title: 'Up to Orlando', text: 'North to a condo near the parks in Orlando, with Justine and Oma joining us.' },
+      { n: 5, date: 'Sun, Apr 17', title: 'Galaxy’s Edge & Epcot', text: 'Star Wars: Galaxy’s Edge at Hollywood Studios, then Epcot that night.' },
       { n: 6, date: 'Mon, Apr 18', title: 'Magic Kingdom', text: 'A day at the Magic Kingdom.' },
-      { n: 7, date: 'Tue, Apr 19', title: 'Pirate pool & home', text: 'Hanging out by the pirate pool until it was time to leave in the evening for home.' },
+      { n: 7, date: 'Tue, Apr 19', title: 'Pirate pool & home', text: 'Hanging out by the condo’s pirate pool until it was time to leave in the evening for home.' },
     ],
     scene: { kind: 'palms', sea: true, pal: ['#3a9ac4', '#e8f4ee', '#6aae96', '#2f8a8f', '#18444a', '#fff4d0'], seed: 414 },
   },
@@ -2091,7 +2101,8 @@ function scene(sc, w = 1600, h = 1000) {
     }
     return pts + `${w},${h}`;
   };
-  const sunX = w * (.25 + r() * .5), sunY = h * (.22 + r() * .12);
+  let sunX = w * (.25 + r() * .5), sunY = h * (.22 + r() * .12);
+  if (sc.sun) { sunX = w * sc.sun[0]; sunY = h * sc.sun[1]; }
   let layers = '';
   if (sc.kind === 'coast') {
     layers += `<polygon points="${ridge(h * .5, 70, 110)}" fill="${far}" opacity=".9"/>`;
@@ -2239,6 +2250,38 @@ function scene(sc, w = 1600, h = 1000) {
     layers += `<polygon points="${ridge(h * .6, 30, 140)}" fill="${far}" opacity=".5"/>` + bld;
     layers += `<rect y="${base}" width="${w}" height="${h - base}" fill="url(#${id}w)"/>`;
     for (let i = 0; i < 12; i++) layers += `<rect x="${(r() * w).toFixed(0)}" y="${(base + 10 + r() * (h - base - 20)).toFixed(0)}" width="${(40 + r() * 160).toFixed(0)}" height="2" fill="${sun}" opacity="${(.2 + r() * .3).toFixed(2)}"/>`;
+  } else if (sc.kind === 'capitol') {
+    // Washington: the Monument and the Capitol dome, lit at dusk, over the Reflecting Pool.
+    const lit = sc.lit || '#f3e6cc', shade = sc.shade || '#d8c6a4', base = h * .72;
+    for (let i = 0; i < 70; i++) layers += `<circle cx="${(r() * w).toFixed(0)}" cy="${(r() * h * .35).toFixed(0)}" r="${(.6 + r() * 1.3).toFixed(1)}" fill="#fff" opacity="${(.2 + r() * .5).toFixed(2)}"/>`;
+    layers += `<polygon points="${ridge(h * .68, 18, 120)}" fill="${far}" opacity=".7"/>`;
+    // Washington Monument
+    const mx = w * .36, mTop = h * .14, mw = 34;
+    layers += `<polygon points="${mx - mw},${base} ${mx - mw * .72},${mTop + 40} ${mx},${mTop} ${mx + mw * .72},${mTop + 40} ${mx + mw},${base}" fill="${lit}"/>`;
+    layers += `<polygon points="${mx},${mTop} ${mx + mw * .72},${mTop + 40} ${mx + mw},${base} ${mx},${base}" fill="${shade}" opacity=".55"/>`;
+    layers += `<circle cx="${mx}" cy="${mTop + 22}" r="3" fill="#ff5a4a"/>`;
+    // Capitol
+    const cx = w * .66, cb = base;
+    layers += `<rect x="${cx - 300}" y="${cb - 62}" width="600" height="62" fill="${lit}"/>`;
+    layers += `<rect x="${cx - 300}" y="${cb - 70}" width="600" height="8" fill="${shade}"/>`;
+    layers += `<rect x="${cx - 110}" y="${cb - 96}" width="220" height="96" fill="${lit}"/>`;
+    layers += `<polygon points="${cx - 70},${cb - 96} ${cx},${cb - 124} ${cx + 70},${cb - 96}" fill="${shade}"/>`;
+    layers += `<rect x="${cx - 82}" y="${cb - 170}" width="164" height="48" fill="${lit}"/>`;
+    layers += `<rect x="${cx - 90}" y="${cb - 178}" width="180" height="10" fill="${shade}"/>`;
+    layers += `<rect x="${cx - 68}" y="${cb - 212}" width="136" height="34" fill="${lit}"/>`;
+    layers += `<path d="M${cx - 76},${cb - 212} A76 92 0 0 1 ${cx + 76},${cb - 212} Z" fill="${lit}"/>`;
+    layers += `<path d="M${cx},${cb - 304} A76 92 0 0 1 ${cx + 76},${cb - 212} H${cx} Z" fill="${shade}" opacity=".45"/>`;
+    layers += `<rect x="${cx - 12}" y="${cb - 336}" width="24" height="34" fill="${lit}"/><path d="M${cx - 14},${cb - 336} A14 14 0 0 1 ${cx + 14},${cb - 336} Z" fill="${lit}"/><rect x="${cx - 2}" y="${cb - 368}" width="4" height="22" fill="${lit}"/>`;
+    for (let k = -5; k <= 5; k++) layers += `<rect x="${cx + k * 13 - 3}" y="${cb - 166}" width="6" height="40" fill="${shade}" opacity=".7"/>`;
+    for (let k = -18; k <= 18; k++) if (Math.abs(k) > 6) layers += `<rect x="${cx + k * 15.5 - 3}" y="${cb - 56}" width="6" height="46" fill="${shade}" opacity=".55"/>`;
+    for (let k = -5; k <= 5; k++) layers += `<rect x="${cx + k * 19 - 3}" y="${cb - 88}" width="6" height="80" fill="${shade}" opacity=".55"/>`;
+    // ground, trees and the Reflecting Pool
+    let trees = '';
+    for (let i = 0; i < 46; i++) { const x = r() * w, tr = 16 + r() * 26; if (Math.abs(x - mx) < 50) continue; trees += `<circle cx="${x.toFixed(0)}" cy="${(base - tr * .4).toFixed(0)}" r="${tr.toFixed(0)}" fill="${mid}"/>`; }
+    layers += trees + `<rect y="${base}" width="${w}" height="${h - base}" fill="${near}"/>`;
+    layers += `<rect x="${w * .08}" y="${base + 40}" width="${w * .84}" height="${h * .12}" fill="url(#${id}w)" opacity=".85"/>`;
+    layers += `<polygon points="${mx - mw},${base + 40} ${mx + mw},${base + 40} ${mx + 10},${base + 40 + h * .12} ${mx - 10},${base + 40 + h * .12}" fill="${lit}" opacity=".35"/>`;
+    for (let i = 0; i < 10; i++) layers += `<rect x="${(w * .1 + r() * w * .7).toFixed(0)}" y="${(base + 50 + r() * h * .1).toFixed(0)}" width="${(40 + r() * 140).toFixed(0)}" height="2" fill="${lit}" opacity="${(.15 + r() * .25).toFixed(2)}"/>`;
   } else if (sc.kind === 'eclipse') {
     const ex = w * .58, ey = h * .3;
     for (let i = 0; i < 120; i++) layers += `<circle cx="${(r() * w).toFixed(0)}" cy="${(r() * h * .55).toFixed(0)}" r="${(.6 + r() * 1.4).toFixed(1)}" fill="#fff" opacity="${(.2 + r() * .6).toFixed(2)}"/>`;
