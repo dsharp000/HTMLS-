@@ -298,6 +298,20 @@ body.locked { overflow: hidden; }
 .gallery > * { border-radius: 10px; overflow: hidden; aspect-ratio: 1; }
 .gallery > *:first-child { grid-column: span 2; grid-row: span 2; }
 .gallery svg, .gallery img { width: 100%; height: 100%; object-fit: cover; }
+.gallery > .shot { position: relative; display: block; padding: 0; border: 0; background: var(--sand-2); cursor: zoom-in; font: inherit; }
+.gallery > .shot img { display: block; transition: transform .5s ease; }
+.gallery > .shot:hover img { transform: scale(1.04); }
+.gallery > .shot:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+.shot .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 10px 8px; font-size: 12.5px; font-weight: 600; line-height: 1.3; color: #fff; text-align: left; background: linear-gradient(rgba(8,20,32,0), rgba(8,20,32,.78)); }
+.lightbox { position: fixed; inset: 0; z-index: 130; background: rgba(6,12,20,.95); display: grid; grid-template-columns: 72px minmax(0, 1fr) 72px; align-items: center; }
+.lightbox[hidden] { display: none; }
+.lightbox figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px 0; min-width: 0; }
+.lightbox img { max-width: 100%; max-height: calc(100vh - 120px); max-height: calc(100svh - 120px); object-fit: contain; border-radius: 6px; }
+.lightbox figcaption { color: #fff; font-size: 15px; display: flex; gap: 14px; align-items: baseline; text-align: center; padding: 0 12px; }
+.lightbox figcaption span:last-child { opacity: .6; font-size: 13px; white-space: nowrap; }
+.lb-btn { width: 46px; height: 46px; border-radius: 50%; border: 0; background: rgba(255,255,255,.14); color: #fff; font-size: 26px; line-height: 1; cursor: pointer; justify-self: center; display: grid; place-items: center; }
+.lb-btn:hover { background: rgba(255,255,255,.26); }
+.lb-close { position: absolute; top: 14px; right: 14px; font-size: 22px; }
 .aside-card { background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow); padding: 28px; position: sticky; top: 24px; }
 .aside-card h3 { font-size: 22px; margin-bottom: 14px; }
 .aside-card ul { list-style: none; padding: 0; margin: 0 0 22px; display: grid; gap: 12px; }
@@ -370,6 +384,10 @@ body.locked { overflow: hidden; }
   .live-banner a { display: none; }
   .hero-content { padding-bottom: 48px; }
   .close-btn { top: auto; bottom: 18px; right: 18px; }
+  .lightbox { grid-template-columns: minmax(0, 1fr); }
+  .lightbox figure { padding: 64px 0 84px; }
+  .lb-prev, .lb-next { position: absolute; bottom: 20px; }
+  .lb-prev { left: 20px; } .lb-next { right: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
@@ -574,6 +592,12 @@ body.locked { overflow: hidden; }
 </footer>
 
 <div class="detail" id="detail" role="dialog" aria-modal="true" aria-labelledby="detailTitle"></div>
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer" hidden>
+  <button type="button" class="lb-btn lb-prev" aria-label="Previous photo">‹</button>
+  <figure><img id="lbImg" alt=""><figcaption><span id="lbCap"></span><span id="lbCount"></span></figcaption></figure>
+  <button type="button" class="lb-btn lb-next" aria-label="Next photo">›</button>
+  <button type="button" class="lb-btn lb-close" aria-label="Close photo">✕</button>
+</div>
 <button class="close-btn" id="closeBtn" aria-label="Close" hidden>
   <svg width="18" height="18" viewBox="0 0 18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l12 12M15 3L3 15"/></svg>
 </button>
@@ -585,8 +609,11 @@ body.locked { overflow: hidden; }
    TRIPS: one object per journey. status is worked out from the dates
    (before start = upcoming, between = live, after end = past), so a trip
    moves from "Departures" to "Journeys" on its own.
-     image:   hero photo URL (optional). Leave blank for an illustrated scene.
-     photos:  gallery photo URLs (optional).
+     image:   cover photo path (optional), e.g. 'photos/<trip id>/cover.jpg'. Leave
+              blank for an illustrated scene. imagePos: optional focus point,
+              e.g. '50% 40%', for how the cover is cropped.
+     photos:  gallery (optional): [{ src, caption }]. Each photo in photos/ has a
+              small copy beside it named <name>-sm.jpg, used for thumbnails.
      scene:   illustration used when there's no photo:
               kind = mountains | coast | forest | lakes, pal = [sky top, sky
               bottom, far ridge, mid ridge, near ridge, sun]
@@ -740,6 +767,25 @@ const TRIPS = [
       { n: 9, date: 'Mon, Jun 22', title: 'Portland', text: 'Two and a half hours to Fort Williams Park and Portland Head Light, lunch from the Bite Into Maine truck, a walk through the Old Port, dinner at Duckfat, and camp at Old Orchard Beach.' },
       { n: 10, date: 'Tue, Jun 23', title: 'The journey home', text: 'Return the RV by 11, then Saugus Iron Works, the Cliff Walk in Newport and pizza in New Haven before the last four hours home.' },
       { label: 'Bonus', n: '★', date: 'Thu, Jun 25', title: 'World Cup in Philadelphia', text: 'Curaçao v. Ivory Coast at 4pm at Lincoln Financial Field.' },
+    ],
+    image: 'photos/maine-rv/04-cadillac-sunset.jpg', imagePos: '50% 40%',
+    photos: [
+      { src: 'photos/maine-rv/01-minuteman-bridge.jpg', caption: 'Minuteman Bridge, Concord, MA' },
+      { src: 'photos/maine-rv/02-ogunquit-beach.jpg', caption: 'Ogunquit Beach, Maine' },
+      { src: 'photos/maine-rv/03-desert-of-maine.jpg', caption: 'Desert of Maine' },
+      { src: 'photos/maine-rv/04-cadillac-sunset.jpg', caption: 'Cadillac Mountain Sunset, Acadia NP' },
+      { src: 'photos/maine-rv/05-otter-point.jpg', caption: 'Otter Point, Acadia NP' },
+      { src: 'photos/maine-rv/06-jordan-pond.jpg', caption: 'Jordan Pond, Acadia NP' },
+      { src: 'photos/maine-rv/07-lobster-bar-harbor.jpg', caption: 'Lobster, Bar Harbor, ME' },
+      { src: 'photos/maine-rv/08-lulus-lobster-boat.jpg', caption: 'Lulu’s Lobster Boat' },
+      { src: 'photos/maine-rv/09-acadia-tide-pool.jpg', caption: 'Acadia NP' },
+      { src: 'photos/maine-rv/10-acadia-granite.jpg', caption: 'Acadia NP' },
+      { src: 'photos/maine-rv/11-acadia.jpg', caption: 'Acadia NP' },
+      { src: 'photos/maine-rv/12-moosehead-lake.jpg', caption: 'Moosehead Lake' },
+      { src: 'photos/maine-rv/13-boating-moosehead.jpg', caption: 'Boating on Moosehead' },
+      { src: 'photos/maine-rv/14-mount-kineo.jpg', caption: 'Top of Mount Kineo' },
+      { src: 'photos/maine-rv/15-night-sky.jpg', caption: 'Night sky in Maine Woods' },
+      { src: 'photos/maine-rv/16-our-chariot.jpg', caption: 'Our Chariot' },
     ],
     scene: { kind: 'coast', pal: ['#f0b98a', '#fbe7cf', '#8aa7a0', '#4f7468', '#28463d', '#fff1d6'], seed: 3 },
   },
@@ -2362,9 +2408,12 @@ function scene(sc, w = 1600, h = 1000) {
     ${layers}
   </svg>`;
 }
+const photoOf = p => typeof p === 'string' ? { src: p, caption: '' } : p;
+const thumbOf = src => /^photos\/.+\.jpg$/.test(src) ? src.replace(/\.jpg$/, '-sm.jpg') : src;
 function media(t, variant = 0) {
-  const src = variant ? (t.photos || [])[variant - 1] : t.image;
-  if (src) return `<img src="${esc(src)}" alt="${esc(t.title)}" loading="lazy">`;
+  if (!variant && t.image) return `<img src="${esc(t.image)}" alt="${esc(t.title)}" loading="lazy"${t.imagePos ? ` style="object-position:${esc(t.imagePos)}"` : ''}>`;
+  const ph = variant && t.photos && t.photos[variant - 1] ? photoOf(t.photos[variant - 1]) : null;
+  if (ph) return `<img src="${esc(thumbOf(ph.src))}" alt="${esc(ph.caption || t.title)}" loading="lazy">`;
   return scene({ ...t.scene, seed: (t.scene.seed || 1) + variant * 13 });
 }
 
@@ -2549,7 +2598,7 @@ function renderDetail(t) {
     ['When', t.when], ['Duration', t.duration || (t.nights ? `${t.nights + 1} days` : 'TBA')],
     ['Style', t.style], ['Travellers', t.travelers], ['Pace', t.pace],
   ].filter(([, v]) => v != null && v !== '');
-  const nGallery = Math.max((t.photos || []).length, t.status === 'past' ? 4 : 0);
+  const nPhotos = (t.photos || []).length, nGallery = nPhotos || (t.status === 'past' ? 4 : 0);
   detail.innerHTML = `
     <div class="detail-hero">
       <div class="art">${media(t)}</div>
@@ -2573,7 +2622,9 @@ function renderDetail(t) {
             <div class="itin">${t.itinerary.map((d, n) => `<div class="day"><div class="day-n">${d.label || 'Day'}<b>${d.n ?? n + 1}</b></div><div><h4>${esc(d.title)}</h4>${d.date ? `<div class="day-date">${esc(d.date)}</div>` : ''}<p>${esc(d.text)}</p></div></div>`).join('')}</div></section>`
             : `<section><h2>Itinerary coming soon</h2><p class="prose">The plan is still taking shape. Check back closer to departure.</p></section>`}
           ${tripPosts.length ? `<section><div class="eyebrow">Dispatches</div><h2 style="margin-top:12px">From the road</h2><div class="feed">${tripPosts.map(p => postHtml(p, false)).join('')}</div></section>` : ''}
-          ${nGallery ? `<section><div class="eyebrow">Gallery</div><h2 style="margin-top:12px">Moments</h2><div class="gallery">${Array.from({ length: nGallery }, (_, k) => `<div>${media(t, k + 1)}</div>`).join('')}</div></section>` : ''}
+          ${nGallery ? `<section><div class="eyebrow">Gallery</div><h2 style="margin-top:12px">Moments</h2><div class="gallery">${Array.from({ length: nGallery }, (_, k) => nPhotos
+            ? `<button type="button" class="shot" data-i="${k}" aria-label="Open photo: ${esc(photoOf(t.photos[k]).caption || t.title)}">${media(t, k + 1)}${photoOf(t.photos[k]).caption ? `<span class="cap">${esc(photoOf(t.photos[k]).caption)}</span>` : ''}</button>`
+            : `<div>${media(t, k + 1)}</div>`).join('')}</div></section>` : ''}
         </div>
         <aside>
           ${t.highlights.length ? `<div class="aside-card"><h3>Highlights</h3><ul>${t.highlights.map(h => `<li>${esc(h)}</li>`).join('')}</ul>
@@ -2602,6 +2653,43 @@ function route() {
 closeBtn.addEventListener('click', () => { history.length > 1 && /^#\/trip/.test(location.hash) ? (location.hash = '#/') : route(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && detail.classList.contains('open')) location.hash = '#/'; });
 addEventListener('hashchange', route);
+
+/* ---------- Photo viewer ---------- */
+const lb = { el: $('#lightbox'), list: [], i: 0, from: null };
+function lbShow(i) {
+  lb.i = (i + lb.list.length) % lb.list.length;
+  const ph = lb.list[lb.i];
+  $('#lbImg').src = ph.src; $('#lbImg').alt = ph.caption || '';
+  $('#lbCap').textContent = ph.caption || '';
+  $('#lbCount').textContent = `${lb.i + 1} / ${lb.list.length}`;
+  [lb.i + 1, lb.i - 1].forEach(n => { const nx = lb.list[(n + lb.list.length) % lb.list.length]; if (nx) new Image().src = nx.src; });
+}
+function lbClose() { lb.el.hidden = true; $('#lbImg').removeAttribute('src'); lb.from && lb.from.focus(); }
+detail.addEventListener('click', e => {
+  const b = e.target.closest('.shot'); if (!b) return;
+  const t = TRIPS.find(x => location.hash === '#/trip/' + x.id); if (!t || !t.photos) return;
+  lb.list = t.photos.map(photoOf); lb.from = b; lb.el.hidden = false; lbShow(+b.dataset.i); $('.lb-close').focus();
+});
+lb.el.addEventListener('click', e => {
+  if (e.target.closest('.lb-prev')) lbShow(lb.i - 1);
+  else if (e.target.closest('.lb-next')) lbShow(lb.i + 1);
+  else if (e.target.closest('.lb-close') || !e.target.closest('figure img')) lbClose();
+});
+document.addEventListener('keydown', e => {
+  if (lb.el.hidden) return;
+  if (e.key === 'Escape') lbClose();
+  else if (e.key === 'ArrowRight') lbShow(lb.i + 1);
+  else if (e.key === 'ArrowLeft') lbShow(lb.i - 1);
+  else return;
+  e.preventDefault(); e.stopImmediatePropagation();
+}, true);
+let lbX = null;
+lb.el.addEventListener('touchstart', e => { lbX = e.touches[0].clientX; }, { passive: true });
+lb.el.addEventListener('touchend', e => {
+  if (lbX == null) return; const dx = e.changedTouches[0].clientX - lbX; lbX = null;
+  if (Math.abs(dx) > 40) lbShow(lb.i + (dx < 0 ? 1 : -1));
+});
+addEventListener('hashchange', () => { if (!lb.el.hidden) lbClose(); });
 
 /* ---------- Nav ---------- */
 const nav = $('#nav');
