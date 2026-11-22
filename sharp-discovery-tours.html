@@ -97,6 +97,22 @@ h1, h2, h3, h4 { font-family: var(--serif); font-weight: 600; line-height: 1.12;
 
 /* ---------- Filters ---------- */
 .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.dd { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); padding: 9px 14px 9px 16px; border-radius: 999px; font: 500 14px/1.2 var(--sans); cursor: pointer; }
+.dd .dd-k { color: var(--ink-3); }
+.dd b { font-weight: 600; }
+.dd svg { transition: transform .2s; color: var(--ink-3); }
+.dd[aria-expanded="true"] { border-color: var(--navy); box-shadow: 0 0 0 1px var(--navy); }
+.dd[aria-expanded="true"] svg { transform: rotate(180deg); }
+.dd.is-set { background: var(--navy); border-color: var(--navy); color: #fff; }
+.dd.is-set .dd-k, .dd.is-set svg { color: rgba(255,255,255,.7); }
+.filter-clear { border: 0; background: none; color: var(--brass-ink); font: 600 14px/1 var(--sans); padding: 8px 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.filter-panel { background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; margin: -16px 0 32px; }
+.filter-panel .chip { cursor: pointer; }
+.filter-panel .chip:disabled { opacity: .4; cursor: default; }
+.chip .n { color: var(--ink-3); font-size: 12px; margin-left: 6px; }
+.chip[aria-pressed="true"] .n { color: rgba(255,255,255,.7); }
+.filter-status { margin: -16px 0 24px; font-size: 14px; color: var(--ink-3); }
 .chip { border: 1px solid var(--line); background: var(--paper); color: var(--ink-2); padding: 8px 16px; border-radius: 999px; font-size: 14px; font-weight: 500; }
 .chip[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
 
@@ -434,8 +450,14 @@ body.locked { overflow: hidden; }
           <div class="eyebrow">Signature Journeys</div>
           <h2>Where we've been</h2>
         </div>
-        <div class="filters" id="filters" role="group" aria-label="Filter journeys"></div>
+        <div class="filter-bar" role="group" aria-label="Filter journeys">
+          <button type="button" class="dd" id="ddRegion" data-dd="region" aria-expanded="false" aria-controls="filterPanel"><span class="dd-k">Region</span><b>All</b><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg></button>
+          <button type="button" class="dd" id="ddType" data-dd="type" aria-expanded="false" aria-controls="filterPanel"><span class="dd-k">Trip type</span><b>All</b><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg></button>
+          <button type="button" class="filter-clear" id="filterClear" hidden>Clear</button>
+        </div>
       </div>
+      <div class="filter-panel" id="filterPanel" hidden><div class="filters" id="filters"></div></div>
+      <p class="filter-status" id="filterStatus" hidden></p>
       <div class="grid" id="journeyGrid"></div>
     </div>
   </section>
@@ -1755,7 +1777,7 @@ const TRIPS = [
     pace: 'Relaxed',
     lat: 30.27, lng: -97.74,
     tagline: 'A winter long weekend visiting Becca: Austin’s parks, brisket at Rudy’s and a night out on Rainey Street.',
-    tags: ['Friends', 'Food', 'Parks', 'BBQ'],
+    tags: ['Friends', 'Food', 'City parks', 'BBQ'],
     numbers: [['5', 'Days'], ['2', 'Flights'], ['1', 'BBQ joint'], ['1', 'Night on Rainey Street']],
     highlights: [
       'Time with Becca',
@@ -2375,15 +2397,57 @@ if (live) {
   $('.lbl-long').textContent = 'Live from the road';
 }
 
-const regions = ['All', ...new Set(past.map(t => t.region))];
-let filter = 'All';
+/* Trip types group the tags shown on each card. Add a tag to a list to file it under that type. */
+const TRIP_TYPES = [
+  ['National & state parks', ['National park', 'National parks', 'State parks']],
+  ['RV & road trips', ['RV', 'First RV trip', 'Road trip', 'Camping']],
+  ['Beaches & islands', ['Beach', 'Beaches', 'Islands', 'Coast', 'Swimming', 'Boardwalk', 'Lighthouses']],
+  ['Snorkeling & boats', ['Snorkelling', 'Snorkeling', 'Sailing', 'Boat day', 'Ferries', 'Whales', 'Canal']],
+  ['Museums & history', ['Museums', 'History', 'Monuments', 'Forts', 'Castles', 'Ruins', 'Old town', 'Culture', 'Fossils', 'Wild West']],
+  ['Cities', ['City', 'City parks', 'Skyline', 'Architecture', 'Music', 'Jazz', 'French Quarter', 'Holiday lights']],
+  ['Food', ['Food', 'BBQ', 'Coffee', 'Farms']],
+  ['Theme parks', ['Theme parks', 'Disneyland', 'Pirates']],
+  ['Mountains & glaciers', ['Mountains', 'Glaciers', 'Volcanoes', 'Volcano', 'Canyons', 'Red rock', 'Salt flats', 'Fall foliage', 'Redwoods', 'Geysers', 'Hot springs']],
+  ['Caves', ['Caves', 'Lava caves']],
+  ['Rainforest & swamps', ['Rainforest', 'Cloud forest', 'Cenotes', 'Wax palms', 'Bayou']],
+  ['Lakes & waterfalls', ['Lakes', 'Waterfalls']],
+  ['Space & eclipses', ['Eclipse', 'Space', 'Dark skies']],
+  ['Trains', ['Train', 'Trains']],
+];
+TRIPS.forEach(t => { t.types = TRIP_TYPES.filter(([, tags]) => t.tags.some(g => tags.includes(g))).map(([l]) => l); });
+const regions = [...new Set(past.map(t => t.region))].sort((a, b) => a.localeCompare(b));
+const types = TRIP_TYPES.map(([l]) => l).filter(l => past.some(t => t.types.includes(l)));
+const sel = { region: 'All', type: 'All' };
+let openDd = null;
+const matches = (t, s = sel) => (s.region === 'All' || t.region === s.region) && (s.type === 'All' || t.types.includes(s.type));
 function renderFilters() {
-  $('#filters').innerHTML = regions.length > 2 ? regions.map(r => `<button class="chip" aria-pressed="${r === filter}" data-r="${esc(r)}">${esc(r)}</button>`).join('') : '';
+  for (const [key, id] of [['region', '#ddRegion'], ['type', '#ddType']]) {
+    const b = $(id);
+    b.querySelector('b').textContent = sel[key];
+    b.classList.toggle('is-set', sel[key] !== 'All');
+    b.setAttribute('aria-expanded', openDd === key);
+  }
+  $('#filterClear').hidden = sel.region === 'All' && sel.type === 'All';
+  const panel = $('#filterPanel');
+  panel.hidden = !openDd;
+  if (openDd) {
+    const opts = ['All', ...(openDd === 'region' ? regions : types)];
+    $('#filters').innerHTML = opts.map(o => {
+      const n = past.filter(t => matches(t, { ...sel, [openDd]: o })).length;
+      return `<button type="button" class="chip" aria-pressed="${o === sel[openDd]}" data-v="${esc(o)}"${n ? '' : ' disabled'}>${esc(o)}<span class="n">${n}</span></button>`;
+    }).join('');
+  }
 }
+document.querySelectorAll('.dd').forEach(b => b.addEventListener('click', () => {
+  openDd = openDd === b.dataset.dd ? null : b.dataset.dd; renderFilters();
+}));
 $('#filters').addEventListener('click', e => {
-  const b = e.target.closest('.chip'); if (!b) return;
-  filter = b.dataset.r; renderFilters(); renderGrid();
+  const b = e.target.closest('.chip'); if (!b || b.disabled) return;
+  sel[openDd] = b.dataset.v; openDd = null; renderFilters(); renderGrid();
 });
+$('#filterClear').addEventListener('click', () => { sel.region = sel.type = 'All'; openDd = null; renderFilters(); renderGrid(); });
+document.addEventListener('click', e => { if (openDd && !e.target.closest('#filterPanel, .dd')) { openDd = null; renderFilters(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && openDd) { openDd = null; renderFilters(); } });
 
 function card(t, feature) {
   return `<a class="card${feature ? ' feature' : ''}${feature === 'wide' ? ' wide' : ''}" href="#/trip/${t.id}">
@@ -2398,10 +2462,13 @@ function card(t, feature) {
   </a>`;
 }
 function renderGrid() {
-  const list = past.filter(t => filter === 'All' || t.region === filter);
+  const list = past.filter(t => matches(t));
+  const filtered = sel.region !== 'All' || sel.type !== 'All';
+  $('#filterStatus').hidden = !filtered;
+  $('#filterStatus').textContent = `${list.length} ${list.length === 1 ? 'journey' : 'journeys'}`;
   $('#journeyGrid').innerHTML = list.length
     ? list.map((t, i) => card(t, i === 0 ? ['', 'wide', 'feature'][list.length % 3] : '')).join('')
-    : `<div class="empty">The first journey is still to come.</div>`;
+    : `<div class="empty">${filtered ? 'No journeys match both filters.' : 'The first journey is still to come.'}</div>`;
 }
 renderFilters(); renderGrid();
 
