@@ -234,11 +234,11 @@ body.locked { overflow: hidden; }
 .detail-hero { position: relative; height: min(62vh, 640px); min-height: 420px; color: #fff; display: flex; align-items: end; overflow: hidden; background: var(--navy); }
 .detail-hero > .art { position: absolute; inset: 0; }
 .detail-hero > .art svg, .detail-hero > .art img { width: 100%; height: 100%; object-fit: cover; }
-.detail-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,36,54,.25), rgba(14,36,54,0) 35%, rgba(14,36,54,.85)); }
+.detail-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(14,36,54,.5) 0%, rgba(14,36,54,.2) 60%, rgba(14,36,54,0) 90%), linear-gradient(180deg, rgba(14,36,54,.3), rgba(14,36,54,.1) 30%, rgba(14,36,54,.88)); }
 .detail-hero .wrap { position: relative; z-index: 2; width: 100%; padding-bottom: 48px; }
-.detail-hero h1 { font-size: clamp(38px, 6vw, 72px); margin: 14px 0 10px; }
-.detail-hero p { font-size: 19px; max-width: 640px; margin: 0; opacity: .92; }
-.detail-hero .eyebrow { color: var(--brass-2); }
+.detail-hero h1 { font-size: clamp(38px, 6vw, 72px); margin: 14px 0 10px; text-shadow: 0 2px 16px rgba(8,20,32,.55), 0 1px 3px rgba(8,20,32,.5); }
+.detail-hero p { font-size: 19px; max-width: 640px; margin: 0; text-shadow: 0 1px 10px rgba(8,20,32,.7), 0 1px 2px rgba(8,20,32,.6); }
+.detail-hero .eyebrow { color: #f4cb85; text-shadow: 0 1px 6px rgba(8,20,32,.8); }
 .close-btn[hidden] { display: none; }
 .close-btn { position: fixed; top: 14px; right: 18px; z-index: 110; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255,255,255,.92); color: var(--ink); box-shadow: var(--shadow); display: grid; place-items: center; }
 .facts { background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow); display: grid; grid-template-columns: repeat(var(--n, 5), 1fr); margin-top: -40px; position: relative; z-index: 3; }
@@ -1792,6 +1792,36 @@ const TRIPS = [
       { n: 4, date: 'Tue, Nov 14', title: 'Head home', text: 'Check out of the Ritz-Carlton and the trip home.' },
     ],
     scene: { kind: 'palms', pal: ['#4f86b0', '#f6dcb4', '#8fb08a', '#4f7f55', '#244232', '#fff1cc'], seed: 1111 },
+  },
+  {
+    id: 'dc-blossoms-2019',
+    title: 'Blossoms & Rockets',
+    place: 'Washington, DC · Dulles, Virginia',
+    region: 'Washington, DC',
+    start: '2019-04-06', end: '2019-04-08',
+    style: 'City weekend',
+    travelers: 'Family',
+    pace: 'Active',
+    lat: 38.88, lng: -77.04,
+    tagline: 'A spring weekend in the capital with Oma and Opa: Air and Space on the Mall and out at Dulles, the monuments after dark, and cherry blossoms around the Tidal Basin.',
+    tags: ['Museums', 'Monuments', 'Cherry blossoms', 'Space'],
+    numbers: [['3', 'Days'], ['2', 'Air & Space museums'], ['1', 'Night of monuments'], ['1', 'Tidal Basin']],
+    highlights: [
+      'The National Air and Space Museum on the Mall',
+      'The Udvar-Hazy Center out by Dulles Airport',
+      'All the major monuments lit up at night',
+      'Cherry blossoms in bloom around the Tidal Basin',
+      'Oma and Opa along for the weekend',
+    ],
+    story: [
+      'An early-April weekend in Washington in 2019, in cherry blossom season, with Oma and Opa joining us.',
+      'The first day was all flight and space: the National Air and Space Museum on the Mall, then out to its big annex, the Udvar-Hazy Center by Dulles Airport. That night we made the rounds of all the major monuments, lit up after dark. Another day was spent under the blossoms around the Tidal Basin.',
+    ],
+    itinerary: [
+      { n: 1, date: 'Sat, Apr 6', title: 'Air, space & monuments by night', text: 'The National Air and Space Museum on the Mall and the Udvar-Hazy Center at Dulles, then all the major monuments after dark.' },
+      { label: 'Days', n: '2–3', date: 'Apr 7–8', title: 'Cherry blossoms & home', text: 'A walk among the cherry blossoms around the Tidal Basin, and the trip home.' },
+    ],
+    scene: { kind: 'lakes', pal: ['#9fb6d6', '#fbe1e6', '#e8a9bb', '#c97f98', '#5d4a5e', '#fff4ea'], seed: 406 },
   },
   {
     id: 'nashville-2016',
