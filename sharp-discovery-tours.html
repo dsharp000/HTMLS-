@@ -564,6 +564,47 @@ body.locked { overflow: hidden; }
 
 const TRIPS = [
   {
+    id: 'dc-holiday-2026',
+    title: 'Holiday Adventure in Washington',
+    place: 'Washington, DC',
+    region: 'Washington, DC',
+    start: '2026-12-28', end: '2026-12-30',
+    duration: '3 days · 2 trains',
+    style: 'Holiday city break',
+    travelers: 'Family',
+    pace: 'Active',
+    lat: 38.89, lng: -77.03,
+    tagline: 'Spies, dinosaurs, a million zoo lights, the National Christmas Tree, model trains through the national parks, and dinner at DC’s oldest saloon.',
+    tags: ['Museums', 'Holiday lights', 'Monuments', 'Train'],
+    numbers: [['3', 'Days'], ['2', 'Trains'], ['2', 'Nights at the Wharf'], ['3', 'Museums'], ['58', 'State trees']],
+    highlights: [
+      'Secret agent names at the International Spy Museum',
+      'ZooLights at the National Zoo',
+      'The elevator to the top of the Washington Monument',
+      'The National Christmas Tree on the Ellipse, ringed by the state trees',
+      'Dinosaurs and the Hope Diamond at Natural History',
+      'Skating at the Sculpture Garden rink',
+      'Model trains through the national parks at the Botanic Garden’s “Season’s Greenings”',
+      'Dinner at Old Ebbitt Grill, DC’s oldest saloon',
+      'The karaoke room at Planet Word',
+    ],
+    story: [
+      'Three days in the capital between Christmas and New Year. The Northeast Regional from 30th Street to Union Station, two nights at the InterContinental on the Wharf, and a city dressed for the holidays.',
+      'Monday is spies by day and a million lights by night. Tuesday works along the Mall from the top of the Washington Monument to the National Christmas Tree, the dinosaurs, the ice rink and the Botanic Garden trains, finishing at Old Ebbitt Grill across from the White House. Wednesday is word play, a slow afternoon on the Wharf and the train home.',
+    ],
+    legsLabel: '2 trains',
+    flights: [
+      ['30th Street', 'Union Station', 'Mon Dec 28 · 9:50a → 11:47a · NE Regional 141', '~2h'],
+      ['Union Station', '30th Street', 'Wed Dec 30 · 6:10p → 8:03p · NE Regional 196', '~2h'],
+    ],
+    itinerary: [
+      { n: 1, date: 'Mon, Dec 28', title: 'Secret agents & a million lights', text: 'The 9:50 Northeast Regional to Union Station and its giant Christmas tree, bags to the InterContinental and lunch at Shake Shack. The International Spy Museum from 2:30, dinner at Makers Union on the Wharf, then ZooLights at the National Zoo from 7.' },
+      { n: 2, date: 'Tue, Dec 29', title: 'Monuments, dinosaurs & garden trains', text: 'Up the Washington Monument, the National Christmas Tree on the Ellipse, and the Natural History Museum at 11:30. Lunch at the Pavilion Café and a skate at the Sculpture Garden rink, hot chocolate back at the hotel, then the Botanic Garden’s “Season’s Greenings” after dark and a 7pm dinner at Old Ebbitt Grill.' },
+      { n: 3, date: 'Wed, Dec 30', title: 'Word play, waterfront & home', text: 'Planet Word when it opens at 10, lunch at Lupo Marino, a free afternoon strolling the Wharf piers, Chick-fil-A at Union Station for a train dinner, and the 6:10 home, into 30th Street around 8.' },
+    ],
+    scene: { kind: 'skyline', pal: ['#1f3550', '#c98a6a', '#3c4f69', '#22344b', '#121e2e', '#ffe2a8'], seed: 1228 },
+  },
+  {
     id: 'nz-samoas-2027',
     title: 'New Zealand & the Samoas',
     place: 'New Zealand · Samoa · American Samoa · Hawaii',
@@ -2242,7 +2283,7 @@ function renderDetail(t) {
         <div>
           ${t.story.length ? `<section><div class="eyebrow">Field notes</div><h2 style="margin-top:12px">The story</h2><div class="prose">${t.story.map(p => `<p>${esc(p)}</p>`).join('')}</div></section>` : ''}
           ${t.numbers ? `<section><div class="trip-numbers">${t.numbers.map(([v, l]) => `<div><b>${esc(v)}</b><span>${esc(l)}</span></div>`).join('')}</div></section>` : ''}
-          ${MAPS[t.id] || t.flights ? `<section><div class="eyebrow">The route</div><h2 style="margin-top:12px">${t.flights ? t.flights.length + ' flights' : 'The route'}</h2>
+          ${MAPS[t.id] || t.flights ? `<section><div class="eyebrow">The route</div><h2 style="margin-top:12px">${t.flights ? (t.legsLabel || t.flights.length + ' flights') : 'The route'}</h2>
             ${MAPS[t.id] ? mapFig(MAPS[t.id][0]) : ''}
             ${t.flights ? `<div class="flights">${t.flights.map((f, k) => `<div class="flight"><span class="fn">${k + 1}</span><div><b>${esc(f[0])} → ${esc(f[1])}</b><small>${esc(f[2])}${f[4] ? ' · ' + esc(f[4]) : ''}</small></div><span class="fd">${esc(f[3])}</span></div>`).join('')}</div>` : ''}
             ${(MAPS[t.id] || []).slice(1).map(mapFig).join('')}</section>` : ''}
