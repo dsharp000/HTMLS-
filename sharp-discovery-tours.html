@@ -79,6 +79,9 @@ h1, h2, h3, h4 { font-family: var(--serif); font-weight: 600; line-height: 1.12;
 .btn-primary:hover { background: #a6752f; }
 .btn-ghost { border-color: rgba(255,255,255,.75); color: #fff; background: rgba(14,36,54,.25); }
 .btn-ghost:hover { background: rgba(255,255,255,.1); }
+button.btn { font-family: inherit; cursor: pointer; }
+.btn-link { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 10px; padding: 10px; border: 0; background: none; color: var(--brass-ink); font: 600 14px/1 var(--sans); cursor: pointer; }
+.btn-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .btn-dark { background: var(--navy); color: #fff; }
 .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
 
@@ -432,6 +435,7 @@ body.locked { overflow: hidden; }
         <a class="btn btn-primary" href="#journeys">Explore journeys
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
         <a class="btn btn-ghost" href="#upcoming">Upcoming departures</a>
+        <button type="button" class="btn btn-ghost js-random"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2.5"/><circle cx="5.5" cy="5.5" r="1" fill="currentColor" stroke="none"/><circle cx="10.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none"/></svg>Choose a random trip</button>
       </div>
     </div>
   </section>
@@ -3366,7 +3370,7 @@ function renderDetail(t) {
         </div>
         <aside>
           ${t.highlights.length ? `<div class="aside-card"><h3>Highlights</h3><ul>${t.highlights.map(h => `<li>${esc(h)}</li>`).join('')}</ul>
-            <a class="btn btn-dark" href="#/">← All journeys</a></div>` : `<div class="aside-card"><h3>Coming soon</h3><p style="color:var(--ink-2);margin-top:0">Details will be posted as plans firm up.</p><a class="btn btn-dark" href="#/">← All journeys</a></div>`}
+            <a class="btn btn-dark" href="#/">← All journeys</a><button type="button" class="btn-link js-random"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2.5"/><circle cx="5.5" cy="5.5" r="1" fill="currentColor" stroke="none"/><circle cx="10.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none"/></svg>Another random trip</button></div>` : `<div class="aside-card"><h3>Coming soon</h3><p style="color:var(--ink-2);margin-top:0">Details will be posted as plans firm up.</p><a class="btn btn-dark" href="#/">← All journeys</a></div>`}
           ${next ? `<div class="aside-card"><a class="next-trip" href="#/trip/${next.id}"><div class="thumb">${media(next)}</div><div><small>${next.status === 'past' ? 'Next journey' : 'Coming up'}</small><b>${esc(next.title)}</b></div></a></div>` : ''}
         </aside>
       </div>
@@ -3391,6 +3395,14 @@ function route() {
 closeBtn.addEventListener('click', () => { history.length > 1 && /^#\/trip/.test(location.hash) ? (location.hash = '#/') : route(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && detail.classList.contains('open')) location.hash = '#/'; });
 addEventListener('hashchange', route);
+
+/* ---------- Random trip ---------- */
+document.addEventListener('click', e => {
+  if (!e.target.closest('.js-random')) return;
+  const here = (location.hash.match(/^#\/trip\/(.+)$/) || [])[1];
+  const pool = past.filter(t => t.id !== here);
+  if (pool.length) location.hash = '#/trip/' + pool[Math.floor(Math.random() * pool.length)].id;
+});
 
 /* ---------- Photo viewer ---------- */
 const lb = { el: $('#lightbox'), list: [], i: 0, from: null };
