@@ -205,7 +205,12 @@ footer nav { display: flex; gap: 22px; flex-wrap: wrap; }
 .tradition { display: grid; grid-template-columns: 1.15fr 1fr; background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
 .tradition + .tradition { margin-top: 36px; }
 .tradition-art { grid-column: 1 / -1; height: 260px; }
-.tradition-art svg { width: 100%; height: 100%; }
+.tradition-art svg, .tradition-art img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.tgallery { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 40px 40px; }
+.tgallery > .shot { position: relative; display: block; padding: 0; border: 0; border-radius: 10px; overflow: hidden; aspect-ratio: 1; background: var(--sand-2); cursor: zoom-in; font: inherit; }
+.tgallery > .shot img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s ease; }
+.tgallery > .shot:hover img { transform: scale(1.04); }
+.tgallery > .shot:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
 .tradition-body { padding: 36px 40px 40px; min-width: 0; }
 .tradition-body h3 { font-size: clamp(28px, 3.2vw, 38px); margin: 10px 0 14px; }
 .tradition-body p { color: var(--ink-2); }
@@ -244,6 +249,7 @@ footer nav { display: flex; gap: 22px; flex-wrap: wrap; }
   .tradition-grid { grid-template-columns: 1fr; padding: 0 22px 24px; }
   .fact-row b { font-size: 19px; }
   .tradition-art { height: 180px; }
+  .tgallery { grid-template-columns: repeat(2, 1fr); padding: 0 22px 24px; }
 }
 
 /* ---------- Trip detail overlay ---------- */
@@ -508,6 +514,7 @@ body.locked { overflow: hidden; }
           <p>Tucked into Frankford Township on the edge of the Kittatinny Ridge, the lake is fed by runoff from the mountain and by Bear Swamp, and spills out into Culver’s Lake before joining the Paulins Kill. Its name sounds Lenape, but it isn’t: “Owassa” comes from a fictional character in a long poem written by a Branchville clergyman for his late wife.</p>
         </div>
         <div class="tradition-map" id="owassaMap"></div>
+        <div class="tgallery" id="owassaPhotos" data-set="owassa"></div>
         <div class="tradition-grid">
             <div class="tcard"><span class="ticon">🛶</span><b>Time on the lake</b><p>Swimming, paddling, fishing off the dock and doing absolutely nothing at all. The best part of every summer.</p></div>
             <div class="tcard"><span class="ticon">🌲</span><b>Stokes State Forest</b><p>Right next door: the trails of Tillman Ravine, and the view from Sunrise Mountain on the Appalachian Trail.</p></div>
@@ -3592,7 +3599,17 @@ $('#shoreTimeline').innerHTML = SHORE.map(e => e.memorial
   ? `<li class="memorial"><span></span><span class="dot"></span><span>${esc(e.memorial)}</span></li>`
   : `<li class="${e.mom ? 'with-mom' : ''}${e.upcoming ? ' upcoming' : ''}"><span class="yr">${e.year}</span><span class="dot"></span><span class="place">${esc(e.place)}${e.upcoming ? '<small>planning</small>' : ''}</span></li>`).join('');
 $('#shoreTimeline').insertAdjacentHTML('afterend', '<div class="shore-legend"><span><i style="background:#d98fa0"></i>With Mom</span><span><i style="background:var(--brass)"></i>Carrying it on</span></div>');
-$('#owassaArt').innerHTML = scene({ kind: 'lakes', pal: ['#f2a46b', '#fde3c0', '#7f9b8a', '#4d6e5c', '#1f3328', '#fff2d2'], seed: 163 }, 1600, 400);
+/* Summer-tradition photos: { src, caption }. The cover replaces the drawn scene. */
+const TRADITION_PHOTOS = {
+  owassa: { cover: 'photos/lake-owassa/04-sky-on-fire.jpg', coverPos: '50% 30%', photos: [{"src": "photos/lake-owassa/01-from-the-ridge.jpg", "caption": "Lake Owassa from the Kittatinny Ridge"}, {"src": "photos/lake-owassa/02-evening-swim.jpg", "caption": "The whole crew in for an evening swim"}, {"src": "photos/lake-owassa/03-shore-at-sunset.jpg", "caption": "Sunset on the shore by the rowboats"}, {"src": "photos/lake-owassa/04-sky-on-fire.jpg", "caption": "The sky on fire over the swim float"}, {"src": "photos/lake-owassa/05-glassy-paddle.jpg", "caption": "A glassy evening paddle at sunset"}, {"src": "photos/lake-owassa/06-sunset-reflection.jpg", "caption": "Sunset reflected on the still lake"}, {"src": "photos/lake-owassa/07-evening-paddle.jpg", "caption": "Paddling out under an evening sky"}, {"src": "photos/lake-owassa/08-autumn-cottages.jpg", "caption": "Lakeside cottages in autumn color"}] },
+};
+$('#owassaArt').innerHTML = TRADITION_PHOTOS.owassa.cover
+  ? `<img src="${TRADITION_PHOTOS.owassa.cover}" alt="Sunset over Lake Owassa" style="object-position:${TRADITION_PHOTOS.owassa.coverPos}">`
+  : scene({ kind: 'lakes', pal: ['#f2a46b', '#fde3c0', '#7f9b8a', '#4d6e5c', '#1f3328', '#fff2d2'], seed: 163 }, 1600, 400);
+document.querySelectorAll('.tgallery').forEach(g => {
+  const set = TRADITION_PHOTOS[g.dataset.set]; if (!set || !set.photos.length) { g.remove(); return; }
+  g.innerHTML = set.photos.map((ph, k) => `<button type="button" class="shot" data-i="${k}" aria-label="Open photo: ${esc(ph.caption)}"><img src="${esc(thumbOf(ph.src))}" alt="${esc(ph.caption)}" loading="lazy"><span class="cap">${esc(ph.caption)}</span></button>`).join('');
+});
 $('#shoreArt').innerHTML = scene({ kind: 'beach', pal: ['#f4a07a', '#fde7cc', '#4fb0c6', '#2a8fb0', '#f3e6cc', '#fff3dc'], seed: 167 }, 1600, 400);
 if (MAPS.__owassa) $('#owassaMap').innerHTML = mapFig(MAPS.__owassa);
 if (MAPS.__shore) $('#shoreMap').innerHTML = mapFig(MAPS.__shore);
@@ -3689,6 +3706,11 @@ detail.addEventListener('click', e => {
   const b = e.target.closest('.shot'); if (!b) return;
   const t = TRIPS.find(x => location.hash === '#/trip/' + x.id); if (!t || !t.photos) return;
   lb.list = t.photos.map(photoOf); lb.from = b; lb.el.hidden = false; lbShow(+b.dataset.i); $('.lb-close').focus();
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('.tgallery .shot'); if (!b) return;
+  const set = TRADITION_PHOTOS[b.closest('.tgallery').dataset.set]; if (!set) return;
+  lb.list = set.photos.map(photoOf); lb.from = b; lb.el.hidden = false; lbShow(+b.dataset.i); $('.lb-close').focus();
 });
 lb.el.addEventListener('click', e => {
   if (e.target.closest('.lb-prev')) lbShow(lb.i - 1);
