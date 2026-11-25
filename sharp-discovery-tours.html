@@ -3361,24 +3361,51 @@ function scene(sc, w = 1600, h = 1000) {
     layers += `<polygon points="${mx - mw},${base} ${mx - mw * .72},${mTop + 40} ${mx},${mTop} ${mx + mw * .72},${mTop + 40} ${mx + mw},${base}" fill="${lit}"/>`;
     layers += `<polygon points="${mx},${mTop} ${mx + mw * .72},${mTop + 40} ${mx + mw},${base} ${mx},${base}" fill="${shade}" opacity=".55"/>`;
     layers += `<circle cx="${mx}" cy="${mTop + 22}" r="3" fill="#ff5a4a"/>`;
-    // Capitol
-    const cx = w * .66, cb = base;
-    layers += `<rect x="${cx - 300}" y="${cb - 62}" width="600" height="62" fill="${lit}"/>`;
-    layers += `<rect x="${cx - 300}" y="${cb - 70}" width="600" height="8" fill="${shade}"/>`;
-    layers += `<rect x="${cx - 110}" y="${cb - 96}" width="220" height="96" fill="${lit}"/>`;
-    layers += `<polygon points="${cx - 70},${cb - 96} ${cx},${cb - 124} ${cx + 70},${cb - 96}" fill="${shade}"/>`;
-    layers += `<rect x="${cx - 82}" y="${cb - 170}" width="164" height="48" fill="${lit}"/>`;
-    layers += `<rect x="${cx - 90}" y="${cb - 178}" width="180" height="10" fill="${shade}"/>`;
-    layers += `<rect x="${cx - 68}" y="${cb - 212}" width="136" height="34" fill="${lit}"/>`;
-    layers += `<path d="M${cx - 76},${cb - 212} A76 92 0 0 1 ${cx + 76},${cb - 212} Z" fill="${lit}"/>`;
-    layers += `<path d="M${cx},${cb - 304} A76 92 0 0 1 ${cx + 76},${cb - 212} H${cx} Z" fill="${shade}" opacity=".45"/>`;
-    layers += `<rect x="${cx - 12}" y="${cb - 336}" width="24" height="34" fill="${lit}"/><path d="M${cx - 14},${cb - 336} A14 14 0 0 1 ${cx + 14},${cb - 336} Z" fill="${lit}"/><rect x="${cx - 2}" y="${cb - 368}" width="4" height="22" fill="${lit}"/>`;
-    for (let k = -5; k <= 5; k++) layers += `<rect x="${cx + k * 13 - 3}" y="${cb - 166}" width="6" height="40" fill="${shade}" opacity=".7"/>`;
-    for (let k = -18; k <= 18; k++) if (Math.abs(k) > 6) layers += `<rect x="${cx + k * 15.5 - 3}" y="${cb - 56}" width="6" height="46" fill="${shade}" opacity=".55"/>`;
-    for (let k = -5; k <= 5; k++) layers += `<rect x="${cx + k * 19 - 3}" y="${cb - 88}" width="6" height="80" fill="${shade}" opacity=".55"/>`;
+    // Capitol (west front): long wings with their own pediments, the central block and portico,
+    // the colonnaded drum, an attic with windows, the tall ribbed cast-iron dome,
+    // the lantern, and the Statue of Freedom on top.
+    const cx = w * .67, cb = base;
+    const R = (x, y, ww, hh, f, o) => `<rect x="${(x).toFixed(1)}" y="${(y).toFixed(1)}" width="${(ww).toFixed(1)}" height="${(hh).toFixed(1)}" fill="${f}"${o ? ` opacity="${o}"` : ''}/>`;
+    const cols = (x0, x1, y, hh, n, o) => { let c = ''; for (let k = 0; k < n; k++) { const x = x0 + (x1 - x0) * (k + .5) / n; c += R(x - 2.2, y, 4.4, hh, shade, o); } return c; };
+    // wings and connecting blocks
+    layers += R(cx - 330, cb - 52, 660, 52, lit) + R(cx - 334, cb - 58, 668, 7, shade);
+    layers += cols(cx - 326, cx - 150, cb - 50, 42, 16, .55) + cols(cx + 150, cx + 326, cb - 50, 42, 16, .55);
+    for (const wx of [cx - 250, cx + 250]) {
+      layers += R(wx - 48, cb - 70, 96, 70, lit) + cols(wx - 44, wx + 44, cb - 64, 56, 8, .6);
+      layers += `<polygon points="${wx - 54},${cb - 70} ${wx},${cb - 88} ${wx + 54},${cb - 70}" fill="${shade}"/>`;
+    }
+    // central block and portico
+    layers += R(cx - 140, cb - 80, 280, 80, lit) + R(cx - 144, cb - 86, 288, 7, shade);
+    layers += cols(cx - 64, cx + 64, cb - 78, 70, 8, .65);
+    layers += `<polygon points="${cx - 72},${cb - 86} ${cx},${cb - 108} ${cx + 72},${cb - 86}" fill="${shade}"/>`;
+    layers += `<polygon points="${cx - 58},${cb - 89} ${cx},${cb - 104} ${cx + 58},${cb - 89}" fill="${lit}" opacity=".6"/>`;
+    // drum base, colonnaded peristyle and balustrade
+    const d0 = cb - 108;
+    layers += R(cx - 98, d0 - 10, 196, 10, shade);
+    layers += R(cx - 92, d0 - 74, 184, 64, lit) + cols(cx - 90, cx + 90, d0 - 70, 58, 15, .6);
+    layers += R(cx - 98, d0 - 82, 196, 8, shade);
+    // attic drum with windows
+    const a0 = d0 - 82;
+    layers += R(cx - 80, a0 - 30, 160, 30, lit);
+    for (let k = 0; k < 7; k++) layers += R(cx - 66 + k * 20, a0 - 24, 9, 16, shade, .7);
+    layers += R(cx - 84, a0 - 34, 168, 5, shade);
+    // the dome: taller than a hemisphere, with ribs and a shaded right side
+    const t0 = a0 - 34, dh = 118, dw = 78;
+    layers += `<path d="M${cx - dw},${t0} C${cx - dw},${t0 - dh * .62} ${cx - dw * .5},${t0 - dh} ${cx},${t0 - dh} C${cx + dw * .5},${t0 - dh} ${cx + dw},${t0 - dh * .62} ${cx + dw},${t0} Z" fill="${lit}"/>`;
+    layers += `<path d="M${cx},${t0 - dh} C${cx + dw * .5},${t0 - dh} ${cx + dw},${t0 - dh * .62} ${cx + dw},${t0} L${cx},${t0} Z" fill="${shade}" opacity=".45"/>`;
+    for (const f of [-.66, -.33, .33, .66]) layers += `<path d="M${cx + dw * f},${t0} Q${cx + dw * f * .78},${t0 - dh * .72} ${cx},${t0 - dh}" fill="none" stroke="${shade}" stroke-width="2" opacity=".7"/>`;
+    for (const y of [.28, .55]) layers += `<path d="M${cx - dw * (1 - y * .35)},${t0 - dh * y} Q${cx},${t0 - dh * y - 8} ${cx + dw * (1 - y * .35)},${t0 - dh * y}" fill="none" stroke="${shade}" stroke-width="1.6" opacity=".55"/>`;
+    // lantern (tholos) and the Statue of Freedom
+    const l0 = t0 - dh + 4;
+    layers += R(cx - 15, l0 - 34, 30, 34, lit) + cols(cx - 13, cx + 13, l0 - 31, 26, 4, .7);
+    layers += `<path d="M${cx - 18},${l0 - 34} Q${cx},${l0 - 50} ${cx + 18},${l0 - 34} Z" fill="${lit}"/>`;
+    layers += R(cx - 3, l0 - 56, 6, 8, lit);
+    layers += `<path d="M${cx - 4},${l0 - 56} L${cx - 2.5},${l0 - 72} Q${cx},${l0 - 78} ${cx + 2.5},${l0 - 72} L${cx + 4},${l0 - 56} Z" fill="${lit}"/>`;
+    layers += `<circle cx="${cx}" cy="${l0 - 66}" r="40" fill="url(#${id}g)" opacity=".35"/>`;
     // ground, trees and the Reflecting Pool
     let trees = '';
-    for (let i = 0; i < 46; i++) { const x = r() * w, tr = 16 + r() * 26; if (Math.abs(x - mx) < 50) continue; trees += `<circle cx="${x.toFixed(0)}" cy="${(base - tr * .4).toFixed(0)}" r="${tr.toFixed(0)}" fill="${mid}"/>`; }
+    for (let i = 0; i < 46; i++) { const x = r() * w, tr = 12 + r() * 18; if (Math.abs(x - mx) < 50 || Math.abs(x - cx) < 340) continue; trees += `<circle cx="${x.toFixed(0)}" cy="${(base - tr * .4).toFixed(0)}" r="${tr.toFixed(0)}" fill="${mid}"/>`; }
+    for (let i = 0; i < 18; i++) { const x = cx - 340 + r() * 680, tr = 7 + r() * 8; trees += `<circle cx="${x.toFixed(0)}" cy="${(base - tr * .3).toFixed(0)}" r="${tr.toFixed(0)}" fill="${mid}"/>`; }
     layers += trees + `<rect y="${base}" width="${w}" height="${h - base}" fill="${near}"/>`;
     layers += `<rect x="${w * .08}" y="${base + 40}" width="${w * .84}" height="${h * .12}" fill="url(#${id}w)" opacity=".85"/>`;
     layers += `<polygon points="${mx - mw},${base + 40} ${mx + mw},${base + 40} ${mx + 10},${base + 40 + h * .12} ${mx - 10},${base + 40 + h * .12}" fill="${lit}" opacity=".35"/>`;
