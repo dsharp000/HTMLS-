@@ -3377,6 +3377,8 @@ function scene(sc, w = 1600, h = 1000) {
     // central block and portico
     layers += R(cx - 140, cb - 80, 280, 80, lit) + R(cx - 144, cb - 86, 288, 7, shade);
     layers += cols(cx - 64, cx + 64, cb - 78, 70, 8, .65);
+    // roof platform the drum rises from (sits behind the portico pediment)
+    layers += R(cx - 112, cb - 112, 224, 27, lit) + R(cx - 112, cb - 112, 224, 27, shade, .35) + R(cx - 116, cb - 114, 232, 4, shade);
     layers += `<polygon points="${cx - 72},${cb - 86} ${cx},${cb - 108} ${cx + 72},${cb - 86}" fill="${shade}"/>`;
     layers += `<polygon points="${cx - 58},${cb - 89} ${cx},${cb - 104} ${cx + 58},${cb - 89}" fill="${lit}" opacity=".6"/>`;
     // drum base, colonnaded peristyle and balustrade
